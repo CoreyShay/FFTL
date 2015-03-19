@@ -26,3 +26,10 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio crap
+*.opensdf
+*.sdf
+
+#Build Output Directory
+Output/
