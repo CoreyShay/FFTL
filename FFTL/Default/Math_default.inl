@@ -171,7 +171,7 @@ FFTL_FORCEINLINE f32 V4fHSumF(Vec4f_In v)
 }
 FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 {
-	return V4fSplat4(V4fHSumF);
+	return V4fSplat4(V4fHSumF(v));
 }
 FFTL_FORCEINLINE Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b)
 {
@@ -206,19 +206,19 @@ FFTL_FORCEINLINE Vec4f V4fReverse(Vec4f_In v)
 
 FFTL_FORCEINLINE f32 V4fGetX(Vec4f_In v)
 {
-	return a.x;
+	return v.x;
 }
 FFTL_FORCEINLINE f32 V4fGetY(Vec4f_In v)
 {
-	return a.y;
+	return v.y;
 }
 FFTL_FORCEINLINE f32 V4fGetZ(Vec4f_In v)
 {
-	return a.z;
+	return v.z;
 }
 FFTL_FORCEINLINE f32 V4fGetW(Vec4f_In v)
 {
-	return a.w;
+	return v.w;
 }
 
 

@@ -48,14 +48,8 @@ template <typename T>
 class cxNumber
 {
 public:
-	union
-	{
-		struct
-		{
-			T r;
-			T i;
-		};
-	};
+	T r;
+	T i;
 
 	FFTL_FORCEINLINE cxNumber() {}
 	FFTL_FORCEINLINE cxNumber(const T& real, const T& imag) : r(real), i(imag) {}
