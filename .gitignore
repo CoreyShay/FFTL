@@ -30,6 +30,8 @@
 # Visual Studio crap
 *.opensdf
 *.sdf
+*.suo
+*.user
 
 #Build Output Directory
 Output/

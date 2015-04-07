@@ -33,17 +33,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "FFTL/fft.h"
 #include "kiss_fft130/kiss_fftr.h"
 
-#include <wtypes.h>
-#include <Windows.h>
-#include <profileapi.h>
+//#include <wtypes.h>
+//#include <Windows.h>
+//#include <profileapi.h>
 //#include <winnt.h>
-#include <conio.h>
+//#include <conio.h>
 #include <stdio.h>
 
-#include <intrin.h>
+//#include <intrin.h>
 
 
-
+#if 0
 
 namespace FFTL
 {
@@ -637,7 +637,7 @@ void RunTests()
 } // namespace FFTL
 using namespace FFTL;
 
-void main()
+int main()
 {
 	const FFTL::f32_4 a(0,1,2,3);
 	const FFTL::f32_4 b(4,5,6,7);
@@ -646,4 +646,14 @@ void main()
 
 
 	FFTL::RunTests();
+
+	return 0;
+}
+#endif
+
+
+int main()
+{
+	printf("hello world\n");
+	return 0;
 }
