@@ -109,12 +109,12 @@ public:
 	void TransformInverse(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput, bool bApplyBitReverse=true) const;
 
 	//	In-place, no bit reversal or windowing
-	void TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const { Transform_Main_DIF(cxInOut); }
-	void TransformForward_InPlace_DIF(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const { Transform_Main_DIF(fInOutR, fInOutI); }
+	void TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const;
+	void TransformForward_InPlace_DIF(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
 
 	//	In-place, no bit reversal or windowing. No divide by N.
 	void TransformInverse_InPlace_DIT(FixedArray<cxT,_N>& cxInOut) const;
-	void TransformInverse_InPlace_DIT(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const { Transform_Main_DIT(fInOutI, fInOutR); }
+	void TransformInverse_InPlace_DIT(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
 
 	void ApplyWindow(FixedArray<T,_N>& fInOut, const WindowCoefficients& coeff) const;
 	void ApplyWindow(FixedArray<cxT,_N>& cxInOut, const WindowCoefficients& coeff) const;
@@ -127,10 +127,12 @@ public:
 	void PrintSetupInfo() const;
 	void PrintTimerInfo(uint iterationCount = 1) const;
 
-	const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
-	const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
-	const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
-	const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
+	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
+	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
+	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
+	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
+
+	FFTL_FORCEINLINE T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
 
 protected:
 
@@ -154,7 +156,7 @@ protected:
 	FixedArray_Aligned32<T_Twiddle,_N> m_TwiddleFactorsR;
 	FixedArray_Aligned32<T_Twiddle,_N> m_TwiddleFactorsI;
 
-	FixedArray<T_BR,_N>m_BitReverseIndices;
+	FixedArray<T_BR,_N> m_BitReverseIndices;
 
 #if FFTL_STAGE_TIMERS
 public:
@@ -237,10 +239,10 @@ public:
 	void TransformForward(const FixedArray<T,_N>& fTimeIn, FixedArray<T,_N_2>& fFreqOutR, FixedArray<T,_N_2>& fFreqOutI) const;
 	void TransformInverse(const FixedArray<T,_N_2>& fFreqInR, const FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
 
-	const T_Twiddle& GetTwiddleReal(uint n) const { return m_PostTwiddlesR[n]; }
-	const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_PostTwiddlesR + n; }
-	const T_Twiddle& GetTwiddleImag(uint n) const { return m_PostTwiddlesI[n]; }
-	const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_PostTwiddlesI + n; }
+	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_PostTwiddlesR[n]; }
+	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_PostTwiddlesR + n; }
+	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_PostTwiddlesI[n]; }
+	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_PostTwiddlesI + n; }
 
 	void PrintTimerInfo(uint iterationCount = 1) const { m_fft.PrintTimerInfo(iterationCount); }
 
@@ -275,6 +277,7 @@ public:
 
 	void TransformForward(const FixedArray<T,_N>& fTimeIn, FixedArray<T,_N_2>& fFreqOutR, FixedArray<T,_N_2>& fFreqOutI) const;
 	void TransformInverse(const FixedArray<T,_N_2>& fFreqInR, const FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
+	void TransformInverse_ClobberInput(FixedArray<T,_N_2>& fFreqInR, FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
 };
 #endif
 

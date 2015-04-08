@@ -554,6 +554,12 @@ FFTL_COND_INLINE void FFT_Base<_M, T, T_Twiddle>::TransformInverse_InPlace_DIT(F
 }
 
 template <uint _M, typename T, typename T_Twiddle>
+FFTL_FORCEINLINE void FFT_Base<_M, T, T_Twiddle>::TransformInverse_InPlace_DIT(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const
+{
+	Transform_Main_DIT(fInOutI, fInOutR);
+}
+
+template <uint _M, typename T, typename T_Twiddle>
 FFTL_COND_INLINE void FFT_Base<_M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<cxT,_N>& cxOutput) const
 {
 	uint uTwiddleIndex = _N - 1;
@@ -824,6 +830,18 @@ FFTL_COND_INLINE void FFT_Base<_M, T, T_Twiddle>::TransformInverse(const FixedAr
 		rOutput.r *= +_1_div_N;
 		rOutput.i *= -_1_div_N;
 	}
+}
+
+template <uint _M, typename T, typename T_Twiddle>
+FFTL_FORCEINLINE void FFT_Base<_M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const
+{
+	Transform_Main_DIF(cxInOut);
+}
+
+template <uint _M, typename T, typename T_Twiddle>
+FFTL_FORCEINLINE void FFT_Base<_M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const
+{
+	Transform_Main_DIF(fInOutR, fInOutI);
 }
 
 template <uint _M, typename T, typename T_Twiddle>
@@ -1903,15 +1921,15 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 	QueryPerformanceCounter(&laStart);
 #endif
 
-	FixedArray<T,_N_2>& fTimeOutR = *reinterpret_cast<FixedArray<T,_N_2>*>(fTimeOut+0);
-	FixedArray<T,_N_2>& fTimeOutI = *reinterpret_cast<FixedArray<T,_N_2>*>(fTimeOut+_N_2);
+	FixedArray<T,_N_2>& fFftInR = *reinterpret_cast<FixedArray<T,_N_2>*>(fTimeOut+0);
+	FixedArray<T,_N_2>& fFftInI = *reinterpret_cast<FixedArray<T,_N_2>*>(fTimeOut+_N_2);
 
 	//	Special case for 0 index
 	{
 		const float fDC = fFreqInR[0];
 		const float fNy = fFreqInI[0];
-		fTimeOutR[0] = fDC + fNy;
-		fTimeOutI[0] = fDC - fNy;
+		fFftInR[0] = fDC + fNy;
+		fFftInI[0] = fDC - fNy;
 	}
 
 	//	Special case for 3 element loads and stores we only need to do once.
@@ -1930,10 +1948,10 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 		const cxNumber<f32_4> fok = tmp * twid;
 
 		//	Store only 3 so we don't pollute the next stage
-		(fek.r + fok.r).Store3(fTimeOutR+n);
-		(fek.i + fok.i).Store3(fTimeOutI+n);
-		ZYXX(fek.r - fok.r).Store3(fTimeOutR+Nmn);
-		ZYXX(fok.i - fek.i).Store3(fTimeOutI+Nmn);
+		(fek.r + fok.r).Store3(fFftInR+n);
+		(fek.i + fok.i).Store3(fFftInI+n);
+		ZYXX(fek.r - fok.r).Store3(fFftInR+Nmn);
+		ZYXX(fok.i - fek.i).Store3(fFftInI+Nmn);
 	}
 
 	//	N-n loading will be unaligned.
@@ -1950,10 +1968,10 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 		const cxNumber<f32_4> tmp = fk - fnkc;
 		const cxNumber<f32_4> fok = tmp * twid;
 
-		(fek.r + fok.r).StoreA(fTimeOutR+n);
-		(fek.i + fok.i).StoreA(fTimeOutI+n);
-		Reverse(fek.r - fok.r).StoreU(fTimeOutR+Nmn);
-		Reverse(fok.i - fek.i).StoreU(fTimeOutI+Nmn);
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
 	}
 
 #if FFTL_SIMD8
@@ -1971,10 +1989,10 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 		const cxNumber<f32_8> tmp = fk - fnkc;
 		const cxNumber<f32_8> fok = tmp * twid;
 
-		(fek.r + fok.r).StoreA(fTimeOutR+n);
-		(fek.i + fok.i).StoreA(fTimeOutI+n);
-		Reverse(fek.r - fok.r).StoreU(fTimeOutR+Nmn);
-		Reverse(fok.i - fek.i).StoreU(fTimeOutI+Nmn);
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
 	}
 #else
 	//	N-n loading will be unaligned.
@@ -1991,16 +2009,16 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 		const cxNumber<f32_4> tmp = fk - fnkc;
 		const cxNumber<f32_4> fok = tmp * twid;
 
-		(fek.r + fok.r).StoreA(fTimeOutR+n);
-		(fek.i + fok.i).StoreA(fTimeOutI+n);
-		Reverse(fek.r - fok.r).StoreU(fTimeOutR+Nmn);
-		Reverse(fok.i - fek.i).StoreU(fTimeOutI+Nmn);
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
 	}
 #endif
 
 	//	The odd center bin just needs to be doubled and the imaginary part negated.
-	fTimeOutR[_N_4] = fFreqInR[_N_4] * +2.f;
-	fTimeOutI[_N_4] = fFreqInI[_N_4] * -2.f;
+	fFftInR[_N_4] = fFreqInR[_N_4] * +2.f;
+	fFftInI[_N_4] = fFreqInI[_N_4] * -2.f;
 
 #if FFTL_STAGE_TIMERS
 	QueryPerformanceCounter(&laEnd);
@@ -2010,7 +2028,7 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 	//	Perform the half size complex inverse FFT
 	FixedArray_Aligned32<T,_N_2> fTempR;
 	FixedArray_Aligned32<T,_N_2> fTempI;
-	this->m_fft.TransformInverse(fTimeOutR, fTimeOutI, fTempR, fTempI);
+	this->m_fft.TransformInverse(fFftInR, fFftInI, fTempR, fTempI);
 
 #if FFTL_STAGE_TIMERS
 	QueryPerformanceCounter(&laStart);
@@ -2034,7 +2052,150 @@ FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse(const FixedAr
 	this->m_fft.m_PostProcessTimer.QuadPart += laEnd.QuadPart - laStart.QuadPart;
 #endif
 }
+
+template <uint _M>
+FFTL_COND_INLINE void FFT_Real<_M, float, float>::TransformInverse_ClobberInput(FixedArray<T,_N_2>& fFreqInR, FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const
+{
+#if FFTL_STAGE_TIMERS
+	LARGE_INTEGER laStart, laEnd;
+	QueryPerformanceCounter(&laStart);
 #endif
+
+	FixedArray<T,_N_2>& fFftInR = fFreqInR;
+	FixedArray<T,_N_2>& fFftInI = fFreqInI;
+
+	//	Special case for 0 index
+	{
+		const float fDC = fFreqInR[0];
+		const float fNy = fFreqInI[0];
+		fFftInR[0] = fDC + fNy;
+		fFftInI[0] = fDC - fNy;
+	}
+
+	//	Special case for 3 element loads and stores we only need to do once.
+	{
+		const uint n = 1;
+		const uint Nmn = _N_2-n-2;
+
+		//	Starting at 1 forces an unaligned load.
+		const cxNumber<f32_4> twid( f32_4::LoadU(this->GetTwiddleRealPtr(n)), -f32_4::LoadU(this->GetTwiddleImagPtr(n)) );
+
+		const cxNumber<f32_4> fk( f32_4::LoadU(fFreqInR+n), f32_4::LoadU(fFreqInI+n) );
+		const cxNumber<f32_4> fnkc( ZYXX( f32_4::Load3(fFreqInR+Nmn) ), -ZYXX( f32_4::Load3(fFreqInI+Nmn) ) );
+
+		const cxNumber<f32_4> fek = fk + fnkc;
+		const cxNumber<f32_4> tmp = fk - fnkc;
+		const cxNumber<f32_4> fok = tmp * twid;
+
+		//	Store only 3 so we don't pollute the next stage
+		(fek.r + fok.r).Store3(fFftInR+n);
+		(fek.i + fok.i).Store3(fFftInI+n);
+		ZYXX(fek.r - fok.r).Store3(fFftInR+Nmn);
+		ZYXX(fok.i - fek.i).Store3(fFftInI+Nmn);
+	}
+
+	//	N-n loading will be unaligned.
+	{
+		const uint n = 4;
+		const uint Nmn = _N_2-n-3;
+
+		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
+
+		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR+n), f32_4::LoadA(fFreqInI+n) );
+		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR+Nmn) ), -Reverse( f32_4::LoadU(fFreqInI+Nmn) ) );
+
+		const cxNumber<f32_4> fek = fk + fnkc;
+		const cxNumber<f32_4> tmp = fk - fnkc;
+		const cxNumber<f32_4> fok = tmp * twid;
+
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
+	}
+
+#if FFTL_SIMD8
+	//	N-n loading will be unaligned.
+	for (uint n = 8; n < _N_4; n += 8)
+	{
+		const uint Nmn = _N_2-n-7;
+
+		const cxNumber<f32_8> twid( f32_8::LoadA(this->GetTwiddleRealPtr(n)), -f32_8::LoadA(this->GetTwiddleImagPtr(n)) );
+
+		const cxNumber<f32_8> fk( f32_8::LoadA(fFreqInR+n), f32_8::LoadA(fFreqInI+n) );
+		const cxNumber<f32_8> fnkc( Reverse( f32_8::LoadU(fFreqInR+Nmn) ), -Reverse( f32_8::LoadU(fFreqInI+Nmn) ) );
+
+		const cxNumber<f32_8> fek = fk + fnkc;
+		const cxNumber<f32_8> tmp = fk - fnkc;
+		const cxNumber<f32_8> fok = tmp * twid;
+
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
+	}
+#else
+	//	N-n loading will be unaligned.
+	for (uint n = 8; n < _N_4; n += 4)
+	{
+		const uint Nmn = _N_2-n-3;
+
+		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
+
+		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR+n), f32_4::LoadA(fFreqInI+n) );
+		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR+Nmn) ), -Reverse( f32_4::LoadU(fFreqInI+Nmn) ) );
+
+		const cxNumber<f32_4> fek = fk + fnkc;
+		const cxNumber<f32_4> tmp = fk - fnkc;
+		const cxNumber<f32_4> fok = tmp * twid;
+
+		(fek.r + fok.r).StoreA(fFftInR+n);
+		(fek.i + fok.i).StoreA(fFftInI+n);
+		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
+	}
+#endif
+
+	//	The odd center bin just needs to be doubled and the imaginary part negated.
+	fFftInR[_N_4] = fFreqInR[_N_4] * +2.f;
+	fFftInI[_N_4] = fFreqInI[_N_4] * -2.f;
+
+#if FFTL_STAGE_TIMERS
+	QueryPerformanceCounter(&laEnd);
+	this->m_fft.m_PreProcessTimer.QuadPart += laEnd.QuadPart - laStart.QuadPart;
+#endif
+
+	//	Perform the half size complex inverse FFT
+	this->m_fft.TransformForward_InPlace_DIF(fFftInI, fFftInR); // Reverse real and imaginary for inverse FFT
+
+#if FFTL_STAGE_TIMERS
+	QueryPerformanceCounter(&laStart);
+#endif
+
+	const f32_4 vInv_N = ConvertTo<f32_4>(1.f/_N);
+
+	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
+	for (uint n = 0; n < _N_2; n += 4)
+	{
+		const uint nR0 = this->m_fft.GetBitReverseIndex(n+0);
+		const uint nR1 = this->m_fft.GetBitReverseIndex(n+1);
+		const uint nR2 = this->m_fft.GetBitReverseIndex(n+2);
+		const uint nR3 = this->m_fft.GetBitReverseIndex(n+3);
+
+		//	Interleave the output while bit reversing.
+		const f32_4 vShA(fFftInR[nR0], fFftInI[nR0], fFftInR[nR1], fFftInI[nR1]);
+		const f32_4 vShB(fFftInR[nR2], fFftInI[nR2], fFftInR[nR3], fFftInI[nR3]);
+
+		(vShA * vInv_N).StoreA(fTimeOut+n*2+0);
+		(vShB * vInv_N).StoreA(fTimeOut+n*2+4);
+	}
+
+#if FFTL_STAGE_TIMERS
+	QueryPerformanceCounter(&laEnd);
+	this->m_fft.m_PostProcessTimer.QuadPart += laEnd.QuadPart - laStart.QuadPart;
+#endif
+}
+#endif // FFTL_SIMD4
 
 
 

@@ -135,11 +135,11 @@ class FixedArray
 {
 public:
 	T data[_N];
-	inline T& operator[](uint32 n) { FFTL_ASSERT(n<_N); return data[n]; }
-	inline const T& operator[](uint n) const { FFTL_ASSERT(n<_N); return data[n]; }
-	inline T* operator+(uint n) { FFTL_ASSERT(n<_N); return data+n; }
-	inline const T* operator+(uint n) const { FFTL_ASSERT(n<_N); return data+n; }
-	inline static uint size() { return _N; }
+	FFTL_FORCEINLINE T& operator[](uint32 n) { FFTL_ASSERT(n<_N); return data[n]; }
+	FFTL_FORCEINLINE const T& operator[](uint n) const { FFTL_ASSERT(n<_N); return data[n]; }
+	FFTL_FORCEINLINE T* operator+(uint n) { FFTL_ASSERT(n<_N); return data+n; }
+	FFTL_FORCEINLINE const T* operator+(uint n) const { FFTL_ASSERT(n<_N); return data+n; }
+	FFTL_FORCEINLINE static uint size() { return _N; }
 };
 
 template <typename T, uint32 _N>
