@@ -166,7 +166,7 @@ void FFT_Base<_M, T, T_Twiddle>::ComputeTwiddleFactors()
 		}
 		else
 		{
-			const double fAngle = -2 * pi_64 * (double)n / (double)_N;
+			const f64 fAngle = -2 * pi_64 * (f64)n / (f64)_N;
 			m_TwiddleFactorsR[n+_N/2] = (T_Twiddle)Cos(fAngle);
 			m_TwiddleFactorsI[n+_N/2] = (T_Twiddle)Sin(fAngle);
 		}
@@ -331,11 +331,11 @@ void FFT_Base<_M, T, T_Twiddle>::PrintTimerInfo(uint iterationCount) const
 #if FFTL_STAGE_TIMERS
 	LARGE_INTEGER laFreq;
 	QueryPerformanceFrequency(&laFreq);
-	const double fInvUS = 1000000.0 / laFreq.QuadPart;
+	const f64 fInvUS = 1000000.0 / laFreq.QuadPart;
 
 	if (m_PreProcessTimer.QuadPart != 0)
 	{
-		FFTL_Printf("\tPreProcess: %f us\n", (double)m_PreProcessTimer.QuadPart * fInvUS / iterationCount);
+		FFTL_Printf("\tPreProcess: %f us\n", (f64)m_PreProcessTimer.QuadPart * fInvUS / iterationCount);
 		m_PreProcessTimer.QuadPart = 0;
 	}
 
@@ -343,14 +343,14 @@ void FFT_Base<_M, T, T_Twiddle>::PrintTimerInfo(uint iterationCount) const
 	{
 		if (m_StageTimers[m].QuadPart != 0)
 		{
-			FFTL_Printf("\tStage %i: %f us\n", m, (double)m_StageTimers[m].QuadPart * fInvUS / iterationCount);
+			FFTL_Printf("\tStage %i: %f us\n", m, (f64)m_StageTimers[m].QuadPart * fInvUS / iterationCount);
 			m_StageTimers[m].QuadPart = 0;
 		}
 	}
 
 	if (m_PostProcessTimer.QuadPart != 0)
 	{
-		FFTL_Printf("\tPostProcess: %f us\n", (double)m_PostProcessTimer.QuadPart * fInvUS / iterationCount);
+		FFTL_Printf("\tPostProcess: %f us\n", (f64)m_PostProcessTimer.QuadPart * fInvUS / iterationCount);
 		m_PostProcessTimer.QuadPart = 0;
 	}
 #else
@@ -1668,9 +1668,9 @@ FFT_Real_Base<_M, T, T_Twiddle>::FFT_Real_Base()
 {
 	for (uint n = 0; n < _N_4; ++n)
 	{
-		const double fAngle = 0.5 * pi_64 * (double)n / (double)_N_4;
-		m_PostTwiddlesR[n] = (float)-Sin(fAngle);
-		m_PostTwiddlesI[n] = (float)-Cos(fAngle);
+		const f64 fAngle = pi_64 * (f64)n / (f64)_N_4;
+		m_PostTwiddlesR[n] = (T_Twiddle)-Sin(fAngle);
+		m_PostTwiddlesI[n] = (T_Twiddle)-Cos(fAngle);
 	}
 }
 

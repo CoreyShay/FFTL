@@ -80,7 +80,7 @@ public:
 
 	cxNumber Conj() const												{ return cxNumber(r, -i); }
 
-	FFTL_FORCEINLINE T Dot(const cxNumber& c) const						{ return r*c.r + i*c.r; }
+	FFTL_FORCEINLINE T Dot(const cxNumber& c) const						{ return r*c.r + i*c.i; }
 	FFTL_FORCEINLINE T Mag2() const										{ return r*r + i*i; }
 	FFTL_FORCEINLINE T Mag() const										{ return sqrt(Mag2()); }
 };
