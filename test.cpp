@@ -30,20 +30,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 //#include "pch.h"
+
+#define COMPARE_WITH_FFTW 0
+
 #include "FFTL/fft.h"
 #include "kiss_fft130/kiss_fftr.h"
+#if COMPARE_WITH_FFTW
+#include "fftw/fftw3.h"
+#endif
 
-//#include <wtypes.h>
-//#include <Windows.h>
-//#include <profileapi.h>
-//#include <winnt.h>
-//#include <conio.h>
+#include <wtypes.h>
+#include <Windows.h>
+#include <profileapi.h>
+#include <winnt.h>
+#include <conio.h>
 #include <stdio.h>
 
 //#include <intrin.h>
 
 
-#if 0
+#if 1
 
 namespace FFTL
 {
@@ -130,7 +136,7 @@ void fft(uint32 n, uint32 m, float x[], float y[])
 #endif
 
 
-const uint32 _M = 11;
+const uint32 _M = 5;
 const uint32 _N = 1<<_M;
 
 typedef float fltType;
@@ -250,6 +256,120 @@ FixedArray_Aligned32<cxNumber<f32_8>, _N> cxInterleaved8;
 FFTL::Convolver<_M, 2, float, float> m_Convolver;
 FFTL::Convolver_Slow<float, _N, _N> m_Convolver_Slow;
 
+void convolutionTest()
+{
+	memset(&fInput1, 0, sizeof(fInput1));
+	memset(&fInput2, 0, sizeof(fInput2));
+	memset(&cxOutput, 0, sizeof(cxOutput));
+	memset(&fOutput1, 0, sizeof(fOutput1));
+	memset(&fOutput2, 0, sizeof(fOutput2));
+	memset(&fTimeOutput1, 0, sizeof(fTimeOutput1));
+	memset(&fTimeOutput2, 0, sizeof(fTimeOutput2));
+	memset(&fTestOutput1, 0, sizeof(fTestOutput1));
+	memset(&fTestOutput2, 0, sizeof(fTestOutput2));
+	memset(&cxInterleaved4, 0, sizeof(cxInterleaved4));
+	memset(&cxInterleaved8, 0, sizeof(cxInterleaved8));
+
+	FFT<_M, float> fftScalar;
+
+	FixedArray_Aligned32<fltType, _N*2> input111;
+	memset(&input111, 0, sizeof(input111));
+
+	for (uint n = 0; n < _N; ++n)
+	{
+#if 1
+		input111[n] = (float(rand() % 32768) / 16384.f) - 1.f;
+#else
+		input111[n] = -100;
+#endif
+	}
+
+	for (uint n = 0; n < _N; ++n)
+	{
+		fInput1[n] = input111[2*n+0];
+		fInput2[n] = input111[2*n+1];
+	}
+
+//	fInput1[0] = 0;
+//	fInput2[0] = 1;
+//	fInput1[1] = 2;
+//	fInput2[1] = 3;
+
+	fftScalar.TransformForward(fInput1, fInput2, fOutput1, fOutput2);
+	FixedArray_Aligned32<cxNumber<fltType>, _N> G;
+	for (uint i = 0; i < _N; ++i)
+	{
+		G[i].r = fOutput1[i];
+		G[i].i = fOutput2[i];
+	}
+
+	FixedArray_Aligned32<cxNumber<fltType>, _N*2> h;
+	memset(&h, 0, sizeof(h));
+//	h[2].r = 1;
+	h[_N-1].r = -1;
+	FixedArray_Aligned32<cxNumber<fltType>, _N*2> H;
+	FixedArray_Aligned32<fltType, _N*2> H_re;
+	FixedArray_Aligned32<fltType, _N*2> H_im;
+
+	FFT<_M+1, float> fftScalar2N;
+	fftScalar2N.TransformForward(h, H_re, H_im);
+	for (uint i = 0; i < 2*_N; ++i)
+	{
+		H[i].r = H_re[i];
+		H[i].i = H_im[i];
+	}
+
+	FixedArray_Aligned32<cxNumber<fltType>, _N> K1;
+	FixedArray_Aligned32<cxNumber<fltType>, _N> K2;
+
+//	K1[0] = (H[0]-H[0].Conj()) * 0.5f;
+//	K2[0] = (H[0] * (1.f - fSin) + H[_N-n].Conj() * (1.f + fSin)) * 0.5f;
+
+	for (uint n = 0; n < _N; ++n)
+	{
+		const float fSin = Sin(pi_32*n/_N);
+
+		K1[n] = (H[n] - H[_N-n].Conj()).Conj() * 0.5f * (Cos(pi_32*n/_N) / _N);
+		K2[n] = (H[n] * (1.f + fSin) + H[_N-n].Conj() * (1.f - fSin)).Conj() * (0.5f / _N);
+	}
+
+	FixedArray_Aligned32<cxNumber<fltType>, _N> Gh;
+	const cxNumber<fltType> ii(0, 1);
+	Gh[0] = G[0].Conj() * ii * K1[0] + G[0] * K2[0];
+	for (uint n = 1; n < _N; ++n)
+	{
+		Gh[n] = G[n].Conj() * ii * K1[n] + G[_N-n] * K2[n];
+	}
+
+	FixedArray_Aligned32<fltType, _N> Ghr;
+	FixedArray_Aligned32<fltType, _N> Ghi;
+
+	for (uint n = 0; n < _N; ++n)
+	{
+		Ghr[n] = Gh[n].r;
+		Ghi[n] = Gh[n].i;
+	}
+
+	fftScalar.TransformForward(Ghr, Ghi, fTimeOutput1, fTimeOutput2);
+	FixedArray_Aligned32<fltType, _N*2> outFinal;
+	for (uint n = 0; n < _N; ++n)
+	{
+		outFinal[n*2+0] = fTimeOutput1[n];
+		outFinal[n*2+1] = fTimeOutput2[n];
+	}
+
+
+	//for (uint i = 0; i < _N; ++i)
+	//{
+	//	cxNumber<float> c0(fOutput1[i], fOutput1[i]);
+	//	c0 *= c0;
+	//	fOutput1[i] = c0.r;
+	//	fOutput2[i] = c0.i;
+	//}
+
+	//fftScalar.TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
+
+}
 
 void verifyFFT()
 {
@@ -339,7 +459,7 @@ void verifyRealFFT()
 
 	memset(&fInput1, 0, sizeof(fInput1));
 	memset(&fInput2, 0, sizeof(fInput2));
-#if 0
+#if 1
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fn = (float)n;
@@ -353,8 +473,17 @@ void verifyRealFFT()
 	}
 #endif
 
-	FixedArray_Aligned32<fltType, _N/2> fHalfOutR;
-	FixedArray_Aligned32<fltType, _N/2> fHalfOutI;
+	FixedArray_Aligned32<fltType, _N> fFullOut;
+	FixedArray_Aligned32<fltType, _N/2>& fHalfOutR = (FixedArray_Aligned32<fltType, _N/2>&)fFullOut;
+	FixedArray_Aligned32<fltType, _N/2>& fHalfOutI = *(FixedArray_Aligned32<fltType, _N/2>*)(fFullOut.data+_N/2);
+
+#if COMPARE_WITH_FFTW
+	{
+		fftwf_plan planForward = fftwf_plan_r2r_1d(_N, fInput1.data, fFullOut.data, FFTW_R2HC, FFTW_ESTIMATE | FFTW_PATIENT);
+		fftwf_execute(planForward); /* repeat as needed */
+		fftwf_destroy_plan(planForward);
+	}
+#endif
 
 	{
 		FFT_Real<_M, float> fftSimdReal;
@@ -510,6 +639,8 @@ void perfTest()
 	const int loopCount = 4096;
 
 
+
+
 	laTimeDiff.QuadPart = 0;
 	{
 		FFT<_M, f32_8, float> fft;
@@ -622,6 +753,24 @@ void perfTest()
 		}
 		FFTL_Printf("Real Inverse FFT 1 ch SSE size %u: %f us\n", _N, (laTimeDiff.QuadPart * fInvUS) / loopCount);
 		fft.PrintTimerInfo(loopCount);
+
+#if COMPARE_WITH_FFTW
+		FixedArray_Aligned32<fltType, _N+1> fHalfOutFull;
+		laTimeDiff.QuadPart = 0;
+		{
+			fftwf_plan planForward = fftwf_plan_r2r_1d(_N, fInput1.data, fHalfOutFull.data, FFTW_R2HC, FFTW_EXHAUSTIVE);
+
+			for (int i = 0; i < loopCount; ++i)
+			{
+				QueryPerformanceCounter(&laLastTime);
+				fftwf_execute(planForward); /* repeat as needed */
+				QueryPerformanceCounter(&laCounter);
+				laTimeDiff.QuadPart += laCounter.QuadPart - laLastTime.QuadPart;
+			}
+			fftwf_destroy_plan(planForward);
+			FFTL_Printf("FFTW size %u: %f us\n", _N, (laTimeDiff.QuadPart * fInvUS) / loopCount);
+		}
+#endif
 	}
 
 //	_getch();
@@ -629,6 +778,7 @@ void perfTest()
 
 void RunTests()
 {
+	FFTL::convolutionTest();
 	FFTL::verifyFFT();
 	FFTL::verifyRealFFT();
 	FFTL::perfTest();
@@ -652,8 +802,8 @@ int main()
 #endif
 
 
-int main()
-{
-	printf("hello world\n");
-	return 0;
-}
+//int main()
+//{
+//	printf("hello world\n");
+//	return 0;
+//}

@@ -150,7 +150,7 @@ class FFTL_ALIGN_BEGIN(16) FixedArray_Aligned16 : public FixedArray<T,_N>
 template <typename T, uint32 _N>
 class FFTL_ALIGN_BEGIN(32) FixedArray_Aligned32 : public FixedArray<T,_N>
 {
-} FFTL_ALIGN_END(16);
+} FFTL_ALIGN_END(32);
 
 template<uint T_ALIGNMENT, typename T>
 inline T AlignForward(const T& offset)
