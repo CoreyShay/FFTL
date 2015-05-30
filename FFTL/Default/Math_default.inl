@@ -96,6 +96,13 @@ FFTL_FORCEINLINE void V4fStore3(f32* pf, Vec4f_In v)
 	pf[1] = v.y;
 	pf[2] = v.z;
 }
+FFTL_FORCEINLINE void V4fScatter(f32* pf, Vec4f_In v, int iA, int iB, int iC, int iD)
+{
+	pf[iA] = v.x;
+	pf[iB] = v.y;
+	pf[iC] = v.z;
+	pf[iD] = v.w;
+}
 FFTL_FORCEINLINE Vec4f V4fSet(f32 x, f32 y, f32 z, f32 w)
 {
 	const Vec4f r = { x, y, z, w };

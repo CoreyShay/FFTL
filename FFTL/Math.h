@@ -233,6 +233,7 @@ void V4fStoreU(f32* pf, Vec4f_In v);
 void V4fStore1(f32* pf, Vec4f_In v);
 void V4fStore2(f32* pf, Vec4f_In v);
 void V4fStore3(f32* pf, Vec4f_In v);
+void V4fScatter(f32* pf, Vec4f_In v, int iA, int iB, int iC, int iD);
 Vec4f V4fSet(f32 x, f32 y, f32 z, f32 w);
 Vec4f V4fSplat4(f32 f);
 Vec4f V4fSplat4(const f32* pf);
@@ -345,6 +346,7 @@ public:
 	FFTL_FORCEINLINE void Store1(f32* pf) const			{ V4fStore1(pf, m_v); }
 	FFTL_FORCEINLINE void Store2(f32* pf) const			{ V4fStore2(pf, m_v); }
 	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V4fStore3(pf, m_v); }
+	FFTL_FORCEINLINE void Scatter(f32* pf, int iA, int iB, int iC, int iD) const	{ V4fScatter(pf, m_v, iA, iB, iC, iD); }
 
 	FFTL_FORCEINLINE void Set(float x, float y, float z, float w)	{ m_v = V4fSet(x, y, z, w); }
 
