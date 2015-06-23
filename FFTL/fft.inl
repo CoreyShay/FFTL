@@ -1498,6 +1498,48 @@ FFTL_COND_INLINE void FFT<_M, f32, f32>::Transform_Main_DIT(FixedArray<T,_N>& fO
 }
 
 template <uint _M>
+FFTL_COND_INLINE void FFT<_M, f32, f32>::ApplyBitReverseAndInterleave(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N*2>& fOut) const
+{
+	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
+	for (uint n = 0; n < _N; n += 4)
+	{
+		const uint nR0 = this->GetBitReverseIndex(n+0);
+		const uint nR1 = this->GetBitReverseIndex(n+1);
+		const uint nR2 = this->GetBitReverseIndex(n+2);
+		const uint nR3 = this->GetBitReverseIndex(n+3);
+
+		//	Interleave the output while bit reversing.
+		T* pSh = fOut+n*2;
+
+		const T fSh0 = fInR[nR0];
+		const T fSh1 = fInI[nR0];
+		const T fSh2 = fInR[nR1];
+		const T fSh3 = fInI[nR1];
+		const T fSh4 = fInR[nR2];
+		const T fSh5 = fInI[nR2];
+		const T fSh6 = fInR[nR3];
+		const T fSh7 = fInI[nR3];
+
+#if 1
+		const f32_4 vSh0_3(fSh0, fSh1, fSh2, fSh3);
+		const f32_4 vSh4_7(fSh4, fSh5, fSh6, fSh7);
+
+		vSh0_3.StoreA(pSh+0);
+		vSh4_7.StoreA(pSh+4);
+#else
+		pSh[0] = fSh0;
+		pSh[1] = fSh1;
+		pSh[2] = fSh2;
+		pSh[3] = fSh3;
+		pSh[4] = fSh4;
+		pSh[5] = fSh5;
+		pSh[6] = fSh6;
+		pSh[7] = fSh7;
+#endif
+	}
+}
+
+template <uint _M>
 FFTL_FORCEINLINE void FFT<_M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4Arg vUr, f32_4Arg vUi, T* __restrict pfR, T* __restrict pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
@@ -2398,6 +2440,7 @@ void Convolver_Slow<T,_N,T_KERNEL_LENGTH>::Convolve(const FixedArray<T,_N>& fInp
 
 	memcpy(&fOutput, &m_AccumulationBuffer, sizeof(fOutput));
 }
+
 
 
 

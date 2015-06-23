@@ -53,6 +53,14 @@ FFTL_FORCEINLINE Vec8f V8fLoadU(const f32* pf)
 {
 	return _mm256_loadu_ps(pf);
 }
+FFTL_FORCEINLINE Vec8f V8fLoadAR(const f32* pf)
+{
+	return V8fReverse( V8fLoadA(pf) );
+}
+FFTL_FORCEINLINE Vec8f V8fLoadUR(const f32* pf)
+{
+	return V8fReverse( V8fLoadU(pf) );
+}
 FFTL_FORCEINLINE void V8fStoreA(f32* pf, Vec8f_In v)
 {
 	_mm256_store_ps(pf, v);

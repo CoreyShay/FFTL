@@ -58,6 +58,20 @@ FFTL_FORCEINLINE Vec8f V8fLoadU(const f32* pf)
 	r.b = V4fLoadU(pf+4);
 	return r;
 }
+FFTL_FORCEINLINE Vec8f V8fLoadAR(const f32* pf)
+{
+	Vec8f r;
+	r.a = V4fReverse( V4fLoadA(pf+4) );
+	r.b = V4fReverse( V4fLoadA(pf+0) );
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fLoadUR(const f32* pf)
+{
+	Vec8f r;
+	r.a = V4fReverse( V4fLoadU(pf+4) );
+	r.b = V4fReverse( V4fLoadU(pf+0) );
+	return r;
+}
 FFTL_FORCEINLINE void V8fStoreA(f32* pf, Vec8f_In v)
 {
 	V4fStoreA(pf+0, v.a);

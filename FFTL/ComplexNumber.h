@@ -74,6 +74,9 @@ public:
 	FFTL_FORCEINLINE cxNumber& operator*=(const cxNumber& c)			{ return *this = *this * c; }
 	FFTL_FORCEINLINE cxNumber& operator*=(const T& n)					{ return *this = *this * n; }
 
+	FFTL_FORCEINLINE cxNumber operator/(const T& n) const				{ return cxNumber(r/n, i/n); }
+	FFTL_FORCEINLINE cxNumber& operator/=(const T& n)					{ return *this = *this / n; }
+
 	//	Unary operators
 	FFTL_FORCEINLINE cxNumber operator+() const							{ return *this; }
 	FFTL_FORCEINLINE cxNumber operator-() const							{ return cxNumber(-r, -i); }

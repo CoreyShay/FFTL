@@ -135,6 +135,7 @@ public:
 	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
 	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
 
+	FFTL_FORCEINLINE const FixedArray<T_BR,_N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
 	FFTL_FORCEINLINE T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
 
 protected:
@@ -198,7 +199,7 @@ public:
 	//	Transforms that perform bit reversal, out of place.
 	void TransformForward(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
 	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput) const { FFT_Base::TransformForward(cxInput, cxOutput); }// TODO, optimize
+	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput) const { FFT_Base<_M,T,T_Twiddle>::TransformForward(cxInput, cxOutput); }// TODO, optimize
 	void TransformInverse(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
 
 	//	Forward transform outputs in bit reversed order. Inverse transform assumes input in bit-reversed order, outputs in normal order.
@@ -207,7 +208,7 @@ public:
 	void TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const { FFT_Base<_M, f32, f32>::TransformForward_InPlace_DIF(cxInOut); }// TODO, optimize
 	void TransformForward_InPlace_DIT(FixedArray<cxT,_N>& cxInOut) const { FFT_Base<_M, f32, f32>::TransformForward_InPlace_DIT(cxInOut); }// TODO, optimize
 
-	void ApplyBitReverseAndInterleave(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N*2>& fOut) const { FFT_Base<_M, f32, f32>::ApplyBitReverseAndInterleave(fInR, fInI, fOut); }
+	void ApplyBitReverseAndInterleave(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N*2>& fOut) const;
 
 protected:
 	void Transform_Stage0(FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
@@ -280,7 +281,7 @@ public:
 	static const uint _N_2 = _N>>1;
 	static const uint _N_4 = _N>>2;
 
-//	FFT_Real();
+	//	FFT_Real();
 
 	void TransformForward(const FixedArray<T,_N>& fTimeIn, FixedArray<T,_N_2>& fFreqOutR, FixedArray<T,_N_2>& fFreqOutI) const;
 	void TransformInverse(const FixedArray<T,_N_2>& fFreqInR, const FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;

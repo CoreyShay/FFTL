@@ -58,6 +58,16 @@ FFTL_FORCEINLINE Vec4f V4fLoadU(const f32* pf)
 {
 	return *reinterpret_cast<const Vec4f*>(pf);
 }
+FFTL_FORCEINLINE Vec4f V4fLoadAR(const f32* pf)
+{
+	const Vec4f r = { pf[3], pf[2], pf[1], pf[0] };
+	return r;
+}
+FFTL_FORCEINLINE Vec4f V4fLoadUR(const f32* pf)
+{
+	const Vec4f r = { pf[3], pf[2], pf[1], pf[0] };
+	return r;
+}
 FFTL_FORCEINLINE Vec4f V4fLoad1(const f32* pf)
 {
 	const Vec4f r = { pf[0], 0, 0, 0 };

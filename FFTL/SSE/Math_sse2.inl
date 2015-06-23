@@ -85,6 +85,16 @@ FFTL_FORCEINLINE Vec4f V4fLoadU(const f32* pf)
 {
 	return _mm_loadu_ps(pf);
 }
+FFTL_FORCEINLINE Vec4f V4fLoadAR(const f32* pf)
+{
+	const Vec4f v = _mm_load_ps(pf);
+	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW(3,2,1,0));
+}
+FFTL_FORCEINLINE Vec4f V4fLoadUR(const f32* pf)
+{
+	const Vec4f v = _mm_loadu_ps(pf);
+	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW(3,2,1,0));
+}
 FFTL_FORCEINLINE Vec4f V4fLoad1(const f32* pf)
 {
 	return _mm_load_ss(pf);

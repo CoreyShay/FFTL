@@ -225,6 +225,8 @@ enum enShuf2
 Vec4f V4fZero();
 Vec4f V4fLoadA(const f32* pf);
 Vec4f V4fLoadU(const f32* pf);
+Vec4f V4fLoadAR(const f32* pf); // Aligned Reverse order loading.
+Vec4f V4fLoadUR(const f32* pf); // Unaligned Reverse order loading.
 Vec4f V4fLoad1(const f32* pf);
 Vec4f V4fLoad2(const f32* pf);
 Vec4f V4fLoad3(const f32* pf);
@@ -294,6 +296,8 @@ bool V2dIsEqual(Vec2d_In a, Vec2d_In b);
 Vec8f V8fZero();
 Vec8f V8fLoadA(const f32* pf);
 Vec8f V8fLoadU(const f32* pf);
+Vec8f V8fLoadAR(const f32* pf);
+Vec8f V8fLoadUR(const f32* pf);
 void V8fStoreA(f32* pf, Vec8f_In v);
 void V8fStoreU(f32* pf, Vec8f_In v);
 void V8fStore1(f32* pf, Vec8f_In v);
@@ -335,6 +339,8 @@ public:
 
 	FFTL_FORCEINLINE static f32_4 LoadA(const f32* pf)	{ return f32_4(V4fLoadA(pf)); }
 	FFTL_FORCEINLINE static f32_4 LoadU(const f32* pf)	{ return f32_4(V4fLoadU(pf)); }
+	FFTL_FORCEINLINE static f32_4 LoadAR(const f32* pf)	{ return f32_4(V4fLoadAR(pf)); }
+	FFTL_FORCEINLINE static f32_4 LoadUR(const f32* pf)	{ return f32_4(V4fLoadUR(pf)); }
 	FFTL_FORCEINLINE static f32_4 Load1(const f32* pf)	{ return f32_4(V4fLoad1(pf)); }
 	FFTL_FORCEINLINE static f32_4 Load2(const f32* pf)	{ return f32_4(V4fLoad2(pf)); }
 	FFTL_FORCEINLINE static f32_4 Load3(const f32* pf)	{ return f32_4(V4fLoad3(pf)); }
@@ -423,6 +429,8 @@ public:
 
 	FFTL_FORCEINLINE static f32_8 LoadA(const f32* pf)	{ return f32_8(V8fLoadA(pf)); }
 	FFTL_FORCEINLINE static f32_8 LoadU(const f32* pf)	{ return f32_8(V8fLoadU(pf)); }
+	FFTL_FORCEINLINE static f32_8 LoadAR(const f32* pf)	{ return f32_8(V8fLoadAR(pf)); }
+	FFTL_FORCEINLINE static f32_8 LoadUR(const f32* pf)	{ return f32_8(V8fLoadUR(pf)); }
 	FFTL_FORCEINLINE static f32_8 Splat8(const f32* pf)	{ return f32_8(V8fSplat8(pf)); }
 	FFTL_FORCEINLINE static f32_8 Splat(f32_4Arg v)		{ return f32_8(V8fSplat(v.GetNative())); }
 
