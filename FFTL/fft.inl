@@ -530,7 +530,7 @@ FFTL_COND_INLINE void FFT_Base<_M, T, T_Twiddle>::TransformInverse_InPlace_DIT(F
 			T* __restrict pfCurI = &cxOutput[uButterfly].i;
 			T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
 			T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
-			this->CalculateButterfly_DIT(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
+			this->CalculateButterfly_Unity(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
 		}
 
 		//	Loop for each sub DFT
