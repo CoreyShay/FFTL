@@ -74,10 +74,10 @@ FFTL_FORCEINLINE void Swap(T& a, T& b)
 }
 
 FFTL_FORCEINLINE f64 LogBase(f64 base, f64 y) { return log(y) / log(base); }
-FFTL_FORCEINLINE f32 LogBase(f32 base, f32 y) { return log(y) / log(base); }
+FFTL_FORCEINLINE f32 LogBase(f32 base, f32 y) { return logf(y) / logf(base); }
 
 FFTL_FORCEINLINE f64 Log2(f64 y) { return log(y) * invLog2_64; }
-FFTL_FORCEINLINE f32 Log2(f32 y) { return log(y) * invLog2_32; }
+FFTL_FORCEINLINE f32 Log2(f32 y) { return logf(y) * invLog2_32; }
 
 FFTL_FORCEINLINE f64 Cos(f64 y) { return cos(y); }
 FFTL_FORCEINLINE f32 Cos(f32 y) { return cosf(y); }

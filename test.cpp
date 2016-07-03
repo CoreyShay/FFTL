@@ -136,7 +136,7 @@ void fft(uint32 n, uint32 m, float x[], float y[])
 #endif
 
 
-const uint32 _M = 5;
+const uint32 _M = 9;
 const uint32 _N = 1<<_M;
 
 typedef float fltType;
@@ -144,8 +144,8 @@ typedef float fltType;
 
 inline void sincos(float x, float* s, float* c)
 {
-	*s = sin(x);
-	*c = cos(x);
+	*s = Sin(x);
+	*c = Cos(x);
 }
 
 inline unsigned revbin_update(unsigned r, unsigned n)
@@ -241,8 +241,8 @@ static void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
 
 FixedArray_Aligned32<fltType, _N> fInput1;
 FixedArray_Aligned32<fltType, _N> fInput2;
-FixedArray_Aligned32<cxNumber<fltType>, _N> cxInput;
-FixedArray_Aligned32<cxNumber<fltType>, _N> cxOutput;
+FixedArray_Aligned32<cxNumber<fltType>, _N> cxIn;
+FixedArray_Aligned32<cxNumber<fltType>, _N> cxOut;
 FixedArray_Aligned32<fltType, _N> fOutput1;
 FixedArray_Aligned32<fltType, _N> fOutput2;
 FixedArray_Aligned32<fltType, _N> fTimeOutput1;
@@ -260,7 +260,7 @@ void convolutionTest()
 {
 	memset(&fInput1, 0, sizeof(fInput1));
 	memset(&fInput2, 0, sizeof(fInput2));
-	memset(&cxOutput, 0, sizeof(cxOutput));
+	memset(&cxOut, 0, sizeof(cxOut));
 	memset(&fOutput1, 0, sizeof(fOutput1));
 	memset(&fOutput2, 0, sizeof(fOutput2));
 	memset(&fTimeOutput1, 0, sizeof(fTimeOutput1));
@@ -375,7 +375,7 @@ void verifyFFT()
 {
 	memset(&fInput1, 0, sizeof(fInput1));
 	memset(&fInput2, 0, sizeof(fInput2));
-	memset(&cxOutput, 0, sizeof(cxOutput));
+	memset(&cxOut, 0, sizeof(cxOut));
 	memset(&fOutput1, 0, sizeof(fOutput1));
 	memset(&fOutput2, 0, sizeof(fOutput2));
 	memset(&fTimeOutput1, 0, sizeof(fTimeOutput1));
@@ -412,13 +412,13 @@ void verifyFFT()
 
 	for (uint n = 0; n < _N; ++n)
 	{
-		cxInput[n].Set(fInput1[n], 0);
+		cxIn[n].Set(fInput1[n], 0);
 	}
 
 	FFT<_M, float> fftScalar;
 	FFT<_M, float, float> fftSimd;
 
-	dit4l_fft(cxInput.data, _M, 1);
+	dit4l_fft(cxIn.data, _M, 1);
 
 	fftScalar.TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
 	fftScalar.TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
@@ -428,7 +428,7 @@ void verifyFFT()
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fDiff = fInput1[n] - (fTimeOutput1[n] / _N);
-		FFTL_ASSERT(abs(fDiff) <= 0.000001f);
+		FFTL_ASSERT(Abs(fDiff) <= 0.000001f);
 	}
 
 	memcpy(fTimeOutput1.data, fInput1.data, sizeof(fInput1));
@@ -440,7 +440,7 @@ void verifyFFT()
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fDiff = fInput1[n] - (fTimeOutput1[n] / _N);
-		FFTL_ASSERT(abs(fDiff) <= 0.000001f);
+		FFTL_ASSERT(Abs(fDiff) <= 0.000001f);
 	}
 
 	fftSimd.TransformForward(fInput1, fInput2, fOutput1, fOutput2);
@@ -449,7 +449,7 @@ void verifyFFT()
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fDiff = fInput1[n] - (fTimeOutput1[n] / _N);
-		FFTL_ASSERT(abs(fDiff) <= 0.000001f);
+		FFTL_ASSERT(Abs(fDiff) <= 0.000001f);
 	}
 }
 
@@ -603,7 +603,7 @@ void verifyConvolution()
 		for (uint n = 0; n < _N; ++n)
 		{
 			const float fDiff = fOutput2[n] - fOutput1[n];
-			FFTL_ASSERT(abs(fDiff) <= 0.00001f);
+			FFTL_ASSERT(Abs(fDiff) <= 0.00001f);
 		}
 	}
 }
@@ -612,7 +612,7 @@ void verifyConvolution()
 void perfTest()
 {
 	memset(&fInput1, 0, sizeof(fInput1));
-	memset(&cxOutput, 0, sizeof(cxOutput));
+	memset(&cxOut, 0, sizeof(cxOut));
 	memset(&fOutput1, 0, sizeof(fOutput1));
 	memset(&fOutput2, 0, sizeof(fOutput2));
 	memset(&fInput2, 0, sizeof(fInput2));
