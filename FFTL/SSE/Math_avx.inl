@@ -51,7 +51,13 @@ FFTL_FORCEINLINE Vec8f V8fLoadA(const f32* pf)
 }
 FFTL_FORCEINLINE Vec8f V8fLoadU(const f32* pf)
 {
+#if defined(__clang__) // Apparently a compiler bug causes _mm256_loadu_ps to emit 2 SSE loads followed by an insert.
+	__m256 ret;
+	__asm__("vmovups %1, %0" : "=x" (ret) : "m" (*pf));
+	return ret;
+#else
 	return _mm256_loadu_ps(pf);
+#endif
 }
 FFTL_FORCEINLINE Vec8f V8fLoadAR(const f32* pf)
 {

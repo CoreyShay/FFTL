@@ -57,7 +57,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 	#define FFTL_AVX 1
 #endif
 
-#if FFTL_SSE
+#if defined(__ARM_NEON__)
+	#define FFTL_ARM_NEON 1
+#endif
+
+#if FFTL_SSE || FFTL_ARM_NEON
 	#define FFTL_SIMD4 1
 #else
 	#define FFTL_SIMD4 0
@@ -67,7 +71,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #else
 	#define FFTL_SIMD8 0
 #endif
-
 
 #if defined(_MSC_VER)
 	#define FFTL_ALIGN_BEGIN(x) __declspec( align(x) )
@@ -88,7 +91,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #if defined(_DEBUG) || defined(FFTL_ENABLE_ASSERT)
-	#define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || (__debugbreak(), 1) )
+	#if defined(_MSC_VER)
+		#define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || ( __debugbreak(), 1) )
+	#else
+		#define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || ( *((int*)0) = 0xdeadbeef ) )
+	#endif
 #else
 	#define FFTL_ASSERT(___expr) ((void)0)
 #endif
@@ -99,6 +106,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if defined(_MSC_VER)
 	#define FFTL_FORCEINLINE __forceinline
 	#define FFTL_NOINLINE __declspec(noinline)
+#elif defined(__ANDROID__)
+	#define FFTL_FORCEINLINE inline __attribute__((always_inline))
+	#define FFTL_NOINLINE __attribute((noinline))
 #else
 	#define FFTL_FORCEINLINE inline __attribute__((always_inline))
 	#define FFTL_NOINLINE __noinline
@@ -107,7 +117,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if defined(FFTL_FORCE_COND_INLINE)
 	#define FFTL_COND_INLINE FFTL_FORCEINLINE
 #else
-	#define FFTL_COND_INLINE
+	#define FFTL_COND_INLINE FFTL_NOINLINE
 #endif
 
 
@@ -130,25 +140,25 @@ typedef double				f64;
 
 
 
-template <typename T, uint _N>
+template <typename T, uint T_N>
 class FixedArray
 {
 public:
-	T data[_N];
-	FFTL_FORCEINLINE T& operator[](uint32 n) { FFTL_ASSERT(n<_N); return data[n]; }
-	FFTL_FORCEINLINE const T& operator[](uint n) const { FFTL_ASSERT(n<_N); return data[n]; }
-	FFTL_FORCEINLINE T* operator+(uint n) { FFTL_ASSERT(n<_N); return data+n; }
-	FFTL_FORCEINLINE const T* operator+(uint n) const { FFTL_ASSERT(n<_N); return data+n; }
-	FFTL_FORCEINLINE static uint size() { return _N; }
+	T data[T_N];
+	FFTL_FORCEINLINE T& operator[](uint32 n) { FFTL_ASSERT(n<T_N); return data[n]; }
+	FFTL_FORCEINLINE const T& operator[](uint n) const { FFTL_ASSERT(n<T_N); return data[n]; }
+	FFTL_FORCEINLINE T* operator+(uint n) { FFTL_ASSERT(n<T_N); return data+n; }
+	FFTL_FORCEINLINE const T* operator+(uint n) const { FFTL_ASSERT(n<T_N); return data+n; }
+	FFTL_FORCEINLINE static uint size() { return T_N; }
 };
 
-template <typename T, uint32 _N>
-class FFTL_ALIGN_BEGIN(16) FixedArray_Aligned16 : public FixedArray<T,_N>
+template <typename T, uint32 T_N>
+class FFTL_ALIGN_BEGIN(16) FixedArray_Aligned16 : public FixedArray<T,T_N>
 {
 } FFTL_ALIGN_END(16);
 
-template <typename T, uint32 _N>
-class FFTL_ALIGN_BEGIN(32) FixedArray_Aligned32 : public FixedArray<T,_N>
+template <typename T, uint32 T_N>
+class FFTL_ALIGN_BEGIN(32) FixedArray_Aligned32 : public FixedArray<T,T_N>
 {
 } FFTL_ALIGN_END(32);
 

@@ -307,6 +307,7 @@
     <None Include="FFTL\Default\Math_default.inl" />
     <None Include="FFTL\Default\Math_vec8_default.inl" />
     <None Include="FFTL\fft.inl" />
+    <None Include="FFTL\NEON\Math_NEON.inl" />
     <None Include="FFTL\SSE\Math_avx.inl" />
     <None Include="FFTL\SSE\Math_sse2.inl" />
     <None Include="kiss_fft130\kissfft.hh" />

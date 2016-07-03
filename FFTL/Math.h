@@ -50,6 +50,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if FFTL_AVX
 	#include <immintrin.h>
 #endif
+#if FFTL_ARM_NEON
+	#include <arm_neon.h>
+#endif
 
 
 namespace FFTL
@@ -153,6 +156,8 @@ T LinearToOctaves(T linear)
 
 #if FFTL_SSE
 	typedef __m128 Vec4f;
+#elif FFTL_ARM_NEON
+	typedef float32x4_t Vec4f;
 #else
 	struct Vec4f
 	{
@@ -212,15 +217,19 @@ enum enShuf
 };
 enum enShuf2
 {
-	sh_X1 = 0x00010203,
-	sh_Y1 = 0x04050607,
-	sh_Z1 = 0x08090A0B,
-	sh_W1 = 0x0C0D0E0F,
-	sh_X2 = 0x10111213,
-	sh_Y2 = 0x14151617,
-	sh_Z2 = 0x18191A1B,
-	sh_W2 = 0x1C1D1E1F,
+	sh_X1 = 0,
+	sh_Y1 = 1,
+	sh_Z1 = 2,
+	sh_W1 = 3,
+	sh_X2 = 4,
+	sh_Y2 = 5,
+	sh_Z2 = 6,
+	sh_W2 = 7,
 };
+
+// Wraps around integers higher than 3
+#define FFTL_PERMUTEMASK(x) (x & 3)
+
 
 Vec4f V4fZero();
 Vec4f V4fLoadA(const f32* pf);
@@ -247,6 +256,8 @@ Vec4f V4fAdd(Vec4f_In a, Vec4f_In b);
 Vec4f V4fSub(Vec4f_In a, Vec4f_In b);
 Vec4f V4fMul(Vec4f_In a, Vec4f_In b);
 Vec4f V4fDiv(Vec4f_In a, Vec4f_In b);
+Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a+b*c
+Vec4f V4fSubMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a-b*c
 Vec4f V4fSqrt(Vec4f_In v);
 float V4fHSumF(Vec4f_In v);
 Vec4f V4fHSumV(Vec4f_In v);
@@ -262,12 +273,15 @@ f32 V4fGetW(Vec4f_In v);
 Vec4f V4fMergeXY(Vec4f_In a, Vec4f_In b);
 Vec4f V4fMergeZW(Vec4f_In a, Vec4f_In b);
 
+Vec4f V4fSplitXZ(Vec4f_In a, Vec4f_In b);
+Vec4f V4fSplitYW(Vec4f_In a, Vec4f_In b);
+
 Vec4f V4fReverse(Vec4f_In v);
 
-template <enShuf _X, enShuf _Y, enShuf _Z, enShuf _W>
+template <enShuf T_X, enShuf T_Y, enShuf T_Z, enShuf T_W>
 Vec4f V4fPermute( Vec4f_In v );
 
-template <enShuf2 _X, enShuf2 _Y, enShuf2 _Z, enShuf2 _W>
+template <enShuf2 T_X, enShuf2 T_Y, enShuf2 T_Z, enShuf2 T_W>
 Vec4f V4fPermute( Vec4f_In a, Vec4f_In b );
 
 
@@ -320,9 +334,11 @@ Vec8f V8fReverse(Vec8f_In v);
 
 
 
-#if FFTL_SSE
-typedef const f32_4& f32_4Arg;
-#endif
+
+enum enMoveAlignment
+{
+	kAligned, kUnaligned
+};
 
 
 
@@ -353,6 +369,12 @@ public:
 	FFTL_FORCEINLINE void Store2(f32* pf) const			{ V4fStore2(pf, m_v); }
 	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V4fStore3(pf, m_v); }
 	FFTL_FORCEINLINE void Scatter(f32* pf, int iA, int iB, int iC, int iD) const	{ V4fScatter(pf, m_v, iA, iB, iC, iD); }
+
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE static f32_4 Load(const f32* pf)	{ return f32_4(_A==kAligned ? V4fLoadA(pf) : V4fLoadU(pf)); }
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V4fStoreA(pf, m_v) : V4fStoreU(pf, m_v); }
+
 
 	FFTL_FORCEINLINE void Set(float x, float y, float z, float w)	{ m_v = V4fSet(x, y, z, w); }
 
@@ -398,12 +420,18 @@ FFTL_FORCEINLINE f32 HSumF(f32_4Arg v)						{ return V4fHSumF(v.GetNative()); }
 
 FFTL_FORCEINLINE f32_4 MergeXY(f32_4Arg a, f32_4Arg b)		{ return V4fMergeXY(a.GetNative(), b.GetNative()); }
 FFTL_FORCEINLINE f32_4 MergeZW(f32_4Arg a, f32_4Arg b)		{ return V4fMergeZW(a.GetNative(), b.GetNative()); }
+FFTL_FORCEINLINE f32_4 SplitXZ(f32_4Arg a, f32_4Arg b)		{ return V4fSplitXZ(a.GetNative(), b.GetNative()); }
+FFTL_FORCEINLINE f32_4 SplitYW(f32_4Arg a, f32_4Arg b)		{ return V4fSplitYW(a.GetNative(), b.GetNative()); }
 
-template <enShuf _X, enShuf _Y, enShuf _Z, enShuf _W>
-FFTL_FORCEINLINE f32_4 Permute( f32_4Arg v )				{ return f32_4(V4fPermute<_X,_Y,_Z,_W>(v.GetNative())); }
+FFTL_FORCEINLINE f32_4 AddMul(f32_4Arg a, f32_4Arg b, f32_4Arg c)	{ return V4fAddMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a+b*c
+FFTL_FORCEINLINE f32_4 SubMul(f32_4Arg a, f32_4Arg b, f32_4Arg c)	{ return V4fSubMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a-b*c
 
-template <enShuf2 _X, enShuf2 _Y, enShuf2 _Z, enShuf2 _W>
-FFTL_FORCEINLINE f32_4 Permute( f32_4Arg a, f32_4Arg b )	{ return f32_4(V4fPermute<_X,_Y,_Z,_W>(a.GetNative(), b.GetNative())); }
+
+template <enShuf T_X, enShuf T_Y, enShuf T_Z, enShuf T_W>
+FFTL_FORCEINLINE f32_4 Permute( f32_4Arg v )				{ return f32_4(V4fPermute<T_X,T_Y,T_Z,T_W>(v.GetNative())); }
+
+template <enShuf2 T_X, enShuf2 T_Y, enShuf2 T_Z, enShuf2 T_W>
+FFTL_FORCEINLINE f32_4 Permute( f32_4Arg a, f32_4Arg b )	{ return f32_4(V4fPermute<T_X,T_Y,T_Z,T_W>(a.GetNative(), b.GetNative())); }
 
 FFTL_FORCEINLINE f32_4 XXXX(f32_4Arg v)						{ return Permute<sh_X,sh_X,sh_X,sh_X>(v); }
 FFTL_FORCEINLINE f32_4 YYYY(f32_4Arg v)						{ return Permute<sh_Y,sh_Y,sh_Y,sh_Y>(v); }
@@ -437,6 +465,11 @@ public:
 	FFTL_FORCEINLINE void StoreA(f32* pf) const			{ V8fStoreA(pf, m_v); }
 	FFTL_FORCEINLINE void StoreU(f32* pf) const			{ V8fStoreU(pf, m_v); }
 	FFTL_FORCEINLINE void Store1(f32* pf) const			{ V8fStore1(pf, m_v); }
+
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE static f32_8 Load(const f32* pf)	{ return f32_8(_A==kAligned ? V8fLoadA(pf) : V8fLoadU(pf)); }
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V8fStoreA(pf, m_v) : V8fStoreU(pf, m_v); }
 
 	FFTL_FORCEINLINE f32_8 operator+(f32_8Arg b) const	{ return f32_8(V8fAdd(m_v, b.m_v)); }
 	FFTL_FORCEINLINE f32_8 operator-(f32_8Arg b) const	{ return f32_8(V8fSub(m_v, b.m_v)); }
@@ -481,7 +514,7 @@ public:
 	ScopedFlushDenormals();
 	~ScopedFlushDenormals();
 private:
-	unsigned int m_prevMode;
+	uint32 m_prevMode;
 };
 
 
@@ -489,6 +522,8 @@ private:
 
 #if FFTL_SSE
 	#include "SSE/Math_sse2.inl"
+#elif FFTL_ARM_NEON
+	#include "NEON/Math_NEON.inl"
 #else
 	#include "Default/Math_default.inl"
 #endif

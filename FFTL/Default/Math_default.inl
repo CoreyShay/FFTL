@@ -177,6 +177,16 @@ FFTL_FORCEINLINE Vec4f V4fDiv(Vec4f_In a, Vec4f_In b)
 	const Vec4f r = { a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w };
 	return r;
 }
+FFTL_FORCEINLINE Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	const Vec4f r = { a.x+b.x*c.x, a.y+b.y*c.y, a.z+b.z*c.z, a.w+b.w*c.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4f V4fSubMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	const Vec4f r = { a.x-b.x*c.x, a.y-b.y*c.y, a.z-b.z*c.z, a.w-b.w*c.w };
+	return r;
+}
 FFTL_FORCEINLINE Vec4f V4fSqrt(Vec4f_In v)
 {
 	const Vec4f r = { Sqrt(v.x), Sqrt(v.y), Sqrt(v.z), Sqrt(v.w) };
@@ -199,6 +209,7 @@ FFTL_FORCEINLINE int V4fToIntMask(Vec4f_In v)
 {
 	const uint32* u = reinterpret_cast<const uint32*>(&v);
 	const int r = (u[0]>>31) | ((u[1]>>30)&2) | ((u[1]>>29)&4) | ((u[1]>>28)&8);
+	return r;
 }
 FFTL_FORCEINLINE bool V4fIsEqual(Vec4f_In a, Vec4f_In b)
 {
@@ -212,6 +223,16 @@ FFTL_FORCEINLINE Vec4f V4fMergeXY(Vec4f_In a, Vec4f_In b)
 FFTL_FORCEINLINE Vec4f V4fMergeZW(Vec4f_In a, Vec4f_In b)
 {
 	const Vec4f r = { a.z, b.z, a.w, b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4f V4fSplitXZ(Vec4f_In a, Vec4f_In b)
+{
+	const Vec4f r = { a.x, a.z, b.x, b.z };
+	return r;
+}
+FFTL_FORCEINLINE Vec4f V4fSplitYW(Vec4f_In a, Vec4f_In b)
+{
+	const Vec4f r = { a.y, a.w, b.y, b.w };
 	return r;
 }
 
@@ -239,61 +260,59 @@ FFTL_FORCEINLINE f32 V4fGetW(Vec4f_In v)
 }
 
 
-// Converts 0x00010203/0x04050607/0x08090A0B/0x0C0D0E0F and 0x10111213/0x14151617/0x18191A1B/0x1C1D1E1F to 0/1/2/3
-#define _SHUFFLEMASK(x) ( (x & 0xC) >> 2 )
 
-template <enShuf _X, enShuf _Y, enShuf _Z, enShuf _W>
+template <enShuf T_X, enShuf T_Y, enShuf T_Z, enShuf T_W>
 FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In v )
 {
-	FFTL_StaticAssert(	(_X==sh_X || _X==sh_Y || _X==sh_Z || _X==sh_W) &&
-		(_Y==sh_X || _Y==sh_Y || _Y==sh_Z || _Y==sh_W) &&
-		(_Z==sh_X || _Z==sh_Y || _Z==sh_Z || _Z==sh_W) &&
-		(_W==sh_X || _W==sh_Y || _W==sh_Z || _W==sh_W)  );
+	FFTL_StaticAssert(	(T_X==sh_X || T_X==sh_Y || T_X==sh_Z || T_X==sh_W) &&
+		(T_Y==sh_X || T_Y==sh_Y || T_Y==sh_Z || T_Y==sh_W) &&
+		(T_Z==sh_X || T_Z==sh_Y || T_Z==sh_Z || T_Z==sh_W) &&
+		(T_W==sh_X || T_W==sh_Y || T_W==sh_Z || T_W==sh_W)  );
 
-	FFTL_StaticAssert( !(_X==sh_X && _Y==sh_Y && _Z==sh_Z && _W==sh_W) ); // This permute does nothing meaningful!
+	FFTL_StaticAssert( !(T_X==sh_X && T_Y==sh_Y && T_Z==sh_Z && T_W==sh_W) ); // This permute does nothing meaningful!
 
 	const f32* p = reinterpret_cast<const f32*>(&v);
-	const Vec4f r = { p[_X], p[_Y], p[_Z], p[_W] };
+	const Vec4f r = { p[T_X], p[T_Y], p[T_Z], p[T_W] };
 	return r;
 }
 
-template <enShuf2 _X, enShuf2 _Y, enShuf2 _Z, enShuf2 _W>
+template <enShuf2 T_X, enShuf2 T_Y, enShuf2 T_Z, enShuf2 T_W>
 FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In a, Vec4f_In b )
 {
 	//	Template inputs need to be shuffle enumerations sh_(X/Y/Z/W)(1/2)
 	FFTL_StaticAssert(
-		(_X==sh_X1 || _X==sh_Y1 || _X==sh_Z1 || _X==sh_W1	||
-		_X==sh_X2 || _X==sh_Y2 || _X==sh_Z2 || _X==sh_W2 )	&&
-		(_Y==sh_X1 || _Y==sh_Y1 || _Y==sh_Z1 || _Y==sh_W1	||
-		_Y==sh_X2 || _Y==sh_Y2 || _Y==sh_Z2 || _Y==sh_W2 )	&&
-		(_Z==sh_X1 || _Z==sh_Y1 || _Z==sh_Z1 || _Z==sh_W1	||
-		_Z==sh_X2 || _Z==sh_Y2 || _Z==sh_Z2 || _Z==sh_W2 )	&&
-		(_W==sh_X1 || _W==sh_Y1 || _W==sh_Z1 || _W==sh_W1	||
-		_W==sh_X2 || _W==sh_Y2 || _W==sh_Z2 || _W==sh_W2 )	 );
+		(T_X==sh_X1 || T_X==sh_Y1 || T_X==sh_Z1 || T_X==sh_W1	||
+		T_X==sh_X2 || T_X==sh_Y2 || T_X==sh_Z2 || T_X==sh_W2 )	&&
+		(T_Y==sh_X1 || T_Y==sh_Y1 || T_Y==sh_Z1 || T_Y==sh_W1	||
+		T_Y==sh_X2 || T_Y==sh_Y2 || T_Y==sh_Z2 || T_Y==sh_W2 )	&&
+		(T_Z==sh_X1 || T_Z==sh_Y1 || T_Z==sh_Z1 || T_Z==sh_W1	||
+		T_Z==sh_X2 || T_Z==sh_Y2 || T_Z==sh_Z2 || T_Z==sh_W2 )	&&
+		(T_W==sh_X1 || T_W==sh_Y1 || T_W==sh_Z1 || T_W==sh_W1	||
+		T_W==sh_X2 || T_W==sh_Y2 || T_W==sh_Z2 || T_W==sh_W2 )	 );
 
 	//	If you try to shuffle this way, you'll just end up with one of the 2 input arguments. Don't do that.
 	FFTL_StaticAssert(
-		!(_X==sh_X1 && _Y==sh_Y1 && _Z==sh_Z1 && _W==sh_W1) &&
-		!(_X==sh_X2 && _Y==sh_Y2 && _Z==sh_Z2 && _W==sh_W2) );
+		!(T_X==sh_X1 && T_Y==sh_Y1 && T_Z==sh_Z1 && T_W==sh_W1) &&
+		!(T_X==sh_X2 && T_Y==sh_Y2 && T_Z==sh_Z2 && T_W==sh_W2) );
 
 	//	If this error fires, it means you should use the single parameter V4fShuffle function.
 	FFTL_StaticAssert(
-		!( (_X&0xF0F0F0F0) != 0 && (_Y&0xF0F0F0F0) != 0 && (_Z&0xF0F0F0F0) != 0 && (_W&0xF0F0F0F0) != 0 ) &&
-		!( (_X&0xF0F0F0F0) == 0 && (_Y&0xF0F0F0F0) == 0 && (_Z&0xF0F0F0F0) == 0 && (_W&0xF0F0F0F0) == 0 ) );
+		!( (T_X < 4) && (T_Y < 4) && (T_Z < 4) && (T_W < 4) ) &&
+		!( (T_X > 3) && (T_Y > 3) && (T_Z > 3) && (T_W > 3) ) );
 
 
-	const uint shufX = (_X==sh_X1||_X==sh_Y1||_X==sh_Z1||_X==sh_W1) ? 0 : 1;
-	const uint shufY = (_Y==sh_X1||_Y==sh_Y1||_Y==sh_Z1||_Y==sh_W1) ? 0 : 1;
-	const uint shufZ = (_Z==sh_X1||_Z==sh_Y1||_Z==sh_Z1||_Z==sh_W1) ? 0 : 1;
-	const uint shufW = (_W==sh_X1||_W==sh_Y1||_W==sh_Z1||_W==sh_W1) ? 0 : 1;
+	const uint shufX = (T_X==sh_X1||T_X==sh_Y1||T_X==sh_Z1||T_X==sh_W1) ? 0 : 1;
+	const uint shufY = (T_Y==sh_X1||T_Y==sh_Y1||T_Y==sh_Z1||T_Y==sh_W1) ? 0 : 1;
+	const uint shufZ = (T_Z==sh_X1||T_Z==sh_Y1||T_Z==sh_Z1||T_Z==sh_W1) ? 0 : 1;
+	const uint shufW = (T_W==sh_X1||T_W==sh_Y1||T_W==sh_Z1||T_W==sh_W1) ? 0 : 1;
 
 	const f32* arr[2] = { reinterpret_cast<const f32*>(&a), reinterpret_cast<const f32*>(&b) };
 	Vec4f r;
 
-	r.x = arr[shufX][_SHUFFLEMASK(_X)];
-	r.y = arr[shufY][_SHUFFLEMASK(_Y)];
-	r.z = arr[shufZ][_SHUFFLEMASK(_Z)];
-	r.w = arr[shufW][_SHUFFLEMASK(_W)];
+	r.x = arr[shufX][FFTL_PERMUTEMASK(T_X)];
+	r.y = arr[shufY][FFTL_PERMUTEMASK(T_Y)];
+	r.z = arr[shufZ][FFTL_PERMUTEMASK(T_Z)];
+	r.w = arr[shufW][FFTL_PERMUTEMASK(T_W)];
 
 	return r;
 }

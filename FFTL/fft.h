@@ -77,7 +77,7 @@ enum enFftWindowType
 };
 
 
-template <uint _M, typename T, typename T_Twiddle = T>
+template <uint M, typename T, typename T_Twiddle = T>
 class FFT_Base
 {
 public:
@@ -87,45 +87,45 @@ public:
 	typedef cxNumber<T_Twiddle> cxTInternal;
 
 	//	Precomputed constants
-	static const uint _N = 1<<_M;
-	static const uint _N_div_2 = _N>>1;
+	static const uint N = 1<<M;
+	static const uint N_div_2 = N>>1;
 
 	class WindowCoefficients
 	{
 	public:
-		WindowCoefficients(enFftWindowType windowType, uint uWindowWidth = _N) { Compute(windowType, uWindowWidth); }
-		void Compute(enFftWindowType windowType, uint uWidth = _N);
+		WindowCoefficients(enFftWindowType windowType, uint uWindowWidth = N) { Compute(windowType, uWindowWidth); }
+		void Compute(enFftWindowType windowType, uint uWidth = N);
 
-		FixedArray<T_Twiddle,_N> m_C;
+		FixedArray<T_Twiddle,N> m_C;
 	};
 
 	FFT_Base();
 
-	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput) const;
-	void TransformForward(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void TransformForwardApplyWindow(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput, const WindowCoefficients& coeff) const;
+	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput) const;
+	void TransformForward(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForwardApplyWindow(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput, const WindowCoefficients& coeff) const;
 
-	void TransformInverse(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput, bool bApplyBitReverse=true) const;
-	void TransformInverse(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const { TransformForward(fInI, fInR, fOutI, fOutR); }
+	void TransformInverse(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput, bool bApplyBitReverse=true) const;
+	void TransformInverse(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const { TransformForward(fInI, fInR, fOutI, fOutR); }
 
 	//	In-place, no bit reversal or windowing
-	void TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const;
-	void TransformForward_InPlace_DIF(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
+	void TransformForward_InPlace_DIF(FixedArray<cxT,N>& cxInOut) const;
+	void TransformForward_InPlace_DIF(FixedArray<T,N>& fInOutR, FixedArray<T,N>& fInOutI) const;
 
 	//	In-place, no bit reversal or windowing. No divide by N.
-	void TransformInverse_InPlace_DIT(FixedArray<cxT,_N>& cxInOut) const;
-	void TransformInverse_InPlace_DIT(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
+	void TransformInverse_InPlace_DIT(FixedArray<cxT,N>& cxInOut) const;
+	void TransformInverse_InPlace_DIT(FixedArray<T,N>& fInOutR, FixedArray<T,N>& fInOutI) const;
 
-	static void ApplyWindow(FixedArray<T,_N>& fInOut, const WindowCoefficients& coeff);
-	static void ApplyWindow(FixedArray<cxT,_N>& cxInOut, const WindowCoefficients& coeff);
+	static void ApplyWindow(FixedArray<T,N>& fInOut, const WindowCoefficients& coeff);
+	static void ApplyWindow(FixedArray<cxT,N>& cxInOut, const WindowCoefficients& coeff);
 
-	static void TransformForward_Slow(const FixedArray<T,_N>& fInput, FixedArray<cxT,_N>& cxOutput);
-	static void TransformForward_Slow(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput);
-	static void TransformInverse_Slow(const FixedArray<cxT,_N>& cxInput, FixedArray<T,_N>& fOutTime);
-	static void TransformInverse_Slow(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput);
+	static void TransformForward_Slow(const FixedArray<T,N>& fInput, FixedArray<cxT,N>& cxOutput);
+	static void TransformForward_Slow(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput);
+	static void TransformInverse_Slow(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutTime);
+	static void TransformInverse_Slow(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput);
 
-	void ApplyBitReverseAndInterleave(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N*2>& fOut) const;
+	void ApplyBitReverseAndInterleave(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N*2>& fOut) const;
 
 	void PrintSetupInfo() const;
 	void PrintTimerInfo(uint iterationCount = 1) const;
@@ -135,7 +135,7 @@ public:
 	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
 	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
 
-	FFTL_FORCEINLINE const FixedArray<T_BR,_N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
+	FFTL_FORCEINLINE const FixedArray<T_BR,N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
 	FFTL_FORCEINLINE T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
 
 protected:
@@ -151,20 +151,20 @@ protected:
 	void ComputeBitReversalIndices();
 	void ComputeTwiddleFactors();
 
-	void Transform_Main_DIT(FixedArray<cxT,_N>& cxOutput, bool bSkipStage0 = false) const;
-	void Transform_Main_DIF(FixedArray<cxT,_N>& cxOutput) const;
-	void Transform_Main_DIT(FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI, bool bSkipStage0 = false) const;
-	void Transform_Main_DIF(FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
+	void Transform_Main_DIT(FixedArray<cxT,N>& cxOutput, bool bSkipStage0 = false) const;
+	void Transform_Main_DIF(FixedArray<cxT,N>& cxOutput) const;
+	void Transform_Main_DIT(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI, bool bSkipStage0 = false) const;
+	void Transform_Main_DIF(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 
 	//	Twiddle factors are always split into 2 arrays for real and imaginary to keep consistent with the highly vectorized 1d transforms.
-	FixedArray_Aligned32<T_Twiddle,_N> m_TwiddleFactorsR;
-	FixedArray_Aligned32<T_Twiddle,_N> m_TwiddleFactorsI;
+	FixedArray_Aligned32<T_Twiddle,N> m_TwiddleFactorsR;
+	FixedArray_Aligned32<T_Twiddle,N> m_TwiddleFactorsI;
 
-	FixedArray<T_BR,_N> m_BitReverseIndices;
+	FixedArray<T_BR,N> m_BitReverseIndices;
 
 #if FFTL_STAGE_TIMERS
 public:
-	mutable LARGE_INTEGER m_StageTimers[_M];
+	mutable LARGE_INTEGER m_StageTimers[M];
 	mutable LARGE_INTEGER m_PreProcessTimer;
 	mutable LARGE_INTEGER m_PostProcessTimer;
 #endif
@@ -173,8 +173,8 @@ public:
 //	fft_Single class performs FFT's without attempting to vectorize using SIMD instructions,
 // however, if T is a SIMD type with the appropriate operators overloaded, you basically get
 // that for free, eg, 4 channels at once if T is of type f32_4.
-template <uint _M, typename T, typename T_Twiddle = T>
-class FFT : public FFT_Base<_M, T, T_Twiddle>
+template <uint M, typename T, typename T_Twiddle = T>
+class FFT : public FFT_Base<M, T, T_Twiddle>
 {
 public:
 };
@@ -182,39 +182,39 @@ public:
 #if FFTL_SIMD4
 //	fft_SIMD class performs single channel float FFT's only, but uses SIMD instructions
 // if the compiler supports them, usually speeding up the process considerably.
-template <uint _M>
-class FFT<_M, f32, f32> : public FFT_Base<_M, f32, f32>
+template <uint M>
+class FFT<M, f32, f32> : public FFT_Base<M, f32, f32>
 {
 public:
 	typedef f32 T;
 	typedef T T_Twiddle;
 	typedef cxNumber<T> cxT;
-	using FFT_Base<_M, T, T_Twiddle>::_N;
-	using FFT_Base<_M, T, T_Twiddle>::_N_div_2;
-	using FFT_Base<_M, T, T_Twiddle>::m_BitReverseIndices;
-	typedef typename FFT_Base<_M, T, T_Twiddle>::T_BR T_BR;
+	using FFT_Base<M, T, T_Twiddle>::N;
+	using FFT_Base<M, T, T_Twiddle>::N_div_2;
+	using FFT_Base<M, T, T_Twiddle>::m_BitReverseIndices;
+	typedef typename FFT_Base<M, T, T_Twiddle>::T_BR T_BR;
 
 	FFT();
 
 	//	Transforms that perform bit reversal, out of place.
-	void TransformForward(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void TransformForward(const FixedArray<cxT,_N>& cxInput, FixedArray<cxT,_N>& cxOutput) const { FFT_Base<_M,T,T_Twiddle>::TransformForward(cxInput, cxOutput); }// TODO, optimize
-	void TransformInverse(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
+	void TransformForward(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput) const { FFT_Base<M,T,T_Twiddle>::TransformForward(cxInput, cxOutput); }// TODO, optimize
+	void TransformInverse(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 
 	//	Forward transform outputs in bit reversed order. Inverse transform assumes input in bit-reversed order, outputs in normal order.
-	void TransformForward_InPlace_DIF(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
-	void TransformInverse_InPlace_DIT(FixedArray<T,_N>& fInOutR, FixedArray<T,_N>& fInOutI) const;
-	void TransformForward_InPlace_DIF(FixedArray<cxT,_N>& cxInOut) const { FFT_Base<_M, f32, f32>::TransformForward_InPlace_DIF(cxInOut); }// TODO, optimize
-	void TransformForward_InPlace_DIT(FixedArray<cxT,_N>& cxInOut) const { FFT_Base<_M, f32, f32>::TransformForward_InPlace_DIT(cxInOut); }// TODO, optimize
+	void TransformForward_InPlace_DIF(FixedArray<T,N>& fInOutR, FixedArray<T,N>& fInOutI) const;
+	void TransformInverse_InPlace_DIT(FixedArray<T,N>& fInOutR, FixedArray<T,N>& fInOutI) const;
+	void TransformForward_InPlace_DIF(FixedArray<cxT,N>& cxInOut) const { FFT_Base<M, f32, f32>::TransformForward_InPlace_DIF(cxInOut); }// TODO, optimize
+	void TransformForward_InPlace_DIT(FixedArray<cxT,N>& cxInOut) const { FFT_Base<M, f32, f32>::TransformForward_InPlace_DIT(cxInOut); }// TODO, optimize
 
-	void ApplyBitReverseAndInterleave(const FixedArray<T,_N>& fInR, const FixedArray<T,_N>& fInI, FixedArray<T,_N*2>& fOut) const;
+	void ApplyBitReverseAndInterleave(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N*2>& fOut) const;
 
 protected:
-	void Transform_Stage0(FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void Transform_Stage0_BR(const FixedArray<T,_N>& fInReal, const FixedArray<T,_N>& fInImag, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void Transform_Stage0_BR(const FixedArray<cxT,_N>& cxInput, FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
-	void Transform_Main_DIT(FixedArray<T,_N>& fOutR, FixedArray<T,_N>& fOutI) const;
+	void Transform_Stage0(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void Transform_Stage0_BR(const FixedArray<T,N>& fInReal, const FixedArray<T,N>& fInImag, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void Transform_Stage0_BR(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void Transform_Main_DIT(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 
 	static void Calculate4Butterflies_DIT_Stage0(T* __restrict pfReal, T* __restrict pfImag);
 	static void Calculate4Butterflies_DIF_Stage0(T* __restrict pfReal, T* __restrict pfImag);
@@ -228,7 +228,7 @@ protected:
 #endif
 
 
-template <uint _M, typename T, typename T_Twiddle = T>
+template <uint M, typename T, typename T_Twiddle = T>
 class FFT_Real_Base
 {
 public:
@@ -237,15 +237,15 @@ public:
 	typedef cxNumber<T_Twiddle> cxTInternal;
 
 	//	Precomputed constants
-	static const uint _N = 1<<_M;
-	static const uint _N_2 = _N>>1;
-	static const uint _N_4 = _N>>2;
+	static const uint N = 1<<M;
+	static const uint N_2 = N>>1;
+	static const uint N_4 = N>>2;
 
 	FFT_Real_Base();
 
-	void TransformForward(const FixedArray<T,_N>& fTimeIn, FixedArray<T,_N_2>& fFreqOutR, FixedArray<T,_N_2>& fFreqOutI) const;
-	void TransformInverse(const FixedArray<T,_N_2>& fFreqInR, const FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
-	void TransformInverse_ClobberInput(FixedArray<T,_N_2>& fFreqInR, FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
+	void TransformForward(const FixedArray<T,N>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const;
+	void TransformInverse(const FixedArray<T,N_2>& fFreqInR, const FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
+	void TransformInverse_ClobberInput(FixedArray<T,N_2>& fFreqInR, FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 
 	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_PostTwiddlesR[n]; }
 	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_PostTwiddlesR + n; }
@@ -255,37 +255,37 @@ public:
 	void PrintTimerInfo(uint iterationCount = 1) const { m_fft.PrintTimerInfo(iterationCount); }
 
 public:
-	FFT<_M-1, T, T_Twiddle> m_fft;
+	FFT<M-1, T, T_Twiddle> m_fft;
 private:
-	FixedArray_Aligned32<T_Twiddle,_N_4> m_PostTwiddlesR;
-	FixedArray_Aligned32<T_Twiddle,_N_4> m_PostTwiddlesI;
+	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesR;
+	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesI;
 };
 
 
-template <uint _M, typename T, typename T_Twiddle = T>
-class FFT_Real : public FFT_Real_Base<_M, T, T_Twiddle>
+template <uint M, typename T, typename T_Twiddle = T>
+class FFT_Real : public FFT_Real_Base<M, T, T_Twiddle>
 {
 public:
 };
 
 #if FFTL_SIMD4
-template <uint _M>
-class FFT_Real<_M, f32, f32> : public FFT_Real_Base<_M, f32, f32>
+template <uint M>
+class FFT_Real<M, f32, f32> : public FFT_Real_Base<M, f32, f32>
 {
 public:
 	typedef f32 T;
 	typedef cxNumber<T> cxT;
 
 	//	Precomputed constants
-	static const uint _N = 1<<_M;
-	static const uint _N_2 = _N>>1;
-	static const uint _N_4 = _N>>2;
+	static const uint N = 1<<M;
+	static const uint N_2 = N>>1;
+	static const uint N_4 = N>>2;
 
-	//	FFT_Real();
+//	FFT_Real();
 
-	void TransformForward(const FixedArray<T,_N>& fTimeIn, FixedArray<T,_N_2>& fFreqOutR, FixedArray<T,_N_2>& fFreqOutI) const;
-	void TransformInverse(const FixedArray<T,_N_2>& fFreqInR, const FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
-	void TransformInverse_ClobberInput(FixedArray<T,_N_2>& fFreqInR, FixedArray<T,_N_2>& fFreqInI, FixedArray<T,_N>& fTimeOut) const;
+	void TransformForward(const FixedArray<T,N>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const;
+	void TransformInverse(const FixedArray<T,N_2>& fFreqInR, const FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
+	void TransformInverse_ClobberInput(FixedArray<T,N_2>& fFreqInR, FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 };
 #endif
 
@@ -294,38 +294,38 @@ public:
 //	This convolver class only processes real data, effectively more than doubling its speed,
 // rather than zeroing out imaginary data. This way it only needs to use a complex FFT the same
 // size as its input, rather than a double size one. In this way, no data is thrown away either.
-template <uint _M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
+template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
 class Convolver
 {
 public:
 	typedef cxNumber<T> cxT;
-	static const uint _N = 1<<_M;
-	static const uint _2N = _N<<1;
+	static const uint N = 1<<M;
+	static const uint _2N = N<<1;
 
 	Convolver();
 	~Convolver();
 
 	void InitKernel(const void* pKernelInput, size_t byteSize);
-	void Convolve(FixedArray<T,_N>& fInOutput);
+	void Convolve(FixedArray<T,N>& fInOutput);
 	void Destroy();
 
 private:
 	//	Our FFT computer
-	static const FFT<_M, T, T_Twiddle> sm_FFT;
+	static const FFT<M, T, T_Twiddle> sm_FFT;
 
 	struct Kernel
 	{
-		FixedArray<cxT,_N> c;
-		FixedArray<cxT,_N>& AsComplex() { return c; }
+		FixedArray<cxT,N> c;
+		FixedArray<cxT,N>& AsComplex() { return c; }
 		FixedArray<T,_2N>& AsScalar() { return *reinterpret_cast<FixedArray<T,_2N>*>(&c); }
 	};
 
 	FixedArray<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
-	FixedArray<T, T_MAX_KERNELS*_N> m_AccumulationBuffer;
+	FixedArray<T, T_MAX_KERNELS*N> m_AccumulationBuffer;
 	uint m_KernelCount;
 };
 
-template <typename T, uint _N, uint T_KERNEL_LENGTH>
+template <typename T, uint T_N, uint T_KERNEL_LENGTH>
 class Convolver_Slow
 {
 public:
@@ -333,11 +333,11 @@ public:
 	Convolver_Slow() { memset(&m_AccumulationBuffer, 0, sizeof(m_AccumulationBuffer)); }
 
 	void SetKernel(const FixedArray<T, T_KERNEL_LENGTH>& fKernel) { memcpy(&m_Kernel, &fKernel, sizeof(m_Kernel)); }
-	void Convolve(const FixedArray<T,_N>& fInput, FixedArray<T,_N>& fOutput);
+	void Convolve(const FixedArray<T,T_N>& fInput, FixedArray<T,T_N>& fOutput);
 
 private:
 	FixedArray<T, T_KERNEL_LENGTH> m_Kernel;
-	FixedArray<T, _N+T_KERNEL_LENGTH> m_AccumulationBuffer;
+	FixedArray<T, T_N+T_KERNEL_LENGTH> m_AccumulationBuffer;
 };
 
 } // namespace FFTL

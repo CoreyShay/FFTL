@@ -13,6 +13,9 @@
     <Filter Include="FFTL\Default">
       <UniqueIdentifier>{6413762c-7bc6-4330-950a-b9390728c79d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FFTL\NEON">
+      <UniqueIdentifier>{8a83a663-d00a-457c-acf2-2da75f7c797a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FFTL\ComplexNumber.h">
@@ -55,6 +58,9 @@
     </None>
     <None Include="FFTL\Default\Math_vec8_default.inl">
       <Filter>FFTL\Default</Filter>
+    </None>
+    <None Include="FFTL\NEON\Math_NEON.inl">
+      <Filter>FFTL\NEON</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
