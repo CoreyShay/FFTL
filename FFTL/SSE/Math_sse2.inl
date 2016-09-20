@@ -39,6 +39,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 #define _MM_SHUFFLE_XYZW(x,y,z,w) _MM_SHUFFLE(w,z,y,x)
+#define _MM_INSERTPS_MASK_HELPER(_to_a, _from_b, _zeroX_, _zeroY_, _zeroZ_, _zeroW_) ( (_zeroX_&1) | ((_zeroY_&1)<<1) | ((_zeroZ_&1)<<2) | ((_zeroW_&1)<<3) | ((_to_a&3)<<4) | ((_from_b&3)<<6) )
 
 namespace FFTL
 {
@@ -586,6 +587,7 @@ FFTL_FORCEINLINE ScopedFlushDenormals::~ScopedFlushDenormals()
 } // namespace FFTL
 
 #undef _MM_SHUFFLE_XYZW
+#undef _MM_INSERTPS_MASK_HELPER
 
 
 #ifdef _MSC_VER
