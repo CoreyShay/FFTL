@@ -299,7 +299,11 @@ FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In v )
 
 	FFTL_StaticAssert( !(T_X==sh_X && T_Y==sh_Y && T_Z==sh_Z && T_W==sh_W) ); // This permute does nothing meaningful!
 
+#if defined(FFTL_AVX)
+	return _mm_permute_ps( v, _MM_SHUFFLE_XYZW( T_X, T_Y, T_Z, T_W ) );
+#else
 	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW( T_X, T_Y, T_Z, T_W ) );
+#endif
 }
 
 //	While this function may look scary, all the branches and switches actually compile away in release builds, leaving only 1 or 2 SSE instructions.
@@ -343,7 +347,13 @@ FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In a, Vec4f_In b )
 		else			//	_X and _Y from v2. _Z and _W from v1.
 			return _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), FFTL_PERMUTEMASK(T_Y), FFTL_PERMUTEMASK(T_Z), FFTL_PERMUTEMASK(T_W)) );
 	}
-
+#if defined(FFTL_SSE4)
+	//	If we have SSE4, we can use the blend instruction as long as we don't need reordering
+	else if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_Z) == 2 && FFTL_PERMUTEMASK(T_W) == 3)
+	{
+		return _mm_blend_ps(a, b, (shufX<<0) | (shufY<<1) | (shufZ<<2) | (shufW<<3));
+	}
+#endif
 	//	Next 4 cases, when we need 2 32 bit words from each vector, but it can't be handled with a single SSE instruction,
 	// we use one _mm_shuffle_ps instruction, then one _mm_shuffle_epi32 instruction.
 	else if (shufX==0 && shufY==1 && shufZ==0 && shufW==1)
@@ -376,23 +386,39 @@ FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In a, Vec4f_In b )
 		(shufX==1 && shufY==1 && shufZ==1 && shufW==0)	)
 	{
 		//	When we need one word from V1
-		if( shufX==0 )
+		if (shufX == 0)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_Z) == 2 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T_X), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), sh_W, FFTL_PERMUTEMASK(T_Y), sh_W) );
 			return _mm_shuffle_ps( vShuffleTemp, b, _MM_SHUFFLE_XYZW(sh_X, sh_Z, FFTL_PERMUTEMASK(T_Z), FFTL_PERMUTEMASK(T_W)) );
 		}
-		else if( shufY==0 )
+		else if (shufY == 0)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Z) == 2 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T_Y), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), sh_W, FFTL_PERMUTEMASK(T_Y), sh_W) );
 			return _mm_shuffle_ps( vShuffleTemp, b, _MM_SHUFFLE_XYZW(sh_X, sh_Z, FFTL_PERMUTEMASK(T_Z), FFTL_PERMUTEMASK(T_W)) );
 		}
-		else if( shufZ==0 )
+		else if (shufZ == 0)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T_Z), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_Z), sh_W, FFTL_PERMUTEMASK(T_W), sh_W) );
 			return _mm_shuffle_ps( b, vShuffleTemp, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), FFTL_PERMUTEMASK(T_Y), sh_X, sh_Z) );
 		}
-		else // shufW==0
+		else // shufW == 0
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_Z) == 2)
+				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T_W), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_Z), sh_W, FFTL_PERMUTEMASK(T_W), sh_W) );
 			return _mm_shuffle_ps( b, vShuffleTemp, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), FFTL_PERMUTEMASK(T_Y), sh_X, sh_Z) );
 		}
@@ -405,23 +431,39 @@ FFTL_FORCEINLINE Vec4f V4fPermute( Vec4f_In a, Vec4f_In b )
 	{
 		//	When we need one word from V2
 
-		if( shufX==1 )
+		if (shufX == 1)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_Z) == 2 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T_X), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), sh_W, FFTL_PERMUTEMASK(T_Y), sh_W) );
 			return _mm_shuffle_ps( vShuffleTemp, a, _MM_SHUFFLE_XYZW(sh_X, sh_Z, FFTL_PERMUTEMASK(T_Z), FFTL_PERMUTEMASK(T_W)) );
 		}
-		else if( shufY==1 )
+		else if (shufY == 1)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Z) == 2 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T_Y), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), sh_W, FFTL_PERMUTEMASK(T_Y), sh_W) );
 			return _mm_shuffle_ps( vShuffleTemp, a, _MM_SHUFFLE_XYZW(sh_X, sh_Z, FFTL_PERMUTEMASK(T_Z), FFTL_PERMUTEMASK(T_W)) );
 		}
-		else if( shufZ==1 )
+		else if (shufZ == 1)
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_W) == 3)
+				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T_Z), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_Z), sh_W, FFTL_PERMUTEMASK(T_W), sh_W) );
 			return _mm_shuffle_ps( a, vShuffleTemp, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), FFTL_PERMUTEMASK(T_Y), sh_X, sh_Z) );
 		}
 		else // shufW==1
 		{
+#if defined(FFTL_SSE4)
+			if (FFTL_PERMUTEMASK(T_X) == 0 && FFTL_PERMUTEMASK(T_Y) == 1 && FFTL_PERMUTEMASK(T_Z) == 2)
+				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T_W), 0, 0, 0, 0));
+#endif
 			const Vec4f vShuffleTemp = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_Z), sh_W, FFTL_PERMUTEMASK(T_W), sh_W) );
 			return _mm_shuffle_ps( a, vShuffleTemp, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T_X), FFTL_PERMUTEMASK(T_Y), sh_X, sh_Z) );
 		}
