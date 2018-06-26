@@ -119,7 +119,7 @@ struct __nodeName__ ## __memberNameTag__										\
 {																				\
 	static constexpr ptrdiff_t MyOffset() { return offsetof(T, __nodeName__); }	\
 };																				\
-ListNode<T, __nodeName__ ## __memberNameTag__> __nodeName__
+FFTL::ListNode<T, __nodeName__ ## __memberNameTag__> __nodeName__
 
 
 
@@ -331,6 +331,6 @@ protected:
 
 }
 
-#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) TContainedLinkedList<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember> __listName__
+#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) FFTL::TContainedLinkedList<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember> __listName__
 
 
