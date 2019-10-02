@@ -39,6 +39,8 @@
     <ClInclude Include="kiss_fft130\kiss_fftr.h">
       <Filter>kiss_fft130</Filter>
     </ClInclude>
+    <ClInclude Include="FFTL\Containers\Array.h" />
+    <ClInclude Include="FFTL\Containers\List.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FFTL\fft.inl">

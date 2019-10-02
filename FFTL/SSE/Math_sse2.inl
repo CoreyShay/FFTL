@@ -143,10 +143,10 @@ FFTL_FORCEINLINE void V4fStore3(f32* pf, Vec4f_In v)
 FFTL_FORCEINLINE void V4fScatter(f32* pf, Vec4f_In v, int iA, int iB, int iC, int iD)
 {
 #if FFTL_SSE4
-	reinterpret_cast<int32*>(pf)[iA] = _mm_extract_ps(v, 0);
-	reinterpret_cast<int32*>(pf)[iB] = _mm_extract_ps(v, 1);
-	reinterpret_cast<int32*>(pf)[iC] = _mm_extract_ps(v, 2);
-	reinterpret_cast<int32*>(pf)[iD] = _mm_extract_ps(v, 3);
+	reinterpret_cast<s32*>(pf)[iA] = _mm_extract_ps(v, 0);
+	reinterpret_cast<s32*>(pf)[iB] = _mm_extract_ps(v, 1);
+	reinterpret_cast<s32*>(pf)[iC] = _mm_extract_ps(v, 2);
+	reinterpret_cast<s32*>(pf)[iD] = _mm_extract_ps(v, 3);
 #else
 	_mm_store_ss(pf+iA, v );
 	_mm_store_ss(pf+iB, _mm_shuffle_ps(v, v, _MM_SHUFFLE(1,1,1,1)) );

@@ -102,6 +102,11 @@ class alignas(32) FixedArray_Aligned32 : public FixedArray<T, T_N>
 {
 };
 
+template <typename T, u32 T_N>
+class alignas(64) FixedArray_Aligned64 : public FixedArray<T, T_N>
+{
+};
+
 
 
 }

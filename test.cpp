@@ -251,7 +251,7 @@ FixedArray_Aligned32<fltType, _N> fTestOutput1;
 FixedArray_Aligned32<fltType, _N> fTestOutput2;
 
 FixedArray_Aligned32<cxNumber<f32_4>, _N> cxInterleaved4;
-FixedArray_Aligned32<cxNumber<f32_8>, _N> cxInterleaved8;
+FixedArray_Aligned64<cxNumber<f32_8>, _N> cxInterleaved8;
 
 FFTL::Convolver<_M, 2, float, float> m_Convolver;
 FFTL::Convolver_Slow<float, _N, _N> m_Convolver_Slow;
