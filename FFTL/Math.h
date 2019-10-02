@@ -508,13 +508,28 @@ FFTL_FORCEINLINE f32_8 Reverse(f32_8Arg v)				{ return f32_8(V8fReverse(v.GetNat
 
 
 
+
+template<uint T_ALIGNMENT, typename T>
+FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
+{
+	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
+	return (offset + (T_ALIGNMENT - 1)) & ~(T_ALIGNMENT - 1);
+}
+template<typename T>
+FFTL_FORCEINLINE T AlignForward(size_t alignment, const T& offset)
+{
+	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
+	return (offset + (alignment - 1)) & ~(alignment - 1);
+}
+
+
 class ScopedFlushDenormals
 {
 public:
 	ScopedFlushDenormals();
 	~ScopedFlushDenormals();
 private:
-	uint32 m_prevMode;
+	u32 m_prevMode;
 };
 
 

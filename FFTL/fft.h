@@ -35,6 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "defs.h"
 #include "ComplexNumber.h"
 #include "Math.h"
+#include "Containers/Array.h"
 
 #define FFTL_STAGE_TIMERS 0
 
@@ -81,7 +82,7 @@ template <uint M, typename T, typename T_Twiddle = T>
 class FFT_Base
 {
 public:
-	typedef uint16 T_BR; // can be made larger if size greater than 65536 is needed.
+	typedef u16 T_BR; // can be made larger if size greater than 65536 is needed.
 
 	typedef cxNumber<T> cxT;
 	typedef cxNumber<T_Twiddle> cxTInternal;

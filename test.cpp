@@ -136,8 +136,8 @@ void fft(uint32 n, uint32 m, float x[], float y[])
 #endif
 
 
-const uint32 _M = 9;
-const uint32 _N = 1<<_M;
+const u32 _M = 9;
+const u32 _N = 1<<_M;
 
 typedef float fltType;
 

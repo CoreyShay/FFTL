@@ -45,7 +45,7 @@ namespace FFTL
 
 
 template <typename T>
-class cxNumber
+class alignas(2 * alignof(T)) cxNumber
 {
 public:
 	T r;
@@ -89,8 +89,8 @@ public:
 	FFTL_FORCEINLINE T Mag() const										{ return sqrt(Mag2()); }
 };
 
-typedef FFTL_ALIGN_BEGIN(8)  cxNumber<f32> FFTL_ALIGN_END(8)  cx64;
-typedef FFTL_ALIGN_BEGIN(16) cxNumber<f64> FFTL_ALIGN_END(16) cx128;
+typedef cxNumber<f32> cx64;
+typedef cxNumber<f64> cx128;
 
 
 } // namespace FFTL

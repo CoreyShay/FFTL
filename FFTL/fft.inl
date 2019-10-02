@@ -1050,7 +1050,7 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 	LARGE_INTEGER laStart, laEnd;
 #endif
 
-	uint uTwiddleIndex = N - (FFTL_SIMD8 ? 8 : 4);
+	uint uTwiddleIndex = N - (FFTL_SIMD_WIDTH == 8 ? 8 : 4);
 
 	//	We can make an exception in the case of the last stage because the inner loop only runs one time for each sub DFT,
 	// and our twiddle factors are all contiguous in memory.
