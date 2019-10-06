@@ -46,7 +46,7 @@ class FixedArray
 public:
 	T data[T_N];
 
-	FFTL_FORCEINLINE FixedArray() {}
+	FFTL_FORCEINLINE FixedArray() = default;
 	FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_N); return data[n]; }
 	FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_N); return data[n]; }
 	FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_N); return data + n; }

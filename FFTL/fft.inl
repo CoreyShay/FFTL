@@ -2290,7 +2290,7 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 
 
 
-template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle> const FFT<M, T, T_Twiddle> Convolver<M, T_MAX_KERNELS, T,T_Twiddle>::sm_FFT;
+template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle> const FFT_Real<M+1, T, T_Twiddle> Convolver<M, T_MAX_KERNELS, T,T_Twiddle>::sm_FFT;
 
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
 Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolver()
@@ -2320,15 +2320,15 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(const void* pKernelIn
 	memset(&m_KernelArray_FD, 0, sizeof(m_KernelArray_FD));
 	m_KernelCount = kernelCount;
 
-	const size_t segmentSize = sizeof(Kernel)/2;
-	for (uint i = 0; i < kernelCount; ++i, sizeBytes-=segmentSize)
+	constexpr size_t segmentSize = sizeof(Kernel) / 2;
+	for (uint i = 0; i < kernelCount; ++i, sizeBytes -= segmentSize)
 	{
 		FFTL_ASSERT(sizeBytes > 0);
 		Kernel& kernel = m_KernelArray_FD[i];
-		memcpy(&kernel, byteInput + i*segmentSize, Min(segmentSize, sizeBytes));
+//		memcpy(&kernel, byteInput + i*segmentSize, Min(segmentSize, sizeBytes));
 
 		//	Convert to frequency domain, and store
-		sm_FFT.TransformForward_InPlace_DIF(kernel.AsComplex());
+		sm_FFT.TransformForward(*reinterpret_cast<const FixedArray<T, _2N>*>(byteInput + i * segmentSize), kernel.r, kernel.i);
 	}
 }
 
@@ -2336,15 +2336,13 @@ template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOutput)
 {
 	Kernel inputXFormed;
-	Kernel workBuffer;
+	Kernel workBufferA, workBufferB;
 
-	const T invN = ConvertTo<T>(1 / (T_Twiddle)N);
-
-	memcpy(&inputXFormed.AsScalar(), &fInOutput, sizeof(inputXFormed)/2);
-	memset(&inputXFormed.AsScalar()[N], 0, sizeof(inputXFormed)/2);
+	memcpy(&workBufferA.t, &fInOutput, sizeof(workBufferA)/2);
+	memset(&workBufferA.t[N], 0, sizeof(workBufferA)/2);
 
 	//	Convert the time domain input to freq domain
-	sm_FFT.TransformForward_InPlace_DIF(inputXFormed.AsComplex());
+	sm_FFT.TransformForward(workBufferA.t, inputXFormed.r, inputXFormed.i);
 
 	//	Perform short convolution on the first kernel only, while pushing to the small output buffer
 	{
@@ -2352,30 +2350,33 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 		T* pAccumBuffer = m_AccumulationBuffer+N*0;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
-		for (uint n=0; n<N; ++n)
+		for (uint n = 0; n < N; ++n)
 		{
-			const cxT& x = inputXFormed.AsComplex()[n];
-			const cxT& y = kernel.AsComplex()[n];
-			cxT& out = workBuffer.AsComplex()[n];
+			const T& xR = inputXFormed.r[n];
+			const T& xI = inputXFormed.i[n];
+			const T& yR = kernel.r[n];
+			const T& yI = kernel.i[n];
+			T& outR = workBufferA.r[n];
+			T& outI = workBufferA.i[n];
 
-			out.r = x.r*y.r - x.i*y.i;
-			out.i = x.r*y.i + x.i*y.r;
+			outR = xR * yR - xI * yI;
+			outI = xR * yI + xI * yR;
 		}
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_FFT.TransformInverse_InPlace(workBuffer.AsComplex());
+		sm_FFT.TransformInverse_ClobberInput(workBufferA.r, workBufferA.i, workBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
-		for (uint n=0; n<N; ++n)
+		for (uint n = 0; n < N; ++n)
 		{
-			const T val = pAccumBuffer[n] = pAccumBuffer[N+n] + workBuffer.AsScalar()[n];
+			const T val = pAccumBuffer[n] = pAccumBuffer[N+n] + workBufferB.t[n];
 			pAccumBuffer[n] = val;
-			fInOutput[n] = val * invN;
+			fInOutput[n] = val;
 		}
 
-		for (uint n=N; n<_2N; ++n)
+		for (uint n = N; n < _2N; ++n)
 		{
-			pAccumBuffer[n] = workBuffer.AsScalar()[n];
+			pAccumBuffer[n] = workBufferB.t[n];
 		}
 	}
 
@@ -2386,27 +2387,30 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 		T* pAccumBuffer = m_AccumulationBuffer+N*k;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
-		for (uint n=0; n<N; ++n)
+		for (uint n = 0; n < N; ++n)
 		{
-			const cxT& x = inputXFormed.AsComplex()[n];
-			const cxT& y = kernel.AsComplex()[n];
-			cxT& out = workBuffer.AsComplex()[n];
+			const T& xR = inputXFormed.r[n];
+			const T& xI = inputXFormed.i[n];
+			const T& yR = kernel.r[n];
+			const T& yI = kernel.i[n];
+			T& outR = workBufferA.r[n];
+			T& outI = workBufferA.i[n];
 
-			out.r = x.r*y.r - x.i*y.i;
-			out.i = x.r*y.i + x.i*y.r;
+			outR = xR * yR - xI * yI;
+			outI = xR * yI + xI * yR;
 		}
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_FFT.TransformInverse_InPlace_DIT(workBuffer.AsComplex());
+		sm_FFT.TransformInverse_ClobberInput(workBufferA.r, workBufferA.i, workBufferB.t);
 
 		//	Write to the accumulation float buffer, while adding the overlap segment and fill it back in
-		for (uint n=0; n<N; ++n)
+		for (uint n = 0; n < N; ++n)
 		{
-			pAccumBuffer[n] += pAccumBuffer[N+n] + workBuffer.AsScalar()[n];
+			pAccumBuffer[n] += pAccumBuffer[N+n] + workBufferB.t[n];
 		}
-		for (uint n=N; n<_2N; ++n)
+		for (uint n = N; n < _2N; ++n)
 		{
-			pAccumBuffer[n] = workBuffer.AsScalar()[n];
+			pAccumBuffer[n] = workBufferB.t[n];
 		}
 	}
 }

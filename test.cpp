@@ -546,11 +546,11 @@ void verifyConvolution()
 	memset(&fInput1, 0, sizeof(fInput1));
 
 #if 1
-	//	fInput1[_N-1] = 1.f;
+	fInput1[_N-1] = 1.f;
 	fInput1[0] = 1.f;
-	//	fInput1[1] = 1.f;
-	//	fInput1[4] = 0.3f;
-	//	fInput1[10] = -0.7f;
+//	fInput1[1] = 1.f;
+//	fInput1[4] = 0.3f;
+	fInput1[10] = -0.7f;
 #elif 0
 	for (uint n = 0; n < _N; ++n)
 	{
@@ -573,7 +573,7 @@ void verifyConvolution()
 	m_Convolver_Slow.SetKernel(fInput1);
 	m_Convolver.InitKernel(&fInput1, sizeof(fInput1));
 
-	for (uint k = 0; k < 1000; ++k)
+//	for (uint k = 0; k < 1000; ++k)
 	{
 #if 0
 		for (uint n = 0; n < _N; ++n)
@@ -598,7 +598,7 @@ void verifyConvolution()
 #endif
 
 		m_Convolver_Slow.Convolve(fInput1, fOutput1);
-		//		m_Convolver.Convolve(fInput1, fOutput2);
+		m_Convolver.Convolve(fInput1);
 
 		for (uint n = 0; n < _N; ++n)
 		{
@@ -778,6 +778,7 @@ void perfTest()
 
 void RunTests()
 {
+	FFTL::verifyConvolution();
 	FFTL::convolutionTest();
 	FFTL::verifyFFT();
 	FFTL::verifyRealFFT();

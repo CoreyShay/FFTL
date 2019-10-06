@@ -60,6 +60,10 @@ inline void FFTL_Printf(const char *format, ...)
 #endif
 
 
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable : 4201) //nonstandard extension used: nameless struct/union)
+#endif
 
 
 namespace FFTL
@@ -290,6 +294,59 @@ public:
 };
 #endif
 
+class FFT_RealV
+{
+public:
+	virtual void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const = 0;
+	virtual void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const = 0;
+	virtual void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const = 0;
+};
+
+class FFT_Real8 : public FFT_RealV
+{
+public:
+	//	Precomputed constants
+	static const uint N = 1 << 8;
+	static const uint N_2 = N >> 1;
+	static const uint N_4 = N >> 2;
+
+	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
+	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+
+private:
+	FFT_Real<8, f32> m_fft;
+};
+class FFT_Real9 : public FFT_RealV
+{
+public:
+	//	Precomputed constants
+	static const uint N = 1 << 9;
+	static const uint N_2 = N >> 1;
+	static const uint N_4 = N >> 2;
+
+	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
+	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+
+private:
+	FFT_Real<9, f32> m_fft;
+};
+class FFT_Real10 : public FFT_RealV
+{
+public:
+	//	Precomputed constants
+	static const uint N = 1 << 10;
+	static const uint N_2 = N >> 1;
+	static const uint N_4 = N >> 2;
+
+	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
+	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
+
+private:
+	FFT_Real<10, f32> m_fft;
+};
 
 
 //	This convolver class only processes real data, effectively more than doubling its speed,
@@ -300,8 +357,9 @@ class Convolver
 {
 public:
 	typedef cxNumber<T> cxT;
-	static const uint N = 1<<M;
-	static const uint _2N = N<<1;
+	static const uint N = 1 << M;
+	static const uint N_2 = N >> 1;
+	static const uint _2N = N << 1;
 
 	Convolver();
 	~Convolver();
@@ -312,13 +370,19 @@ public:
 
 private:
 	//	Our FFT computer
-	static const FFT<M, T, T_Twiddle> sm_FFT;
+	static const FFT_Real<M+1, T, T_Twiddle> sm_FFT;
 
 	struct Kernel
 	{
-		FixedArray<cxT,N> c;
-		FixedArray<cxT,N>& AsComplex() { return c; }
-		FixedArray<T,_2N>& AsScalar() { return *reinterpret_cast<FixedArray<T,_2N>*>(&c); }
+		union
+		{
+			struct
+			{
+				FixedArray<f32, N> r;
+				FixedArray<f32, N> i;
+			};
+			FixedArray<f32, _2N> t;
+		};
 	};
 
 	FixedArray<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
@@ -346,6 +410,10 @@ private:
 
 
 #include "fft.inl"
+
+#if defined(_MSC_VER)
+#	pragma warning(pop)
+#endif
 
 
 #endif // _DFT_H
