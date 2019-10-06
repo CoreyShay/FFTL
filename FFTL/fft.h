@@ -260,7 +260,7 @@ public:
 	void PrintTimerInfo(uint iterationCount = 1) const { m_fft.PrintTimerInfo(iterationCount); }
 
 public:
-	FFT<M-1, T, T_Twiddle> m_fft;
+	static const FFT<M-1, T, T_Twiddle> m_fft;
 private:
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesR;
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesI;

@@ -78,7 +78,7 @@ namespace FFTL
 void fft(uint32 n, uint32 m, float x[], float y[])
 {
 	uint32 i,j,k,n1,n2;
-	float c,s,e,a,t1,t2;        
+	float c,s,e,a,t1,t2;
 
 
 	j = 0; /* bit-reverse */

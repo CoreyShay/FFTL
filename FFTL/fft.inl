@@ -1740,7 +1740,9 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, 
 
 
 
-
+//	Static Init
+template <uint M, typename T, typename T_Twiddle>
+const FFT<M - 1, T, T_Twiddle> FFT_Real_Base<M, T, T_Twiddle>::m_fft;
 
 template <uint M, typename T, typename T_Twiddle>
 FFT_Real_Base<M, T, T_Twiddle>::FFT_Real_Base()
@@ -2289,8 +2291,9 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 
 
 
-
-template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle> const FFT_Real<M+1, T, T_Twiddle> Convolver<M, T_MAX_KERNELS, T,T_Twiddle>::sm_FFT;
+//	Static Init
+template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
+const FFT_Real<M+1, T, T_Twiddle> Convolver<M, T_MAX_KERNELS, T,T_Twiddle>::sm_FFT;
 
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
 Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolver()
