@@ -2353,34 +2353,63 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 		T* pAccumBuffer = m_AccumulationBuffer+N*0;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
-		for (uint n = 0; n < N; ++n)
+		if constexpr (std::is_same<T, f32>::value)
 		{
-			const T& xR = inputXFormed.r[n];
-			const T& xI = inputXFormed.i[n];
-			const T& yR = kernel.r[n];
-			const T& yI = kernel.i[n];
-			T& outR = workBufferA.r[n];
-			T& outI = workBufferA.i[n];
+			for (uint n = 0; n < N; n += 8)
+			{
+				const f32_8 xR = f32_8::LoadA(inputXFormed.r + n);
+				const f32_8 xI = f32_8::LoadA(inputXFormed.i + n);
+				const f32_8 yR = f32_8::LoadA(kernel.r + n);
+				const f32_8 yI = f32_8::LoadA(kernel.i + n);
+				T* outR = workBufferA.r + n;
+				T* outI = workBufferA.i + n;
 
-			outR = xR * yR - xI * yI;
-			outI = xR * yI + xI * yR;
+				(xR * yR - xI * yI).StoreA(outR);
+				(xR * yI + xI * yR).StoreA(outI);
+			}
+		}
+		else
+		{
+			for (uint n = 0; n < N; n += 1)
+			{
+				const T& xR = inputXFormed.r[n];
+				const T& xI = inputXFormed.i[n];
+				const T& yR = kernel.r[n];
+				const T& yI = kernel.i[n];
+				T& outR = workBufferA.r[n];
+				T& outI = workBufferA.i[n];
+
+				outR = xR * yR - xI * yI;
+				outI = xR * yI + xI * yR;
+			}
 		}
 
 		//	Convert the new frequency domain signal back to the time domain
 		sm_FFT.TransformInverse_ClobberInput(workBufferA.r, workBufferA.i, workBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
-		for (uint n = 0; n < N; ++n)
+		if constexpr (std::is_same<T, f32>::value)
 		{
-			const T val = pAccumBuffer[n] = pAccumBuffer[N+n] + workBufferB.t[n];
-			pAccumBuffer[n] = val;
-			fInOutput[n] = val;
+			for (uint n = 0; n < N; n += 8)
+			{
+				const f32_8 a = f32_8::LoadA(pAccumBuffer + N + n);
+				const f32_8 b = f32_8::LoadA(workBufferB.t + n);
+				const f32_8 val = a + b;
+				val.StoreA(pAccumBuffer + n);
+				val.StoreA(fInOutput + n);
+			}
+		}
+		else
+		{
+			for (uint n = 0; n < N; n += 1)
+			{
+				const T val = pAccumBuffer[n] = pAccumBuffer[N + n] + workBufferB.t[n];
+				pAccumBuffer[n] = val;
+				fInOutput[n] = val;
+			}
 		}
 
-		for (uint n = N; n < _2N; ++n)
-		{
-			pAccumBuffer[n] = workBufferB.t[n];
-		}
+		memcpy(pAccumBuffer + N, workBufferB.t + N, sizeof(workBufferB) / 2);
 	}
 
 	//	Perform short convolutions on the remaining kernels, accumulating everything as necessary
@@ -2390,31 +2419,61 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 		T* pAccumBuffer = m_AccumulationBuffer+N*k;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
-		for (uint n = 0; n < N; ++n)
+		if constexpr (std::is_same<T, f32>::value)
 		{
-			const T& xR = inputXFormed.r[n];
-			const T& xI = inputXFormed.i[n];
-			const T& yR = kernel.r[n];
-			const T& yI = kernel.i[n];
-			T& outR = workBufferA.r[n];
-			T& outI = workBufferA.i[n];
+			for (uint n = 0; n < N; n += 8)
+			{
+				const f32_8 xR = f32_8::LoadA(inputXFormed.r + n);
+				const f32_8 xI = f32_8::LoadA(inputXFormed.i + n);
+				const f32_8 yR = f32_8::LoadA(kernel.r + n);
+				const f32_8 yI = f32_8::LoadA(kernel.i + n);
+				T* outR = workBufferA.r + n;
+				T* outI = workBufferA.i + n;
 
-			outR = xR * yR - xI * yI;
-			outI = xR * yI + xI * yR;
+				(xR * yR - xI * yI).StoreA(outR);
+				(xR * yI + xI * yR).StoreA(outI);
+			}
+		}
+		else
+		{
+			for (uint n = 0; n < N; n += 1)
+			{
+				const T& xR = inputXFormed.r[n];
+				const T& xI = inputXFormed.i[n];
+				const T& yR = kernel.r[n];
+				const T& yI = kernel.i[n];
+				T& outR = workBufferA.r[n];
+				T& outI = workBufferA.i[n];
+
+				outR = xR * yR - xI * yI;
+				outI = xR * yI + xI * yR;
+			}
 		}
 
 		//	Convert the new frequency domain signal back to the time domain
 		sm_FFT.TransformInverse_ClobberInput(workBufferA.r, workBufferA.i, workBufferB.t);
 
 		//	Write to the accumulation float buffer, while adding the overlap segment and fill it back in
-		for (uint n = 0; n < N; ++n)
+		if constexpr (std::is_same<T, f32>::value)
 		{
-			pAccumBuffer[n] += pAccumBuffer[N+n] + workBufferB.t[n];
+			for (uint n = 0; n < N; n += 8)
+			{
+				const f32_8 a = f32_8::LoadA(pAccumBuffer + N + n);
+				const f32_8 b = f32_8::LoadA(workBufferB.t + n);
+				const f32_8 c = f32_8::LoadA(pAccumBuffer + n);
+				const f32_8 val = a + b + c;
+				val.StoreA(pAccumBuffer + n);
+			}
 		}
-		for (uint n = N; n < _2N; ++n)
+		else
 		{
-			pAccumBuffer[n] = workBufferB.t[n];
+			for (uint n = 0; n < N; n += 1)
+			{
+				pAccumBuffer[n] += pAccumBuffer[N + n] + workBufferB.t[n];
+			}
 		}
+
+		memcpy(pAccumBuffer + N, workBufferB.t + N, sizeof(workBufferB) / 2);
 	}
 }
 
