@@ -2,7 +2,7 @@
 
 Original author:
 Corey Shay
-cshay892@gmail.com
+corey@signalflowtechnologies.com
 
 This is free and unencumbered software released into the public domain.
 
@@ -29,41 +29,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef _DFT_H
-#define _DFT_H
+#pragma once
 
 #include "defs.h"
+
 #include "ComplexNumber.h"
-#include "Math.h"
+#include "MathCommon.h"
 #include "Containers/Array.h"
 
 #define FFTL_STAGE_TIMERS 0
 
-#if 0
-#include <Windows.h>
-inline void FFTL_Printf(const char *format, ...)
-{
-	va_list arglist;
-	va_start(arglist, format);
-	char _buf[256];
-	vsprintf_s(_buf, format, arglist);
-	OutputDebugStringA(_buf);
-	va_end(arglist);
-}
-#else
-#include <stdio.h>
-#define FFTL_Printf printf
-#endif
 
 #if FFTL_STAGE_TIMERS
-#include <Windows.h>
+#	include "Platform/Timer.h"
 #endif
 
 
-#if defined(_MSC_VER)
-#	pragma warning(push)
-#	pragma warning(disable : 4201) //nonstandard extension used: nameless struct/union)
-#endif
 
 
 namespace FFTL
@@ -92,8 +73,8 @@ public:
 	typedef cxNumber<T_Twiddle> cxTInternal;
 
 	//	Precomputed constants
-	static const uint N = 1<<M;
-	static const uint N_div_2 = N>>1;
+	static constexpr uint N = 1 << M;
+	static constexpr uint N_2 = N >> 1;
 
 	class WindowCoefficients
 	{
@@ -104,11 +85,12 @@ public:
 		FixedArray<T_Twiddle,N> m_C;
 	};
 
-	FFT_Base();
+	constexpr FFT_Base();
 
 	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput) const;
 	void TransformForward(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForward_1stHalf(const FixedArray<cxT,N_2>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const; // 2nd half of cxInput is assumed to be all zeros
 	void TransformForwardApplyWindow(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput, const WindowCoefficients& coeff) const;
 
 	void TransformInverse(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput, bool bApplyBitReverse=true) const;
@@ -135,13 +117,13 @@ public:
 	void PrintSetupInfo() const;
 	void PrintTimerInfo(uint iterationCount = 1) const;
 
-	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
-	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
-	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
-	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
+	FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
+	FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
+	FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
+	FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
 
-	FFTL_FORCEINLINE const FixedArray<T_BR,N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
-	FFTL_FORCEINLINE T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
+	FFTL_FORCEINLINE constexpr const FixedArray<T_BR,N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
+	FFTL_FORCEINLINE constexpr T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
 
 protected:
 
@@ -152,9 +134,6 @@ protected:
 	static void CalculateButterfly_DIF(const T& fUReal, const T& fUImag, T* __restrict pfCurReal, T* __restrict pfCurImag, T* __restrict pfNextReal, T* __restrict pfNextImag);
 	static void CalculateButterfly_Unity(T* __restrict pfCurReal, T* __restrict pfCurImag, T* __restrict pfNextReal, T* __restrict pfNextImag);
 	static void CalculateButterfly_Unity(const T& fCurR, const T& fCurI, const T& fNextR, const T& fNextI, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI);
-
-	void ComputeBitReversalIndices();
-	void ComputeTwiddleFactors();
 
 	void Transform_Main_DIT(FixedArray<cxT,N>& cxOutput, bool bSkipStage0 = false) const;
 	void Transform_Main_DIF(FixedArray<cxT,N>& cxOutput) const;
@@ -169,9 +148,9 @@ protected:
 
 #if FFTL_STAGE_TIMERS
 public:
-	mutable LARGE_INTEGER m_StageTimers[M];
-	mutable LARGE_INTEGER m_PreProcessTimer;
-	mutable LARGE_INTEGER m_PostProcessTimer;
+	mutable FixedArray<u64, M> m_StageTimers;
+	mutable u64 m_PreProcessTimer;
+	mutable u64 m_PostProcessTimer;
 #endif
 };
 
@@ -181,10 +160,9 @@ public:
 template <uint M, typename T, typename T_Twiddle = T>
 class FFT : public FFT_Base<M, T, T_Twiddle>
 {
-public:
 };
 
-#if FFTL_SIMD4
+#if FFTL_SIMD_F32x4
 //	fft_SIMD class performs single channel float FFT's only, but uses SIMD instructions
 // if the compiler supports them, usually speeding up the process considerably.
 template <uint M>
@@ -195,15 +173,22 @@ public:
 	typedef T T_Twiddle;
 	typedef cxNumber<T> cxT;
 	using FFT_Base<M, T, T_Twiddle>::N;
-	using FFT_Base<M, T, T_Twiddle>::N_div_2;
+	using FFT_Base<M, T, T_Twiddle>::N_2;
 	using FFT_Base<M, T, T_Twiddle>::m_BitReverseIndices;
-	typedef typename FFT_Base<M, T, T_Twiddle>::T_BR T_BR;
+	using T_BR = typename FFT_Base<M, T, T_Twiddle>::T_BR;
 
-	FFT();
+#if FFTL_STAGE_TIMERS
+	using FFT_Base<M, T, T_Twiddle>::m_StageTimers;
+	using FFT_Base<M, T, T_Twiddle>::m_PreProcessTimer;
+	using FFT_Base<M, T, T_Twiddle>::m_PostProcessTimer;
+#endif
+
+	constexpr FFT();
 
 	//	Transforms that perform bit reversal, out of place.
 	void TransformForward(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void TransformForward_1stHalf(const FixedArray<cxT,N_2>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const; // 2nd half of cxInput is assumed to be all zero
 	void TransformForward(const FixedArray<cxT,N>& cxInput, FixedArray<cxT,N>& cxOutput) const { FFT_Base<M,T,T_Twiddle>::TransformForward(cxInput, cxOutput); }// TODO, optimize
 	void TransformInverse(const FixedArray<T,N>& fInR, const FixedArray<T,N>& fInI, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 
@@ -219,13 +204,14 @@ protected:
 	void Transform_Stage0(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 	void Transform_Stage0_BR(const FixedArray<T,N>& fInReal, const FixedArray<T,N>& fInImag, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 	void Transform_Stage0_BR(const FixedArray<cxT,N>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
+	void Transform_Stage0_BR_1stHalf(const FixedArray<cxT,N_2>& cxInput, FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const; // 2nd half of cxInput is assumed to be all zero
 	void Transform_Main_DIT(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const;
 
 	static void Calculate4Butterflies_DIT_Stage0(T* __restrict pfReal, T* __restrict pfImag);
 	static void Calculate4Butterflies_DIF_Stage0(T* __restrict pfReal, T* __restrict pfImag);
-	static void Calculate4Butterflies_DIT_Stage0(f32_4Arg vCurR, f32_4Arg vNextR, f32_4Arg vCurI, f32_4Arg vNextI, T* __restrict pfReal, T* __restrict pfImag);
-	static void Calculate4Butterflies_DIT_Stage1(f32_4Arg vUR, f32_4Arg vUI, T* __restrict pfReal, T* __restrict pfImag);
-	static void Calculate4Butterflies_DIF_Stage1(f32_4Arg vUR, f32_4Arg vUI, T* __restrict pfReal, T* __restrict pfImag);
+	static void Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* __restrict pfReal, T* __restrict pfImag);
+	static void Calculate4Butterflies_DIT_Stage1(f32_4_In vUR, f32_4_In vUI, T* __restrict pfReal, T* __restrict pfImag);
+	static void Calculate4Butterflies_DIF_Stage1(f32_4_In vUR, f32_4_In vUI, T* __restrict pfReal, T* __restrict pfImag);
 
 	template <typename V> static void CalculateVButterflies_DIT(const V& vUR, const V& vUI, T* __restrict pfCurReal, T* __restrict pfCurImag, T* __restrict pfNextReal, T* __restrict pfNextImag);
 	template <typename V> static void CalculateVButterflies_DIF(const V& vUR, const V& vUI, T* __restrict pfCurReal, T* __restrict pfCurImag, T* __restrict pfNextReal, T* __restrict pfNextImag);
@@ -242,13 +228,14 @@ public:
 	typedef cxNumber<T_Twiddle> cxTInternal;
 
 	//	Precomputed constants
-	static const uint N = 1<<M;
-	static const uint N_2 = N>>1;
-	static const uint N_4 = N>>2;
+	static constexpr uint N = 1 << M;
+	static constexpr uint N_2 = N >> 1;
+	static constexpr uint N_4 = N >> 2;
 
-	FFT_Real_Base();
+	constexpr FFT_Real_Base();
 
 	void TransformForward(const FixedArray<T,N>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const;
+	void TransformForward_1stHalf(const FixedArray<T,N_2>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const; // 2nd half of fTimeIn is assumed to be all zeros
 	void TransformInverse(const FixedArray<T,N_2>& fFreqInR, const FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 	void TransformInverse_ClobberInput(FixedArray<T,N_2>& fFreqInR, FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 
@@ -257,10 +244,10 @@ public:
 	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_PostTwiddlesI[n]; }
 	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_PostTwiddlesI + n; }
 
-	void PrintTimerInfo(uint iterationCount = 1) const { m_fft.PrintTimerInfo(iterationCount); }
+	void PrintTimerInfo(uint iterationCount = 1) const { sm_fft.PrintTimerInfo(iterationCount); }
 
 public:
-	static const FFT<M-1, T, T_Twiddle> m_fft;
+	static constexpr FFT<M-1, T, T_Twiddle> sm_fft{ };
 private:
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesR;
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesI;
@@ -270,10 +257,9 @@ private:
 template <uint M, typename T, typename T_Twiddle = T>
 class FFT_Real : public FFT_Real_Base<M, T, T_Twiddle>
 {
-public:
 };
 
-#if FFTL_SIMD4
+#if FFTL_SIMD_F32x4
 template <uint M>
 class FFT_Real<M, f32, f32> : public FFT_Real_Base<M, f32, f32>
 {
@@ -282,19 +268,21 @@ public:
 	typedef cxNumber<T> cxT;
 
 	//	Precomputed constants
-	static const uint N = 1<<M;
-	static const uint N_2 = N>>1;
-	static const uint N_4 = N>>2;
-
-//	FFT_Real();
+	static constexpr uint N = 1 << M;
+	static constexpr uint N_2 = N >> 1;
+	static constexpr uint N_4 = N >> 2;
 
 	void TransformForward(const FixedArray<T,N>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const;
+	void TransformForward_1stHalf(const FixedArray<T,N_2>& fTimeIn, FixedArray<T,N_2>& fFreqOutR, FixedArray<T,N_2>& fFreqOutI) const; // 2nd half of fTimeIn is assumed to be all zeros
 	void TransformInverse(const FixedArray<T,N_2>& fFreqInR, const FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 	void TransformInverse_ClobberInput(FixedArray<T,N_2>& fFreqInR, FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
+
+private:
+	void PostProcess(FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const;
 };
 #endif
 
-class FFT_RealV
+class FFT_RealV_Base
 {
 public:
 	virtual void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const = 0;
@@ -302,91 +290,54 @@ public:
 	virtual void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const = 0;
 };
 
-class FFT_Real8 : public FFT_RealV
+//	Use this class if you need an FFT where the usage M is only known at runtime,
+// eg, use FFT_RealV_Base
+template <uint M>
+class FFT_RealV : public FFT_RealV_Base, public FFT_Real<M, f32>
 {
 public:
 	//	Precomputed constants
-	static const uint N = 1 << 8;
-	static const uint N_2 = N >> 1;
-	static const uint N_4 = N >> 2;
+	static constexpr uint N = 1 << M;
+	static constexpr uint N_2 = N >> 1;
+	static constexpr uint N_4 = N >> 2;
 
-	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
-	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-
-private:
-	FFT_Real<8, f32> m_fft;
-};
-class FFT_Real9 : public FFT_RealV
-{
-public:
-	//	Precomputed constants
-	static const uint N = 1 << 9;
-	static const uint N_2 = N >> 1;
-	static const uint N_4 = N >> 2;
-
-	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
-	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-
-private:
-	FFT_Real<9, f32> m_fft;
-};
-class FFT_Real10 : public FFT_RealV
-{
-public:
-	//	Precomputed constants
-	static const uint N = 1 << 10;
-	static const uint N_2 = N >> 1;
-	static const uint N_4 = N >> 2;
-
-	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override { m_fft.TransformForward(*reinterpret_cast<const FixedArray<f32, N>*>(fTimeIn), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqOutI)); }
-	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse(*reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<const FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override { m_fft.TransformInverse_ClobberInput(*reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInR), *reinterpret_cast<FixedArray<f32, N_2>*>(fFreqInI), *reinterpret_cast<FixedArray<f32, N>*>(fTimeOut)); }
-
-private:
-	FFT_Real<10, f32> m_fft;
+	void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const override;
+	void TransformInverse(const f32* fFreqInR, const f32* fFreqInI, f32* fTimeOut) const override;
+	void TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f32* fTimeOut) const override;
 };
 
-
-//	This convolver class only processes real data, effectively more than doubling its speed,
-// rather than zeroing out imaginary data. This way it only needs to use a complex FFT the same
-// size as its input, rather than a double size one. In this way, no data is thrown away either.
+//	This convolver class only processes real data, using a real FFT of size 2N, which itself
+// utilizes a complex FFT of size N.
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
 class Convolver
 {
 public:
 	typedef cxNumber<T> cxT;
-	static const uint N = 1 << M;
-	static const uint N_2 = N >> 1;
-	static const uint _2N = N << 1;
+	static constexpr uint N = 1<<M;
+	static constexpr uint N_2 = N >> 1;
+	static constexpr uint _2N = N << 1;
 
 	Convolver();
 	~Convolver();
 
-	void InitKernel(const void* pKernelInput, size_t byteSize);
+	void InitKernel(const T* pKernelInput, size_t byteSize);
 	void Convolve(FixedArray<T,N>& fInOutput);
 	void Destroy();
 
 private:
 	//	Our FFT computer
-	static const FFT_Real<M+1, T, T_Twiddle> sm_FFT;
+	static constexpr FFT_Real<M+1, T, T_Twiddle> sm_fft{ };
 
 	struct Kernel
 	{
-		union
-		{
-			struct
-			{
-				FixedArray<f32, N> r;
-				FixedArray<f32, N> i;
-			};
-			FixedArray<f32, _2N> t;
-		};
+		FixedArray<f32, _2N> t;
+
+		FixedArray<f32, N>& r() { return *reinterpret_cast<FixedArray<f32, N>*>(&t); }
+		FixedArray<f32, N>& i() { return *reinterpret_cast<FixedArray<f32, N>*>(t+N); }
 	};
 
 	FixedArray<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
-	FixedArray<T, T_MAX_KERNELS*N> m_AccumulationBuffer;
+	FixedArray<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
 	uint m_KernelCount;
 };
 
@@ -395,25 +346,19 @@ class Convolver_Slow
 {
 public:
 
-	Convolver_Slow() { memset(&m_AccumulationBuffer, 0, sizeof(m_AccumulationBuffer)); }
+	Convolver_Slow() { MemZero(m_AccumulationBuffer); }
 
-	void SetKernel(const FixedArray<T, T_KERNEL_LENGTH>& fKernel) { memcpy(&m_Kernel, &fKernel, sizeof(m_Kernel)); }
+	void SetKernel(const FixedArray<T, T_KERNEL_LENGTH>& fKernel) { MemCopy(m_Kernel, fKernel); }
 	void Convolve(const FixedArray<T,T_N>& fInput, FixedArray<T,T_N>& fOutput);
 
 private:
 	FixedArray<T, T_KERNEL_LENGTH> m_Kernel;
-	FixedArray<T, T_N+T_KERNEL_LENGTH> m_AccumulationBuffer;
+	FixedArray<T, T_N + T_KERNEL_LENGTH> m_AccumulationBuffer;
 };
+
 
 } // namespace FFTL
 
 
 
-#include "fft.inl"
-
-#if defined(_MSC_VER)
-#	pragma warning(pop)
-#endif
-
-
-#endif // _DFT_H
+#include "FFT.inl"

@@ -1,0 +1,1294 @@
+/*
+
+Original author:
+Corey Shay
+corey@signalflowtechnologies.com
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+*/
+
+#ifndef _FFTL_MATH_H
+#define _FFTL_MATH_H
+
+#include "defs.h"
+
+#include <cmath>
+//#undef _USE_MATH_DEFINES
+
+#if defined(FFTL_SSE)
+#	include <xmmintrin.h>
+#endif
+#if defined(FFTL_SSE2)
+#	include <emmintrin.h>
+#endif
+#if defined(FFTL_SSE3)
+#	include <pmmintrin.h>
+#endif
+#if defined(FFTL_SSE4)
+#	include <smmintrin.h>
+#endif
+#if defined(FFTL_AVX)
+#	include <immintrin.h>
+#endif
+#if defined(FFTL_FMA3)
+#	include <immintrin.h>
+#endif
+#if defined(FFTL_FMA4)
+#	include <ammintrin.h>
+#endif
+
+#if defined(_MSC_VER)
+#	include <intrin.h>
+#elif defined(FFTL_ARM_NEON)
+#	include <arm_neon.h>
+#elif defined(__ORBIS__) || defined(__PROSPERO__)
+#	include <avxintrin.h>
+#endif
+
+#define FFTL_MATH_ASSERT(___expr, ...) FFTL_ASSERT(___expr)
+
+
+#if defined(FFTL_SSE)
+#	include "Math/SSE/Utils_SSE.h"
+#elif FFTL_ARM_NEON
+#	include "Math/NEON/Utils_NEON.h"
+#endif
+
+#include "Containers/Array.h"
+
+//	Fires off in clang tidy here for some reason when not appropriate
+#if defined(__clang__)
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wmissing-braces"
+#endif
+
+
+namespace FFTL
+{
+
+#if defined(FFTL_SSE)
+	typedef __m128 Vec4f;
+#elif FFTL_ARM_NEON
+	typedef float32x4_t Vec4f;
+#else
+	struct Vec4f
+	{
+		f32 x,y,z,w;
+	};
+#endif
+	
+#if defined(FFTL_SSE2)
+	typedef __m128d Vec2d;
+#elif FFTL_ARM_NEON && defined(__aarch64__)
+	typedef float64x2_t Vec2d;
+#else
+	struct Vec2d
+	{
+		double x,y;
+	};
+#endif
+	
+#if defined(FFTL_AVX)
+	typedef __m256 Vec8f;
+#else
+	struct Vec8f
+	{
+		Vec4f a, b;
+	};
+#endif
+
+class f32_4;
+class f64_2;
+class f32_8;
+
+
+#if 0
+	typedef Vec4f Vec4f_In;
+	typedef Vec2d Vec2d_In;
+	typedef Vec8f Vec8f_In;
+
+	typedef f32_4 f32_4Arg;
+	typedef f64_2 f64_2Arg;
+	typedef f32_8 f32_8Arg;
+
+#else
+	typedef const Vec4f& Vec4f_In;
+	typedef const Vec2d& Vec2d_In;
+	typedef const Vec8f& Vec8f_In;
+
+	typedef const f32_4& f32_4_In;
+	typedef const f64_2& f64_2_In;
+	typedef const f32_8& f32_8_In;
+#endif
+
+// Wraps around integers higher than 3
+#define FFTL_PERMUTEMASK(x) (x & 3)
+
+template <typename T>
+constexpr T PI = 3.14159265358979323846264338327L;
+
+template <>
+constexpr f64 PI<f64> = 3.14159265358979323846264338327;
+
+template <>
+constexpr f32 PI<f32> = 3.14159265358979323846264338327f;
+
+constexpr f32 PI_32 = PI<f32>;
+constexpr f64 PI_64 = PI<f64>;
+
+constexpr f64 invLog2_64 = 1.4426950408889634073599246810019;
+constexpr f32 invLog2_32 = 1.4426950408889634073599246810019f;
+
+constexpr f32 INV_SQRT2 = 0.707106781186547524401f;
+constexpr f32 PI_4 = 0.78539816339744830961566084581988f;
+constexpr f32 SPEED_OF_SOUND = 343.2f;
+constexpr f32 NEAR_SPEED_OF_SOUND = SPEED_OF_SOUND * 0.95f;
+
+}// namespace FFTL
+
+
+
+
+
+namespace FFTL
+{
+
+
+
+template <typename T_TO, typename T_FROM>
+FFTL_FORCEINLINE T_TO ReinterpretAs(const T_FROM& v) { return *reinterpret_cast<const T_TO*>(&v); }
+
+/// Returns the bit index position of the first set bit found starting from the MSB. Returns 0 if val is 0.
+inline u32			MS1Bit(u32 val);
+inline u32			MS1Bit(s32 val) { return MS1Bit(static_cast<u32>(val)); }
+inline u32			MS1Bit(u64 val);
+inline u32			MS1Bit(s64 val) { return MS1Bit(static_cast<u64>(val)); }
+/// Returns the bit index position of the first set bit found starting from the LSB. Returns 0 if val is 0.
+inline u32			LS1Bit(u32 val);
+inline u32			LS1Bit(s32 val) { return LS1Bit(static_cast<u32>(val)); }
+inline u32			LS1Bit(u64 val);
+inline u32			LS1Bit(s64 val) { return LS1Bit(static_cast<u64>(val)); }
+
+
+
+template <typename T>
+FFTL_FORCEINLINE T LogBase(T base, T y) { return std::log(y) / std::log(base); }
+
+template <typename T>
+FFTL_FORCEINLINE T Log2(T y)
+{
+#if !defined(__GNUC__) || defined(__LP64__)
+	return std::log2(y);
+#else
+	return LogBase((T)2, y);
+#endif
+}
+template <typename T>
+FFTL_FORCEINLINE T Log10(T y) { return std::log10(y); }
+template <typename T>
+FFTL_FORCEINLINE T Pow(T x, T y) { return std::pow(x, y); }
+
+template <typename T>
+FFTL_FORCEINLINE T Cos(T y) { return std::cos(y); }
+template <typename T>
+FFTL_FORCEINLINE T Sin(T y) { return std::sin(y); }
+template <typename T>
+FFTL_FORCEINLINE T Tan(T y) { return std::tan(y); }
+
+inline void SinCos(f32 a, f32 &s, f32 &c)
+{
+#if defined(_MSC_VER) && !defined(_M_X64)
+	_asm {
+		fld a
+		fsincos
+		mov ecx, c
+		fstp dword ptr[ecx]
+		mov ecx, s
+		fstp dword ptr[ecx]
+	}
+#else
+	s = Sin(a);
+	c = Cos(a);
+#endif
+}
+
+template <typename T>
+FFTL_FORCEINLINE T Abs(T y) { return static_cast<T>(std::abs(y)); }
+
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T Square(T y) { return y*y; }
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T Cube(T y) { return y*y*y; }
+
+template <typename T>
+FFTL_FORCEINLINE T Sqrt(T y) { return std::sqrt(y); }
+
+template <typename T>
+FFTL_FORCEINLINE T RSqrt(T y) { static_assert(std::is_same<decltype(y), f32>::value || std::is_same<decltype(y), f64>::value, "Must be a float"); }
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T Min(T a, T b)
+{
+	return a < b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T1>::is_integer && std::numeric_limits<T2>::is_integer && (sizeof(T1) > sizeof(T2)), T1>::type Min(T1 a, T2 b)
+{
+	return a < b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T1>::is_integer && std::numeric_limits<T2>::is_integer && (sizeof(T1) < sizeof(T2)), T2>::type Min(T1 a, T2 b)
+{
+	return a < b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::is_floating_point<T1>::value && std::is_floating_point<T2>::value && (sizeof(T1) > sizeof(T2)), T1>::type Min(T1 a, T2 b)
+{
+	return a < b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::is_floating_point<T1>::value && std::is_floating_point<T2>::value && (sizeof(T1) < sizeof(T2)), T2>::type Min(T1 a, T2 b)
+{
+	return a < b ? a : b;
+}
+template <typename T>
+FFTL_FORCEINLINE constexpr T Max(T a, T b)
+{
+	return a > b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T1>::is_integer && std::numeric_limits<T2>::is_integer && (sizeof(T1) > sizeof(T2)), T1>::type Max(T1 a, T2 b)
+{
+	return a > b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T1>::is_integer && std::numeric_limits<T2>::is_integer && (sizeof(T1) < sizeof(T2)), T2>::type Max(T1 a, T2 b)
+{
+	return a > b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::is_floating_point<T1>::value && std::is_floating_point<T2>::value && (sizeof(T1) > sizeof(T2)), T1>::type Max(T1 a, T2 b)
+{
+	return a > b ? a : b;
+}
+template <typename T1, typename T2>
+FFTL_FORCEINLINE constexpr typename std::enable_if<std::is_floating_point<T1>::value && std::is_floating_point<T2>::value && (sizeof(T1) < sizeof(T2)), T2>::type Max(T1 a, T2 b)
+{
+	return a > b ? a : b;
+}
+
+template <typename T>
+FFTL_FORCEINLINE bool IsNan(T y)
+{
+	return std::isnan(y);
+}
+
+template <typename T>
+FFTL_FORCEINLINE bool IsInfinite(T y)
+{
+	std::isinf(y);
+}
+
+template <typename T>
+FFTL_FORCEINLINE bool IsNearEqual(T a, T b, T tol = (T)0.001)
+{
+	return Abs(a - b) <= tol;
+}
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T Clamp(T value, T low, T high)
+{
+	return Min(high, Max(low, value));
+}
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T Lerp(T mu, T from, T to)
+{
+	return from + (mu * (to - from));
+}
+
+template <typename T>
+FFTL_FORCEINLINE constexpr T FSel(T test, T retGE, T retLT)
+{
+	return test >= 0 ? retGE : retLT;
+}
+
+template <typename T>
+FFTL_FORCEINLINE T CosInterpolate(T mu, T from, T to)
+{
+	T scale2 = ( (T)1 - Cos(mu * PI<T>)) * (T)0.5;
+	return Lerp(scale2, from, to);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T CubicInterpolate(T mu, T p0, T p1, T p2, T p3)
+{
+	const T mu2 = mu * mu;
+	const T a0 = p3 - p2 - p0 + p1;
+	const T a1 = p0 - p1 - a0;
+	const T a2 = p2 - p0;
+
+	return (a0 * mu * mu2) + (a1 * mu2) + (a2 * mu) + p1;
+}
+
+template <typename T>
+FFTL_FORCEINLINE T DecibelsToLinear(T dB)
+{
+	return Pow((T)10, dB/(T)20);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T LinearToDecibels(T linear)
+{
+	return 20 * Log10(linear);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T OctavesToLinear(T oct)
+{
+	return Pow((T)2, oct);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T SemitonesToLinear(T semitones)
+{
+	return Pow((T)2, semitones / (T)12);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T CentsToLinear(T cents)
+{
+	return SemitonesToLinear(cents / (T)100);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T LinearToOctaves(T linear)
+{
+	return Log2(linear);
+}
+
+template <typename T>
+FFTL_FORCEINLINE T LinearToSemitones(T linear)
+{
+	return LinearToOctaves(linear) * (T)12;
+}
+
+template <typename T>
+FFTL_FORCEINLINE T LinearToCents(T linear)
+{
+	return LinearToOctaves(linear) * (T)1200;
+}
+
+template <typename T>
+FFTL_FORCEINLINE T DegreesToRadians(T deg)
+{
+	return (PI<T> / (T)180) * deg;
+}
+
+template <typename T>
+FFTL_FORCEINLINE T RadiansToDegrees(T rad)
+{
+	return ((T)180 / PI<T>) * rad;
+}
+
+#if defined(FFTL_SSE)
+template <>
+FFTL_FORCEINLINE s32 ReinterpretAs(const f32& v)
+{
+#if defined(FFTL_VECTOR_USE_SSE4)
+	return _mm_extract_ps(_mm_set_ss(v), 0);
+#else
+	return _mm_cvtsi128_si32(_mm_castps_si128(_mm_set_ss(v)));
+#endif
+}
+template <>
+FFTL_FORCEINLINE u32 ReinterpretAs(const f32& v)
+{
+	return static_cast<u32>(ReinterpretAs<s32>(v));
+}
+template <>
+FFTL_FORCEINLINE __m128 ReinterpretAs(const f32& v)
+{
+	return _mm_set_ss(v);
+}
+template <>
+FFTL_FORCEINLINE f32 ReinterpretAs(const s32& v)
+{
+	return _mm_cvtss_f32(_mm_castsi128_ps(_mm_cvtsi32_si128(v)));
+}
+template <>
+FFTL_FORCEINLINE f32 ReinterpretAs(const u32& v)
+{
+	return ReinterpretAs<f32>(static_cast<s32>(v));
+}
+template <>
+FFTL_FORCEINLINE f32 ReinterpretAs(const __m128& v)
+{
+	return _mm_cvtss_f32(v);
+}
+
+#if defined(FFTL_64BIT)
+template <>
+FFTL_FORCEINLINE s64 ReinterpretAs(const f64& v)
+{
+	return _mm_cvtsi128_si64(_mm_castpd_si128(_mm_set_sd(v)));
+}
+template <>
+FFTL_FORCEINLINE f64 ReinterpretAs(const s64& v)
+{
+	return _mm_cvtsd_f64(_mm_castsi128_pd(_mm_cvtsi64_si128(v)));
+}
+#endif
+template <>
+FFTL_FORCEINLINE u64 ReinterpretAs(const f64& v)
+{
+	return static_cast<u64>(ReinterpretAs<s64>(v));
+}
+template <>
+FFTL_FORCEINLINE f64 ReinterpretAs(const u64& v)
+{
+	return ReinterpretAs<f64>(static_cast<s64>(v));
+}
+#endif
+
+
+#if defined(_MSC_VER)
+FFTL_FORCEINLINE u32 MS1Bit(u32 val)
+{
+	unsigned long r;
+	const int b0 = _BitScanReverse(&r, val); // Emits the bsr x86 instruction
+	return r & (-b0); // b0 will be 0 if val is zero, else, 1. Use this to clear the result in the zero input case.
+}
+
+FFTL_FORCEINLINE u32 MS1Bit(u64 val)
+{
+#if defined(_M_X64)
+	unsigned long r;
+	const int b0 = _BitScanReverse64(&r, static_cast<unsigned __int64>(val)); // Emits the bsr x86 instruction
+	return r & (-b0); // b0 will be 0 if val is zero, else, 1. Use this to clear the result in the zero input case.
+#else
+	unsigned long r0, r1;
+	const int b0 = _BitScanReverse(&r0, static_cast<u32>(val)); // Emits the bsr x86 instruction
+	const int b1 = _BitScanReverse(&r1, static_cast<u32>(val>>32)); // Emits the bsr x86 instruction
+	return b1 ? r1 + 32 : r0 & (-b0); // b0 will be 0 if val is zero, else, 1. Use this to clear the result in the zero input case.
+#endif
+}
+FFTL_FORCEINLINE u32 LS1Bit(u32 val)
+{
+	unsigned long r = 0;
+	const int b0 = _BitScanForward(&r, val); // Emits the bsf x86 instruction
+	return r & (-b0); // b0 will be 1 if val is zero, else, 0. Use this to clear the result in the zero input case.
+}
+
+FFTL_FORCEINLINE u32 LS1Bit(u64 val)
+{
+#if defined(_M_X64)
+	unsigned long r = 0;
+	_BitScanForward64(&r, static_cast<unsigned __int64>(val)); // Emits the bsf x86 instruction
+	return r;
+#else
+	unsigned long r0, r1 = 0;
+	const int b0 = _BitScanForward(&r0, static_cast<u32>(val)); // Emits the bsf x86 instruction
+	const int b1 = _BitScanForward(&r1, static_cast<u32>(val >> 32)); // Emits the bsf x86 instruction
+	return b0 ? r0 : (r1 + 32) & (-b1); // b1 will be 0 if val is zero, else, 1. Use this to clear the result in the zero input case.
+#endif
+}
+#elif defined(__GNUC__)
+FFTL_FORCEINLINE u32 MS1Bit(u32 val)
+{
+	return val ? ((sizeof(val)<<3) - 1 - __builtin_clz(val)) : 0; // Subtracts the bsr x86 instruction from word size
+}
+
+FFTL_FORCEINLINE u32 MS1Bit(u64 val)
+{
+	return val ? ((sizeof(val)<<3) - 1 - __builtin_clzll(val)) : 0; // Subtracts the bsr x86 instruction from word size
+}
+FFTL_FORCEINLINE u32 LS1Bit(u32 val)
+{
+	return val ? __builtin_ctz(val) : 0; // Emits the bsf x86 instruction
+}
+
+FFTL_FORCEINLINE u32 LS1Bit(u64 val)
+{
+	return val ? __builtin_ctzll(val) : 0; // Emits the bsf x86 instruction
+}
+#else
+inline u32 MS1Bit(u32 val)
+{
+#error "Make sure there is no intrinsic instruction that does this on your platform before eliminating this error message."
+	static constexpr u8 sLogTable[256] =
+	{
+		0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
+		4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
+	};
+
+	unsigned int temp1;
+	unsigned int temp2;
+
+	// if greater than 2^16
+	temp1 = val >> 16;
+	if (temp1)
+	{
+		temp2 = temp1 >> 8;
+		return temp2 ? 24 + sLogTable[temp2] : 16 + sLogTable[temp1];
+	}
+	// else less than 2^16
+	else
+	{
+		temp2 = val >> 8;
+		return temp2 ? 8 + sLogTable[temp2] : sLogTable[val];
+	}
+}
+inline u32 MS1Bit(u64 val)
+{
+#error "Make sure there is no intrinsic instruction that does this on your platform before eliminating this error message."
+	u64 temp;
+
+	// if greater than 2^32
+	temp = val >> 32;
+	if (temp)
+	{
+		return MS1Bit((u32)temp) + 32;
+	}
+	// else less than 2^32
+	else
+	{
+		temp = val & 0xffffffffULL;
+		return MS1Bit((u32)temp);
+	}
+}
+inline u32 LS1Bit(u32 val)
+{
+#error "Make sure there is no intrinsic instruction that does this on your platform before eliminating this error message."
+	for (u32 i = 1, j = 0; i != 0; i <<= 1, ++j)
+	{
+		if (val & i)
+			return j;
+	}
+	return 0;
+}
+inline u32 LS1Bit(u64 val)
+{
+#error "Make sure there is no intrinsic instruction that does this on your platform before eliminating this error message."
+	for (u64 i = 1, u32 j = 0; i != 0; i <<= 1, ++j)
+	{
+		if (val & i)
+			return j;
+	}
+	return 0;
+}
+#endif
+
+
+#if defined(FFTL_SSE)
+FFTL_FORCEINLINE f32 RSqrt(f32 f)
+{
+	return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(f)));
+}
+template <>
+FFTL_FORCEINLINE f64 RSqrt(f64 f)
+{
+	//	_mm_rsqrt_sd does not exist, unfortunately.
+
+	//	Taken from Quake 3 source code referenced here: https://en.wikipedia.org/wiki/Fast_inverse_square_root
+	s64 i;
+	f64 x2, y;
+	constexpr f32 threehalfs = 1.5;
+
+	x2 = f * 0.5;
+	y  = f;
+	i  = ReinterpretAs<s64>(y);					// evil floating point bit level hacking
+	i  = 0x5FE6EB50C7B537A9 - (i >> 1);			// what the fuck? 
+	y  = ReinterpretAs<f64>(i);
+	y  = y * (threehalfs - (x2 * y * y));		// 1st iteration
+//	y  = y * ( threehalfs - ( x2 * y * y ) );	// 2nd iteration, this can be removed
+
+	return y;
+
+}
+#elif defined(FFTL_ARM_NEON)
+FFTL_FORCEINLINE f32 RSqrt(f32 f)
+{
+	return vget_lane_f32(vrsqrte_f32(vdup_n_f32(f)), 0);
+}
+template <>
+FFTL_FORCEINLINE f64 RSqrt(f64 f)
+{
+#if defined(FFTL_64BIT)
+	return vget_lane_f64(vrsqrte_f64(vdup_n_f64(f)), 0);
+#else
+	//	Taken from Quake 3 source code referenced here: https://en.wikipedia.org/wiki/Fast_inverse_square_root
+	s64 i;
+	f64 x2, y;
+	constexpr f32 threehalfs = 1.5;
+
+	x2 = f * 0.5;
+	y  = f;
+	i  = ReinterpretAs<s64>(y);					// evil floating point bit level hacking
+	i  = 0x5FE6EB50C7B537A9 - (i >> 1);			// what the fuck? 
+	y  = ReinterpretAs<f64>(i);
+	y  = y * (threehalfs - (x2 * y * y));		// 1st iteration
+//	y  = y * ( threehalfs - ( x2 * y * y ) );	// 2nd iteration, this can be removed
+
+	return y;
+#endif
+}
+#else
+template <>
+FFTL_FORCEINLINE f32 RSqrt(f32 f)
+{
+	//	Taken from Quake 3 source code referenced here: https://en.wikipedia.org/wiki/Fast_inverse_square_root
+	s32 i;
+	f32 x2, y;
+	constexpr f32 threehalfs = 1.5;
+
+	x2 = f * 0.5f;
+	y  = f;
+	i  = ReinterpretAs<s32>(y);					// evil floating point bit level hacking
+	i  = 0x5f3759df - (i >> 1);					// what the fuck? 
+	y  = ReinterpretAs<f32>(i);
+	y  = y * (threehalfs - (x2 * y * y));		// 1st iteration
+//	y  = y * ( threehalfs - ( x2 * y * y ) );	// 2nd iteration, this can be removed
+
+	return y;
+}
+template <>
+FFTL_FORCEINLINE f64 RSqrt(f64 f)
+{
+	//	Taken from Quake 3 source code referenced here: https://en.wikipedia.org/wiki/Fast_inverse_square_root
+	s64 i;
+	f64 x2, y;
+	constexpr f32 threehalfs = 1.5;
+
+	x2 = f * 0.5;
+	y  = f;
+	i  = ReinterpretAs<s64>(y);					// evil floating point bit level hacking
+	i  = 0x5FE6EB50C7B537A9 - (i >> 1);			// what the fuck? 
+	y  = ReinterpretAs<f64>(i);
+	y  = y * (threehalfs - (x2 * y * y));		// 1st iteration
+//	y  = y * ( threehalfs - ( x2 * y * y ) );	// 2nd iteration, this can be removed
+
+	return y;
+}
+#endif
+
+FFTL_FORCEINLINE f32 Floor(f32 val)
+{
+#if defined(FFTL_SSE) // Branchless implementation
+	const __m128 v = _mm_set_ss(val);
+	return _mm_cvtss_f32( sse_fFloor_ss(v) );
+#else
+	int ival = (int)val;
+	return val < ival ? ival - 1 : ival;
+#endif
+}
+FFTL_FORCEINLINE f32 Ceil(f32 val)
+{
+#if defined(FFTL_SSE) // Branchless implementation
+	const __m128 v = _mm_set_ss(val);
+	return _mm_cvtss_f32( sse_fCeil_ss(v) );
+#else
+	int ival = (int)val;
+	return (val - ival) > 0.0f ? ival + 1 : ival;
+#endif
+}
+
+FFTL_FORCEINLINE f32 AddMul(f32 a, f32 b, f32 c)
+{
+#if defined(FFTL_SSE)
+	return _mm_cvtss_f32( sse_AddMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)) );
+#elif defined(FFTL_ARM_NEON)
+	return fmaf(b, c, a);
+#else
+	return std::fma(b, c, a);
+#endif
+} // a+b*c
+FFTL_FORCEINLINE f32 SubMul(f32 a, f32 b, f32 c)
+{
+#if defined(FFTL_SSE)
+	return _mm_cvtss_f32( sse_SubMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)) );
+#elif defined(FFTL_ARM_NEON)
+#if defined(__clang__)
+	//	The advertised vmlaw_32 intrinsic doesn't actually perform fused-multiply-add like it's supposed to in some cases.
+	// In some headers you'll see it simply inlined to a+b*c. The inline assembly below fixes this issue so it's a single instruction.
+	float32x2_t ret = vdup_n_f32(a);
+	__asm__("vmls.f32 %0, %1, %2" : "+w" (ret) : "w" (b), "w" (c));
+	return vget_lane_f32(ret, 0);
+#else
+	return vmls_f32(a, b, c); // Fused-multiply-subtract
+#endif
+#else
+	return a - b * c;
+#endif
+} // a-b*c
+
+namespace math_constexpr
+{
+template<std::size_t... Is> struct seq {};
+
+template<std::size_t N, std::size_t... Is>
+struct gen_seq : gen_seq<N - 1, N, Is...> {};
+
+template<std::size_t... Is>
+struct gen_seq<0, Is...> : seq<Is...> {};
+
+constexpr long double pi = 3.14159265358979323846264338327L;
+constexpr long double two_pi = 6.28318530717958647692528676656L;
+constexpr long double half_pi = pi * 0.5L;
+
+constexpr long double pi_v = pi;
+constexpr long double two_pi_v = two_pi;
+constexpr long double half_pi_v = half_pi;
+
+constexpr inline long double inverse(long double value)
+{
+	return (value == 0) ? 0.0 : 1.0L / value;
+}
+constexpr inline long double factorial(intmax_t n)
+{
+	if (n == 0) { return 1; }
+	long double result = static_cast<long double>(n);
+	for (intmax_t i = n - 1; i > 0; --i)
+	{
+		result *= i;
+	}
+	return result;
+}
+constexpr inline std::size_t max_factorial()
+{
+	std::size_t i = 0;
+	long double d = 0;
+	while ((d = factorial(i)) < std::numeric_limits<long double>::max())
+	{
+		++i;
+	}
+	return i;
+}
+
+template<class base, std::size_t N>
+class trig_coeffs
+{
+	using T = typename base::value_type;
+	using array_type = FFTL::FixedArray<T, N>;
+
+	template<std::size_t ... NS>
+	constexpr static inline array_type _coeffs(seq<NS ...>)
+	{
+		return { {base::coeff(NS) ...} };
+	}
+public:
+	constexpr static array_type coeffs = _coeffs(gen_seq<N>{});
+};
+template<class base, std::size_t N>
+constexpr typename trig_coeffs<base, N>::array_type trig_coeffs<base, N>::coeffs;
+
+
+template<class base, std::size_t N, class dcy = std::decay_t<typename base::value_type>>
+constexpr std::enable_if_t<std::is_floating_point<dcy>::value, dcy>
+_sincos(typename base::value_type x) noexcept
+{
+	using c = trig_coeffs<base, N>;
+
+	if (x != x && std::numeric_limits<dcy>::has_quiet_NaN)
+	{
+		return static_cast<dcy>(std::numeric_limits<dcy>::quiet_NaN());
+	}
+	else if (x - x != 0.0L && std::numeric_limits<dcy>::has_infinity)
+	{
+		return static_cast<dcy>(std::numeric_limits<dcy>::infinity());
+}
+	else
+	{
+		dcy result = 0.0;//result accumulator
+						 //do input range mapping
+		dcy _x = base::range_reduce(x);
+		//taylor series
+		{
+			const dcy x_2 = _x * _x; //store x^2
+			dcy pow = base::initial_condition(_x);
+			for (size_t i = 0; i < c::coeffs.size(); ++i)
+			{
+				auto cf = c::coeffs[i];
+				result += cf * pow;
+				pow *= x_2;
+			}
+		}
+		return result;
+	}
+}
+namespace detail
+{
+struct _sin
+{
+	using value_type = long double;
+	constexpr static inline long double coeff(std::size_t n) noexcept
+	{
+		return (n % 2 ? 1 : -1) * inverse(factorial((2 * n) - 1));
+	}
+	constexpr static inline long double range_reduce(long double x) noexcept
+	{
+		long double _x = x;
+		_x += math_constexpr::pi;
+		_x -= static_cast<std::size_t>(_x / math_constexpr::two_pi) * math_constexpr::two_pi;
+		_x -= math_constexpr::pi;
+		return _x;
+	}
+	constexpr static inline long double initial_condition(long double x) noexcept
+	{
+		return x;
+	}
+	constexpr static inline std::size_t default_N() noexcept
+	{
+		return 16;
+	}
+};
+}
+
+template<class T, std::size_t N = math_constexpr::detail::_sin::default_N()>
+constexpr inline std::decay_t<T> Sin(T x) noexcept
+{
+	return static_cast<T>(math_constexpr::_sincos<math_constexpr::detail::_sin, N>(x));
+}
+template<class T, std::size_t N = math_constexpr::detail::_sin::default_N()>
+constexpr inline std::decay_t<T> Cos(T x) noexcept
+{
+	return static_cast<T>(math_constexpr::_sincos<math_constexpr::detail::_sin, N>(x + math_constexpr::half_pi));
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+Vec4f V4fZero();
+Vec4f V4fLoadA(const f32* pf);
+Vec4f V4fLoadU(const f32* pf);
+Vec4f V4fLoadAR(const f32* pf); // Aligned Reverse order loading.
+Vec4f V4fLoadUR(const f32* pf); // Unaligned Reverse order loading.
+Vec4f V4fLoad1(const f32* pf);
+Vec4f V4fLoad2(const f32* pf);
+Vec4f V4fLoad3(const f32* pf);
+void V4fStoreA(f32* pf, Vec4f_In v);
+void V4fStoreU(f32* pf, Vec4f_In v);
+void V4fStore1(f32* pf, Vec4f_In v);
+void V4fStore2(f32* pf, Vec4f_In v);
+void V4fStore3(f32* pf, Vec4f_In v);
+void V4fScatter(f32* pf, Vec4f_In v, int iA, int iB, int iC, int iD);
+Vec4f V4fSet(f32 x, f32 y, f32 z, f32 w);
+Vec4f V4fSet1(f32 x);
+Vec4f V4fSplat4(f32 f);
+Vec4f V4fSplat4(const f32* pf);
+Vec4f V4fAnd(Vec4f_In a, Vec4f_In b);
+Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b);
+Vec4f V4fOr(Vec4f_In a, Vec4f_In b);
+Vec4f V4fXOr(Vec4f_In a, Vec4f_In b);
+Vec4f V4fAdd(Vec4f_In a, Vec4f_In b);
+Vec4f V4fSub(Vec4f_In a, Vec4f_In b);
+Vec4f V4fMul(Vec4f_In a, Vec4f_In b);
+Vec4f V4fDiv(Vec4f_In a, Vec4f_In b);
+Vec4f V4fMin(Vec4f_In a, Vec4f_In b);
+Vec4f V4fMax(Vec4f_In a, Vec4f_In b);
+Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a+b*c
+Vec4f V4fSubMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a-b*c
+Vec4f V4fNegate(Vec4f_In v);
+Vec4f V4fAbs(Vec4f_In v);
+Vec4f V4fSqrt(Vec4f_In v);
+Vec4f V4fRcpSqrt(Vec4f_In v);
+Vec4f V4fRcp(Vec4f_In v);
+f32 V4fHSumF(Vec4f_In v);
+Vec4f V4fHSumV(Vec4f_In v);
+Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b);
+int V4fToIntMask(Vec4f_In v);
+bool V4fIsEqual(Vec4f_In a, Vec4f_In b);
+
+f32 V4fGetX(Vec4f_In v);
+f32 V4fGetY(Vec4f_In v);
+f32 V4fGetZ(Vec4f_In v);
+f32 V4fGetW(Vec4f_In v);
+
+Vec4f V4fMergeXY(Vec4f_In a, Vec4f_In b);
+Vec4f V4fMergeZW(Vec4f_In a, Vec4f_In b);
+
+Vec4f V4fSplitXZ(Vec4f_In a, Vec4f_In b);
+Vec4f V4fSplitYW(Vec4f_In a, Vec4f_In b);
+
+Vec4f V4fReverse(Vec4f_In v);
+
+template <int T0, int T1, int T2, int T3>
+Vec4f V4fPermute( Vec4f_In v );
+
+template <int T0, int T1, int T2, int T3>
+Vec4f V4fPermute( Vec4f_In a, Vec4f_In b );
+
+
+
+
+Vec2d V2dZero();
+Vec2d V2dLoadA(const f64* pf);
+Vec2d V2dLoadU(const f64* pf);
+void V2dStoreA(f64* pf, Vec2d v);
+void V2dStoreU(f64* pf, Vec2d_In v);
+Vec2d V2dSet(f64 x, f64 y);
+Vec2d V2dAnd(Vec2d_In a, Vec2d_In b);
+Vec2d V2dAndNot(Vec2d_In a, Vec2d_In b);
+Vec2d V2dOr(Vec2d_In a, Vec2d_In b);
+Vec2d V2dXOr(Vec2d_In a, Vec2d_In b);
+Vec2d V2dAdd(Vec2d_In a, Vec2d_In b);
+Vec2d V2dSub(Vec2d_In a, Vec2d_In b);
+Vec2d V2dMul(Vec2d_In a, Vec2d_In b);
+Vec2d V2dDiv(Vec2d_In a, Vec2d_In b);
+Vec2d V2dSqrt(Vec2d_In v);
+bool V2dIsEqual(Vec2d_In a, Vec2d_In b);
+
+
+
+
+Vec8f V8fZero();
+Vec8f V8fLoadA(const f32* pf);
+Vec8f V8fLoadU(const f32* pf);
+Vec8f V8fLoadAR(const f32* pf);
+Vec8f V8fLoadUR(const f32* pf);
+Vec8f V8fLoad1(const f32* pf);
+Vec8f V8fLoad2(const f32* pf);
+Vec8f V8fLoad3(const f32* pf);
+Vec8f V8fLoad6(const f32* pf);
+void V8fStoreA(f32* pf, Vec8f_In v);
+void V8fStoreU(f32* pf, Vec8f_In v);
+void V8fStore1(f32* pf, Vec8f_In v);
+void V8fStore2(f32* pf, Vec8f_In v);
+void V8fStore3(f32* pf, Vec8f_In v);
+void V8fStore6(f32* pf, Vec8f_In v);
+Vec8f V8fSet(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d);
+Vec8f V8fSet(Vec4f_In a, Vec4f_In b);
+Vec8f V8fSet0123(Vec8f_In a, Vec4f_In b);
+Vec8f V8fSet4567(Vec8f_In a, Vec4f_In b);
+Vec8f V8fSplat8(f32 f);
+Vec8f V8fSplat8(const f32* pf);
+Vec8f V8fSplat(Vec4f_In v);
+Vec8f V8fAnd(Vec8f_In a, Vec8f_In b);
+Vec8f V8fAndNot(Vec8f_In a, Vec8f_In b);
+Vec8f V8fOr(Vec8f_In a, Vec8f_In b);
+Vec8f V8fXOr(Vec8f_In a, Vec8f_In b);
+Vec8f V8fAdd(Vec8f_In a, Vec8f_In b);
+Vec8f V8fSub(Vec8f_In a, Vec8f_In b);
+Vec8f V8fMul(Vec8f_In a, Vec8f_In b);
+Vec8f V8fMul(Vec8f_In a, Vec4f_In b);
+Vec8f V8fDiv(Vec8f_In a, Vec8f_In b);
+Vec8f V8fSqrt(Vec8f_In v);
+Vec8f V8fCompareEqual(Vec8f_In a, Vec8f_In b);
+int V8fToIntMask(Vec8f_In v);
+bool V8fIsEqual(Vec8f_In a, Vec8f_In b);
+Vec8f V8fReverse(Vec8f_In v);
+Vec4f V8fAsV4f(Vec8f_In v);
+Vec4f V8fGet4567(Vec8f_In v);
+
+
+
+
+
+enum enMoveAlignment
+{
+	kAligned, kUnaligned
+};
+
+
+
+class f32_4
+{
+public:
+	FFTL_FORCEINLINE static constexpr size_t GetSize() { return 4; }
+
+	FFTL_FORCEINLINE f32_4() {}
+	constexpr inline f32_4(Vec4f_In v) : m_v(v) {}
+	constexpr inline f32_4(f32_4_In v) : m_v(v.m_v) {}
+	constexpr inline f32_4(f32 x, f32 y, f32 z, f32 w) : m_v{ x, y, z, w } {}
+	FFTL_FORCEINLINE f32_4& operator=(f32_4_In v)		{ m_v = v.m_v; return *this; }
+
+	FFTL_FORCEINLINE static f32_4 Zero()				{ return f32_4(V4fZero()); }
+
+	FFTL_FORCEINLINE static f32_4 LoadA(const f32* pf)	{ return f32_4(V4fLoadA(pf)); }
+	FFTL_FORCEINLINE static f32_4 LoadU(const f32* pf)	{ return f32_4(V4fLoadU(pf)); }
+	FFTL_FORCEINLINE static f32_4 LoadAR(const f32* pf)	{ return f32_4(V4fLoadAR(pf)); }
+	FFTL_FORCEINLINE static f32_4 LoadUR(const f32* pf)	{ return f32_4(V4fLoadUR(pf)); }
+	FFTL_FORCEINLINE static f32_4 Load1(const f32* pf)	{ return f32_4(V4fLoad1(pf)); }
+	FFTL_FORCEINLINE static f32_4 Load2(const f32* pf)	{ return f32_4(V4fLoad2(pf)); }
+	FFTL_FORCEINLINE static f32_4 Load3(const f32* pf)	{ return f32_4(V4fLoad3(pf)); }
+	FFTL_FORCEINLINE static f32_4 Splat4(const f32* pf)	{ return f32_4(V4fSplat4(pf)); }
+	FFTL_FORCEINLINE static f32_4 Splat1(f32 f) { return f32_4(V4fSet1(f)); }
+	FFTL_FORCEINLINE static f32_4 Splat4(f32 f) { return f32_4(V4fSplat4(f)); }
+
+	FFTL_FORCEINLINE void StoreA(f32* pf) const			{ V4fStoreA(pf, m_v); }
+	FFTL_FORCEINLINE void StoreU(f32* pf) const			{ V4fStoreU(pf, m_v); }
+	FFTL_FORCEINLINE void Store1(f32* pf) const			{ V4fStore1(pf, m_v); }
+	FFTL_FORCEINLINE void Store2(f32* pf) const			{ V4fStore2(pf, m_v); }
+	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V4fStore3(pf, m_v); }
+	FFTL_FORCEINLINE void Scatter(f32* pf, int iA, int iB, int iC, int iD) const	{ V4fScatter(pf, m_v, iA, iB, iC, iD); }
+
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE static f32_4 Load(const f32* pf)	{ return f32_4(_A==kAligned ? V4fLoadA(pf) : V4fLoadU(pf)); }
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V4fStoreA(pf, m_v) : V4fStoreU(pf, m_v); }
+
+
+	FFTL_FORCEINLINE void Set(f32 x, f32 y, f32 z, f32 w)	{ m_v = V4fSet(x, y, z, w); }
+
+	FFTL_FORCEINLINE f32 GetX() const					{ return V4fGetX(m_v); }
+	FFTL_FORCEINLINE f32 GetY() const					{ return V4fGetY(m_v); }
+	FFTL_FORCEINLINE f32 GetZ() const					{ return V4fGetZ(m_v); }
+	FFTL_FORCEINLINE f32 GetW() const					{ return V4fGetW(m_v); }
+
+	FFTL_FORCEINLINE f32_4 operator+(f32_4_In b) const	{ return f32_4(V4fAdd(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator-(f32_4_In b) const	{ return f32_4(V4fSub(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator*(f32_4_In b) const	{ return f32_4(V4fMul(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator/(f32_4_In b) const	{ return f32_4(V4fDiv(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator&(f32_4_In b) const	{ return f32_4(V4fAnd(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator|(f32_4_In b) const	{ return f32_4(V4fOr(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_4 operator^(f32_4_In b) const	{ return f32_4(V4fXOr(m_v, b.m_v)); }
+
+	FFTL_FORCEINLINE f32_4& operator+=(f32_4_In b)		{ m_v = V4fAdd(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator-=(f32_4_In b)		{ m_v = V4fSub(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator*=(f32_4_In b)		{ m_v = V4fMul(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator/=(f32_4_In b)		{ m_v = V4fDiv(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator&=(f32_4_In b)		{ m_v = V4fAnd(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator|=(f32_4_In b)		{ m_v = V4fOr(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_4& operator^=(f32_4_In b)		{ m_v = V4fXOr(m_v, b.m_v);	return *this; }
+
+	//	Scalar methods
+	FFTL_FORCEINLINE f32_4 operator*(f32 b) const		{ return f32_4(V4fMul(m_v, V4fSplat4(b))); }
+	FFTL_FORCEINLINE f32_4 operator/(f32 b) const		{ return f32_4(V4fDiv(m_v, V4fSplat4(b))); }
+	FFTL_FORCEINLINE f32_4& operator*=(f32 b)			{ m_v = V4fMul(m_v, V4fSplat4(b));	return *this; }
+	FFTL_FORCEINLINE f32_4& operator/=(f32 b)			{ m_v = V4fDiv(m_v, V4fSplat4(b));	return *this; }
+
+	//	Unary operators
+	FFTL_FORCEINLINE f32_4 operator+() const			{ return *this; }
+	FFTL_FORCEINLINE f32_4 operator-() const			{ return Zero() - *this; }
+
+	FFTL_FORCEINLINE bool operator==(f32_4_In b) const	{ return V4fIsEqual(m_v, b.m_v); }
+
+	FFTL_FORCEINLINE const Vec4f& GetNative() const		{ return m_v; }
+
+protected:
+	Vec4f m_v;
+};
+
+FFTL_FORCEINLINE void StoreA(f32* pf, f32_4_In v)			{ v.StoreA(pf); }
+FFTL_FORCEINLINE void StoreU(f32* pf, f32_4_In v)			{ v.StoreU(pf); }
+
+FFTL_FORCEINLINE f32_4 Sqrt(f32_4_In v)						{ return f32_4(V4fSqrt(v.GetNative())); }
+FFTL_FORCEINLINE f32_4 HSumV(f32_4_In v)					{ return V4fHSumV(v.GetNative()); }
+FFTL_FORCEINLINE f32 HSumF(f32_4_In v)						{ return V4fHSumF(v.GetNative()); }
+
+FFTL_FORCEINLINE f32_4 MergeXY(f32_4_In a, f32_4_In b)		{ return V4fMergeXY(a.GetNative(), b.GetNative()); }
+FFTL_FORCEINLINE f32_4 MergeZW(f32_4_In a, f32_4_In b)		{ return V4fMergeZW(a.GetNative(), b.GetNative()); }
+FFTL_FORCEINLINE f32_4 SplitXZ(f32_4_In a, f32_4_In b)		{ return V4fSplitXZ(a.GetNative(), b.GetNative()); }
+FFTL_FORCEINLINE f32_4 SplitYW(f32_4_In a, f32_4_In b)		{ return V4fSplitYW(a.GetNative(), b.GetNative()); }
+
+FFTL_FORCEINLINE f32_4 AddMul(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fAddMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a+b*c
+FFTL_FORCEINLINE f32_4 SubMul(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fSubMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a-b*c
+
+
+template <int T0, int T1, int T2, int T3>
+FFTL_FORCEINLINE f32_4 Permute( f32_4_In v )				{ return f32_4(V4fPermute<T0,T1,T2,T3>(v.GetNative())); }
+
+template <int T0, int T1, int T2, int T3>
+FFTL_FORCEINLINE f32_4 Permute( f32_4_In a, f32_4_In b )	{ return f32_4(V4fPermute<T0,T1,T2,T3>(a.GetNative(), b.GetNative())); }
+
+FFTL_FORCEINLINE f32_4 XXXX(f32_4_In v)						{ return Permute<0,0,0,0>(v); }
+FFTL_FORCEINLINE f32_4 YYYY(f32_4_In v)						{ return Permute<1,1,1,1>(v); }
+FFTL_FORCEINLINE f32_4 ZZZZ(f32_4_In v)						{ return Permute<2,2,2,2>(v); }
+FFTL_FORCEINLINE f32_4 WWWW(f32_4_In v)						{ return Permute<3,3,3,3>(v); }
+FFTL_FORCEINLINE f32_4 WZYX(f32_4_In v)						{ return Permute<3,2,1,0>(v); }
+FFTL_FORCEINLINE f32_4 ZYXX(f32_4_In v)						{ return Permute<2,1,0,0>(v); }
+FFTL_FORCEINLINE f32_4 Reverse(f32_4_In v)					{ return f32_4(V4fReverse(v.GetNative())); }
+
+
+
+
+class f32_8
+{
+public:
+	FFTL_FORCEINLINE static constexpr size_t GetSize() { return 8; }
+
+	FFTL_FORCEINLINE f32_8() {}
+	constexpr inline f32_8(Vec8f_In v) : m_v(v) {}
+	constexpr inline f32_8(f32_8_In v) : m_v(v.m_v) {}
+	FFTL_FORCEINLINE f32_8(f32_4_In a, f32_4_In b) : m_v(V8fSet(a.GetNative(), b.GetNative())) {}
+	constexpr inline f32_8(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d) : m_v{ x, y, z, w, a, b, c, d } {}
+	FFTL_FORCEINLINE f32_8& operator=(f32_8_In v)		{ m_v = v.m_v; return *this; }
+
+	FFTL_FORCEINLINE static f32_8 Zero()				{ return f32_8(V8fZero()); }
+
+	FFTL_FORCEINLINE static f32_8 LoadA(const f32* pf)	{ return f32_8(V8fLoadA(pf)); }
+	FFTL_FORCEINLINE static f32_8 LoadU(const f32* pf)	{ return f32_8(V8fLoadU(pf)); }
+	FFTL_FORCEINLINE static f32_8 LoadAR(const f32* pf)	{ return f32_8(V8fLoadAR(pf)); }
+	FFTL_FORCEINLINE static f32_8 LoadUR(const f32* pf)	{ return f32_8(V8fLoadUR(pf)); }
+	FFTL_FORCEINLINE static f32_8 Load1(const f32* pf)	{ return f32_8(V8fLoad1(pf)); }
+	FFTL_FORCEINLINE static f32_8 Load2(const f32* pf)	{ return f32_8(V8fLoad2(pf)); }
+	FFTL_FORCEINLINE static f32_8 Load3(const f32* pf)	{ return f32_8(V8fLoad3(pf)); }
+	FFTL_FORCEINLINE static f32_8 Load6(const f32* pf)	{ return f32_8(V8fLoad6(pf)); }
+	FFTL_FORCEINLINE static f32_8 Splat8(const f32* pf) { return f32_8(V8fSplat8(pf)); }
+	FFTL_FORCEINLINE static f32_8 Splat8(f32 f)			{ return f32_8(V8fSplat8(f)); }
+	FFTL_FORCEINLINE static f32_8 Splat(f32_4_In v)		{ return f32_8(V8fSplat(v.GetNative())); }
+
+	FFTL_FORCEINLINE void StoreA(f32* pf) const			{ V8fStoreA(pf, m_v); }
+	FFTL_FORCEINLINE void StoreU(f32* pf) const			{ V8fStoreU(pf, m_v); }
+	FFTL_FORCEINLINE void Store1(f32* pf) const			{ V8fStore1(pf, m_v); }
+	FFTL_FORCEINLINE void Store2(f32* pf) const			{ V8fStore2(pf, m_v); }
+	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V8fStore3(pf, m_v); }
+	FFTL_FORCEINLINE void Store6(f32* pf) const			{ V8fStore6(pf, m_v); }
+
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE static f32_8 Load(const f32* pf)	{ return f32_8(_A==kAligned ? V8fLoadA(pf) : V8fLoadU(pf)); }
+	template<enMoveAlignment _A>
+	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V8fStoreA(pf, m_v) : V8fStoreU(pf, m_v); }
+
+	FFTL_FORCEINLINE f32_4 Asf32_4() const				{ return V8fAsV4f(m_v); }
+	FFTL_FORCEINLINE f32_4 Get0123() const				{ return V8fAsV4f(m_v); }
+	FFTL_FORCEINLINE f32_4 Get4567() const				{ return V8fGet4567(m_v); }
+
+	FFTL_FORCEINLINE void Set0123(f32_4_In v)			{ m_v = V8fSet0123(m_v, v.GetNative()); }
+	FFTL_FORCEINLINE void Set4567(f32_4_In v)			{ m_v = V8fSet4567(m_v, v.GetNative()); }
+
+	FFTL_FORCEINLINE f32_8 operator+(f32_8_In b) const	{ return f32_8(V8fAdd(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator-(f32_8_In b) const	{ return f32_8(V8fSub(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator*(f32_8_In b) const	{ return f32_8(V8fMul(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator*(f32_4_In b) const	{ return f32_8(V8fMul(m_v, b.GetNative())); }
+	FFTL_FORCEINLINE f32_8 operator/(f32_8_In b) const	{ return f32_8(V8fDiv(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator&(f32_8_In b) const	{ return f32_8(V8fAnd(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator|(f32_8_In b) const	{ return f32_8(V8fOr(m_v, b.m_v)); }
+	FFTL_FORCEINLINE f32_8 operator^(f32_8_In b) const	{ return f32_8(V8fXOr(m_v, b.m_v)); }
+
+	FFTL_FORCEINLINE f32_8& operator+=(f32_8_In b)		{ m_v = V8fAdd(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator-=(f32_8_In b)		{ m_v = V8fSub(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator*=(f32_8_In b)		{ m_v = V8fMul(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator/=(f32_8_In b)		{ m_v = V8fDiv(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator&=(f32_8_In b)		{ m_v = V8fAnd(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator|=(f32_8_In b)		{ m_v = V8fOr(m_v, b.m_v);	return *this; }
+	FFTL_FORCEINLINE f32_8& operator^=(f32_8_In b)		{ m_v = V8fXOr(m_v, b.m_v);	return *this; }
+
+	//	Scalar methods
+#if FFTL_SIMD_F32x8
+	FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ return f32_8(V8fMul(m_v, V8fSplat8(b))); }
+	FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ return f32_8(V8fDiv(m_v, V8fSplat8(b))); }
+	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ m_v = V8fMul(m_v, V8fSplat8(b));	return *this; }
+	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ m_v = V8fDiv(m_v, V8fSplat8(b));	return *this; }
+#else
+	FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ Vec4f vB = V4fSplat4(b); return f32_8( V8fSet( V4fMul(m_v.a, vB), V4fMul(m_v.b, vB) ) ); }
+	FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ Vec4f vB = V4fSplat4(b); return f32_8( V8fSet( V4fDiv(m_v.a, vB), V4fDiv(m_v.b, vB) ) ); }
+	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ Vec4f vB = V4fSplat4(b); m_v.a = V4fMul(m_v.a, vB); m_v.b = V4fMul(m_v.b, vB); return *this; }
+	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ Vec4f vB = V4fSplat4(b); m_v.a = V4fDiv(m_v.a, vB); m_v.b = V4fDiv(m_v.b, vB); return *this; }
+#endif
+
+	//	Unary operators
+	FFTL_FORCEINLINE f32_8 operator+() const			{ return *this; }
+	FFTL_FORCEINLINE f32_8 operator-() const			{ return Zero() - *this; }
+
+	FFTL_FORCEINLINE bool operator==(f32_8_In b) const	{ return V8fIsEqual(m_v, b.m_v); }
+
+	FFTL_FORCEINLINE const Vec8f& GetNative() const		{ return m_v; }
+
+private:
+	Vec8f m_v;
+};
+
+FFTL_FORCEINLINE void StoreA(f32* pf, f32_8_In v)		{ v.StoreA(pf); }
+FFTL_FORCEINLINE void StoreU(f32* pf, f32_8_In v)		{ v.StoreU(pf); }
+
+FFTL_FORCEINLINE f32_8 Sqrt(f32_8_In v)					{ return f32_8(V8fSqrt(v.GetNative())); }
+
+FFTL_FORCEINLINE f32_8 Reverse(f32_8_In v)				{ return f32_8(V8fReverse(v.GetNative())); }
+
+FFTL_FORCEINLINE f32_8 TransformXandY(const f32_4& v, const f32_8& col0, const f32_8& col1)
+{
+	f32_8 result;
+	result = col0 * XXXX(v);
+	result += col1 * YYYY(v);
+	return result;
+}
+
+
+
+class ScopedFlushDenormals
+{
+public:
+	ScopedFlushDenormals();
+	~ScopedFlushDenormals();
+private:
+#if defined(FFTL_SSE) || FFTL_ARM_NEON
+	u32 m_prevMode;
+#endif
+};
+
+
+} // namespace FFTL
+
+
+
+#if defined(FFTL_SSE)
+#	include "SSE/MathCommon_SSE.inl"
+#	include "SSE/Utils_SSE.inl"
+#elif FFTL_ARM_NEON
+#	include "NEON/MathCommon_NEON.inl"
+#	include "NEON/Utils_NEON.inl"
+#else
+#	include "Default/Math_Default.inl"
+#endif
+
+#if defined(FFTL_AVX)
+#	include "SSE/MathCommon_AVX.inl"
+#else
+#	include "Default/MathCommon_Vec8_Default.inl"
+#endif
+
+
+#if defined(__clang__)
+#	pragma clang diagnostic pop
+#endif
+
+
+#endif // _FFTL_MATH_H

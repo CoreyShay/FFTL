@@ -1,0 +1,278 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{a450d184-0752-44a5-a665-0ee27aa2e075}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Default">
+      <UniqueIdentifier>{ebac7f42-e4c6-467e-ba9e-4e7ea5eb557a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{d45a64e7-d243-411b-acee-88572ad7c915}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Windows">
+      <UniqueIdentifier>{cb6b17f2-69d5-49e7-aab1-d7d2ec749f67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Posix">
+      <UniqueIdentifier>{2e2eadf5-884d-4e6a-8bc5-eeb4f24b7c4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{088fe195-ea85-40e2-aa94-37638f8fb036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Orbis">
+      <UniqueIdentifier>{68e419e9-9150-48ab-8362-faced550245f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{23a65006-a2dc-487d-acf5-0c9459b24b78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\Default">
+      <UniqueIdentifier>{c7a4d613-9dca-4ef5-b34e-6d78726a4c6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\NEON">
+      <UniqueIdentifier>{e6b69f89-96db-4439-91be-68bfda4d720f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\SSE">
+      <UniqueIdentifier>{7f7b7fcb-6a12-45c0-a193-e75126887d5d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.cpp">
+      <Filter>Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\ReturnCodes.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\Array.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\List.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\S24.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StdFunctions.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StringFixed.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Mutex.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\ThreadEvent.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\_pch_Core.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix33.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix43.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix44.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector4.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.h">
+      <Filter>Math\NEON</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Utils_SSE.h">
+      <Filter>Math\SSE</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\MathCommon.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\ComplexNumber.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\Casts.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Log.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_Default.inl">
+      <Filter>Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_vec8_Default.inl">
+      <Filter>Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.inl">
+      <Filter>Platform</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.inl">
+      <Filter>Platform</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Orbis\Thread_Orbis.inl">
+      <Filter>Platform\Orbis</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Posix\Thread_Posix.inl">
+      <Filter>Platform\Posix</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Windows\Thread_Windows.inl">
+      <Filter>Platform\Windows</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix33.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix43.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix44.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector2.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector3.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector4.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix33_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix43_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix44_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector3_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector4_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix33_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix43_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix44_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector3_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector4_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix33_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix43_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix44_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector3_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector4_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Utils_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.inl">
+      <Filter>Math</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\MathCommon_AVX.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\MathCommon_SSE.inl">
+      <Filter>Math\SSE</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\MathCommon_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Vec8_Default.inl">
+      <Filter>Math\Default</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.inl">
+      <Filter>Platform</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.inl">
+      <Filter>Math\NEON</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(MSBuildThisFileDirectory)..\FFTL.natvis" />
+  </ItemGroup>
+</Project>

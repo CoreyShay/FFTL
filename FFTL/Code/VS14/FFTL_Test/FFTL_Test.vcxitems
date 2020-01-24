@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{0F04AE99-3065-4FC3-BD41-B6D703258A2C}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_all.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_fft.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_fftr.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kissfft.hh" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_fft.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_fftr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\_kiss_fft_guts.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\rlutil.h" />
+  </ItemGroup>
+</Project>

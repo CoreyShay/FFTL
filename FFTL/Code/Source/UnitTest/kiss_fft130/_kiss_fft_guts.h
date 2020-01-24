@@ -16,8 +16,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
    defines kiss_fft_scalar as either short or a float type
    and defines
    typedef struct { kiss_fft_scalar r; kiss_fft_scalar i; }kiss_fft_cpx; */
+
+#if !defined(_KISS_FFT_GUTS_H)
+#define _KISS_FFT_GUTS_H
+
 #include "kiss_fft.h"
 #include <limits.h>
+#include <math.h>
 
 #define MAXFACTORS 32
 /* e.g. an fft of length 128 has 4 factors 
@@ -162,3 +167,5 @@ struct kiss_fft_state{
 #define  KISS_FFT_TMP_ALLOC(nbytes) KISS_FFT_MALLOC(nbytes)
 #define  KISS_FFT_TMP_FREE(ptr) KISS_FFT_FREE(ptr)
 #endif
+
+#endif //!defined(_KISS_FFT_GUTS_H)

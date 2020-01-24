@@ -1,0 +1,12 @@
+﻿  ANDROID_HOME=C:\ProgramData\Microsoft\AndroidSDK\25
+  ANT_HOME=C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Apps\apache-ant-1.9.3
+  JAVA_HOME=C:\Program Files\Android\jdk\microsoft_dist_openjdk_1.8.0.25
+  NDK_ROOT=C:\\Microsoft\AndroidNDK64\android-ndk-r15c
+  android_native_app_glue.cpp
+  test.cpp
+  MemPoolFixedBlock.cpp
+  RandomNumber.cpp
+  Alloc.cpp
+  Timer.cpp
+  CpuInfo.cpp
+  FFTL_Test_Android.NativeActivity.vcxproj -> C:\Users\cshay\Documents\GitHub\FFTL\FFTL\Code\VS14\Generated\Output\ARM64\Debug\libFFTL_Test_Android.so

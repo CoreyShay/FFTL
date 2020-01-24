@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\Array.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\List.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\ComplexNumber.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\MathCommon.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix33.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix43.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix44.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Utils_SSE.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector3.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Log.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Mutex.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\ThreadEvent.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\ReturnCodes.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\Casts.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\S24.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StdFunctions.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StringFixed.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\_pch_Core.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.cpp" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_default.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_vec8_default.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Default.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Vec8_Default.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix33_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix43_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix44_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector3_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector4_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Vector_Default.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix33.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix43.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix44.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\MathCommon_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix33_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix43_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Matrix44_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector3_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector4_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Vector_NEON.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\MathCommon_AVX.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\MathCommon_SSE.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix33_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix43_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Matrix44_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Utils_SSE.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector3_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector4_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Vector_SSE.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector2.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector3.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector4.inl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.inl">
+      <FileType>Document</FileType>
+    </None>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.cpp" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Orbis\Thread_Orbis.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Posix\Thread_Posix.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Windows\Thread_Windows.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(MSBuildThisFileDirectory)..\FFTL.natvis">
+      <FileType>Document</FileType>
+    </Natvis>
+  </ItemGroup>
+</Project>

@@ -29,31 +29,61 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef FFTL_DEFS_H
-#define FFTL_DEFS_H
+#pragma once
 
-#include <type_traits>
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <limits>
+#include <memory>
+#include <new>
+#include <random>
 #include <stddef.h>
-#if defined(__GNUC__) || defined(__clang__)
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <type_traits>
+#if defined(__GNUC__)
 #	include <unistd.h>
+#endif
+
+#if defined(_DURANGO)
+#	define NOMINMAX //	Kills the stupid min / max macros in windef.h
+#	include <xdk.h>
+#	include <wrl.h>
+#elif defined(_MSC_VER)
+struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error: 'identifier' was unexpected here" when using /permissive-
+#	define NOMINMAX //	Kills the stupid min / max macros in windef.h
+#	include <SDKDDKVer.h>
+#	include <windows.h>
 #endif
 
 
 #if !defined(__cplusplus)
-#	error C compilers not supported.
+#	error "C compilers not supported."
 #endif
 
 #if (__cplusplus >= 201703L) || (defined(_MSC_VER) && _MSC_VER >= 1911)
 #	define FFTL_CPP_VERSION 17
-#else
+#elif (__cplusplus >= 201402) || (defined(_MSC_VER) && _MSC_VER >= 1910)
 #	define FFTL_CPP_VERSION 14
+#else
+#	error "C++14 compiler or greater required."
 #endif
 
 
 #if (FFTL_CPP_VERSION >= 17)
 #	define FFTL_IF_CONSTEXPR(__expr__) if constexpr (__expr__)
+#	define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
 #else
 #	define FFTL_IF_CONSTEXPR(__expr__) if (__expr__)
+#	define FFTL_SWITCH_FALLTHROUGH
+#endif
+
+#if defined(__powerpc__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_XENON)
+#	define FFTL_BIGENDIAN 1
+#else
+#	define FFTL_LITTLEENDIAN 1
 #endif
 
 #if defined(_M_X64) || defined(__x86_64__) || defined(__aarch64__)
@@ -63,6 +93,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 //	For vector intrinsics on non-x86 platforms (PowerPC/ARM), this can easily be modified to use them.
 // Define your symbol for it here, and create your own .inl file that defines all the necessary math
 // functions. Don't forget to include that .inl file at the bottom of MathCommon.h.
+#if defined(__AVX512CD__)
+#	define FFTL_AVX512CD 1
+#endif
+#if defined(__AVX512ER__)
+#	define FFTL_AVX512ER 1
+#endif
+#if defined(__AVX512F__)
+#	define FFTL_AVX512F 1
+#endif
+#if defined(__AVX512PF__)
+#	define FFTL_AVX512PF 1
+#endif
+#if defined(__AVX512BW__)
+#	define FFTL_AVX512BW 1
+#endif
+#if defined(__AVX512CD__)
+#	define FFTL_AVX512CD 1
+#endif
+#if defined(__AVX512DQ__)
+#	define FFTL_AVX512DQ 1
+#endif
+#if defined(__AVX512VL__)
+#	define FFTL_AVX512VL 1
+#endif
+
 #if defined(__AVX2__) || defined(FFTL_USE_AVX2)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
@@ -70,7 +125,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_SSE4 1
 #	define FFTL_AVX 1
 #	define FFTL_AVX2 1
-#	define FFTL_FMA3 1
 #elif defined(__AVX__) || defined(FFTL_USE_AVX)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
@@ -96,7 +150,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__))
 #	define FFTL_FMA3 1
 #endif
-#if !defined(FFTL_FMA4) && defined(FFTL_USE_FMA4)
+#if !defined(FFTL_FMA4) && (defined(FFTL_USE_FMA4) || defined(__FMA3__))
 #	define FFTL_FMA4 1
 #endif
 
@@ -131,54 +185,104 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_AVX2_ONLY(__stuff__)
 #endif
 
-#if defined(__ORBIS__) || defined(_DURANGO)
-#	define FFTL_CPU_INFO_KNOWN_TO_COMPILER 1
-#endif
-
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #	define FFTL_ARM_NEON 1
 #endif
 
-#if defined(FFTL_SSE) && defined(_MSC_VER) && _MSC_VER >= 1700
+#if defined(__ORBIS__) || defined(__PROSPERO__) || defined(_DURANGO) || defined(FFTL_ARM_NEON) // TODO: ARM NEON
+#	define FFTL_CPU_INFO_KNOWN_TO_COMPILER 1
+#endif
+
+#if defined(FFTL_SSE) && ((defined(_MSC_VER) && _MSC_VER >= 1700) || defined(__clang__) && !defined(__ANDROID__) && !defined(__PROSPERO__))
 #	define FFTL_VECTORCALL __vectorcall
-#elif defined(FFTL_SSE) && defined(__GNUC__)
+#elif 0//defined(FFTL_SSE) && defined(__GNUC__)   __attribute__((sseregparm)) doesn't seem to be recognized
 #	define FFTL_VECTORCALL __attribute__((sseregparm))
 #else
 #	define FFTL_VECTORCALL
 #endif
 
 #if defined(FFTL_SSE) || defined(FFTL_ARM_NEON)
-#	define FFTL_SIMD4 1
+#	define FFTL_SIMD_F32x4 1
+#endif
+#if defined(FFTL_SSE2) || defined(FFTL_ARM_NEON)
+#	define FFTL_SIMD_I32x4 1
 #endif
 #if defined(FFTL_AVX)
-#	define FFTL_SIMD8 1
+#	define FFTL_SIMD_F32x8 1
+#endif
+#if defined(FFTL_AVX2)
+#	define FFTL_SIMD_I32x8 1
 #endif
 
-#if defined(FFTL_SIMD8)
-#	define FFTL_SIMD_WIDTH 8
-#elif defined(FFTL_SIMD4)
-#	define FFTL_SIMD_WIDTH 4
+#if defined(FFTL_SIMD_F32x8)
+#	define FFTL_SIMD_F32_WIDTH 8
+#elif defined(FFTL_SIMD_F32x4)
+#	define FFTL_SIMD_F32_WIDTH 4
 #else
-#	define FFTL_SIMD_WIDTH 1
+#	define FFTL_SIMD_F32_WIDTH 1
 #endif
 
-#define FFTL_StaticAssert(e) static_assert(e, "Compile-time assert triggered!")
+#if defined(FFTL_SIMD_I32x8)
+#	define FFTL_SIMD_I32_WIDTH 8
+#elif defined(FFTL_SIMD_I32x4)
+#	define FFTL_SIMD_I32_WIDTH 4
+#else
+#	define FFTL_SIMD_I32_WIDTH 1
+#endif
+
+#if defined(FFTL_SIMD_F32x8)
+#	define FFTL_SIMD_F32x8_ONLY(__stuff__) __stuff__
+#else
+#	define FFTL_SIMD_F32x8_ONLY(__stuff__)
+#endif
+#if defined(FFTL_SIMD_F32x4)
+#	define FFTL_SIMD_F32x4_ONLY(__stuff__) __stuff__
+#else
+#	define FFTL_SIMD_F32x4_ONLY(__stuff__) __stuff__
+#endif
+#if defined(FFTL_SIMD_I32x8)
+#	define FFTL_SIMD_I32x8_ONLY(__stuff__) __stuff__
+#else
+#	define FFTL_SIMD_I32x8_ONLY(__stuff__)
+#endif
+#if defined(FFTL_SIMD_I32x4)
+#	define FFTL_SIMD_I32x4_ONLY(__stuff__) __stuff__
+#else
+#	define FFTL_SIMD_I32x4_ONLY(__stuff__)
+#endif
+
+#if defined(FFTL_BUILD_DEBUG)
+#	define FFTL_ENABLE_ASSERT 1
+#	define FFTL_ENABLE_PROFILING 1
+#elif defined(FFTL_BUILD_RELEASE)
+#	define FFTL_ENABLE_PROFILING 1 // To be removed
+#endif
+
+
+#if defined(_MSC_VER) || defined(__ORBIS__) || defined(__PROSPERO__)
+#	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( __debugbreak(), 1) )
+#elif defined(_POSIX_VERSION)
+#	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( raise(SIGTRAP), 1) )
+#else
+#	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( *((int*)0) = 0xdeadbeef ) )
+#endif
+
+#define FFTL_VERIFY_ALWAYS(___expr) FFTL_ASSERT_ALWAYS(___expr)
+#define FFTL_VERIFY_EQ_ALWAYS(___cmp, ___expr) FFTL_ASSERT_ALWAYS(___cmp == ___expr)
+#define FFTL_VERIFY_NEQ_ALWAYS(___cmp, ___expr) FFTL_ASSERT_ALWAYS(___cmp != ___expr)
+
+#define FFTL_ASSERT_MSG_ALWAYS(___expr, msg, ...) FFTL_ASSERT_ALWAYS(___expr)
+#define FFTL_VERIFY_MSG_ALWAYS(___expr, msg, ...) FFTL_VERIFY_ALWAYS(___expr)
+#define FFTL_VERIFY_EQ_MSG_ALWAYS(___cmp, ___expr, msg, ...) FFTL_VERIFY_EQ_ALWAYS(___cmp, ___expr)
+#define FFTL_VERIFY_NEQ_MSG_ALWAYS(___cmp, ___expr, msg, ...) FFTL_VERIFY_NEQ_ALWAYS(___cmp, ___expr)
 
 
 #if defined(FFTL_ENABLE_ASSERT)
 #	define FFTL_BUILD_QA 1
-#	if defined(_MSC_VER) || defined(__ORBIS__)
-#		define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || ( __debugbreak(), 1) )
-#	elif defined(_POSIX_VERSION)
-#		define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || ( raise(SIGTRAP), 1) )
-#	else
-#		define FFTL_ASSERT(___expr) (void)( (!!(___expr)) || ( *((int*)0) = 0xdeadbeef ) )
-#	endif
-
-#	define FFTL_VERIFY(___expr) FFTL_ASSERT(___expr)
-#	define FFTL_VERIFY_EQ(___cmp, ___expr) FFTL_ASSERT(___cmp == ___expr)
-#	define FFTL_VERIFY_NEQ(___cmp, ___expr) FFTL_ASSERT(___cmp != ___expr)
-
+#	define FFTL_ASSERT(___expr) FFTL_ASSERT_ALWAYS(___expr)
+#	define FFTL_VERIFY(___expr) FFTL_VERIFY_ALWAYS(___expr)
+#	define FFTL_VERIFY_EQ(___cmp, ___expr) FFTL_VERIFY_EQ_ALWAYS(___cmp, ___expr)
+#	define FFTL_VERIFY_NEQ(___cmp, ___expr) FFTL_VERIFY_NEQ_ALWAYS(___cmp, ___expr)
 #else
 #	define FFTL_ASSERT(___expr) ((void)0)
 #	define FFTL_VERIFY(___expr) ___expr
@@ -243,28 +347,40 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	pragma warning(disable : 4251) // 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
 #endif
 
+#if defined(_MSC_VER)// || (defined(__WCHAR_TYPE__) && !defined(__ORBIS__))
+#	define FFTL_WCHAR 1
+#endif
 
 namespace FFTL
 {
 
 
-typedef unsigned char		u8;
-typedef char				s8;
-typedef unsigned short		u16;
-typedef short				s16;
-typedef unsigned int		u32;
-typedef unsigned int		uint;
-typedef int					s32;
-typedef unsigned long long	u64;
-typedef long long			s64;
-typedef float				f32;
-typedef double				f64;
+typedef uint8_t			u8;
+typedef int8_t			s8;
+typedef uint16_t		u16;
+typedef int16_t			s16;
+typedef uint32_t		u32;
+typedef int32_t			s32;
+typedef uint64_t		u64;
+typedef int64_t			s64;
+typedef float			f32;
+typedef double			f64;
 
 //	Aliases and shorthands
-typedef u8					byte;
+typedef u8				byte;
+typedef unsigned int	uint;
 
-
-
+#if defined(FFTL_WCHAR)
+typedef wchar_t			tchar;
+#	if !defined(_T)
+#		define _T(x)	L ## x
+#	endif
+#else
+typedef char			tchar;
+#	if !defined(_T)
+#		define _T(x)	x
+#	endif
+#endif
 
 
 } // namespace FFTL
@@ -273,7 +389,6 @@ typedef u8					byte;
 
 
 
-#define FFTL_INVALID_SAMPLE_CLOCK 0xffffffffffffffff
 #define FFTL_MAX_FILTER_CUTOFF_HZ (24000)
 #define FFTL_MIN_FILTER_CUTOFF_HZ (0)
 
@@ -281,7 +396,3 @@ typedef u8					byte;
 #	define FFTL_THREAD_USE_POSIX 1
 #endif
 
-
-
-
-#endif

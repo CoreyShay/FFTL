@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="FFTL::StringFixed&lt;*&gt;">
+		<DisplayString>{data}</DisplayString>
+		<Expand>
+			<Item Name="[size]" ExcludeView="simple">$T1</Item>
+			<ArrayItems>
+				<Size>$T1</Size>
+				<ValuePointer>data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::FixedArray&lt;*,*&gt;">
+		<DisplayString>{{ size={$T2} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]" ExcludeView="simple">$T2</Item>
+			<ArrayItems>
+				<Size>$T2</Size>
+				<ValuePointer>data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::Array&lt;*,*&gt;">
+		<DisplayString>{{ size={m_size} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]" ExcludeView="simple">m_size</Item>
+			<Item Name="[capacity]" ExcludeView="simple">$T2</Item>
+			<ArrayItems>
+				<Size>m_size</Size>
+				<ValuePointer>($T1*)m_Data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::TContainedLinkedList&lt;*,*,*&gt;">
+		<Expand>
+			<LinkedListItems Condition="m_HeadSentinel.m_pNextNode != &amp;m_TailSentinel">
+				<HeadPointer>m_HeadSentinel.m_pNextNode</HeadPointer>
+				<NextPointer>m_pNextNode->m_pNextNode ? m_pNextNode : 0</NextPointer>
+				<ValueNode>($T1*)((char*)this - $T3)</ValueNode>
+			</LinkedListItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::s24">
+		<DisplayString>{ float(double((*(int*)b)&lt;&lt;8&gt;&gt;8))/8388608 }</DisplayString>
+		<Expand>
+			<Item Name="[asInt]">(*(int*)b)&lt;&lt;8&gt;&gt;8</Item>
+			<Item Name="[asFloat]">float(double((*(int*)b)&lt;&lt;8&gt;&gt;8))/8388608</Item>
+		</Expand>
+	</Type>
+	
+	<Type Name="FFTL::Timer">
+		<DisplayString>{ ((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount }</DisplayString>
+		<Expand>
+			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_TicksToUsScalar</Item>
+			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::CpuTimer">
+		<DisplayString>{ ((double)m_TotalTicks) / m_nAccumCount }</DisplayString>
+		<Expand>
+			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_TicksToUsScalar</Item>
+			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount</Item>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>

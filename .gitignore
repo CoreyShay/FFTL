@@ -26,12 +26,19 @@
 *.exe
 *.out
 *.app
+*.apk
 
 # Visual Studio crap
 *.opensdf
 *.sdf
 *.suo
 *.user
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+*.ipch
 
 #Build Output Directory
 Output/
+FFTL/Code/VS14/Generated/
