@@ -31,7 +31,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "defs.h"
+#include <new>
+
+#if defined(_MSC_VER)
+#	define FFTL_FIXED_ARRAY_USES_STD_ARRAY 1
+#endif
+
+#if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+#	include <array>
+#endif
 
 // Arrays
 
@@ -44,26 +52,80 @@ template <typename T, size_t T_N>
 class FixedArray
 {
 public:
-	T data[T_N];
+#if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+	std::array<T, T_N> m_data;
+#else
+	T m_data[T_N];
+#endif
 
-	FFTL_FORCEINLINE FixedArray() = default;
-	FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_N); return data[n]; }
-	FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_N); return data[n]; }
-	FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_N); return data + n; }
-	FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_N); return data + n; }
+	constexpr FFTL_FORCEINLINE FixedArray() : m_data() {}
+	constexpr FFTL_FORCEINLINE FixedArray(const T(&r)[T_N]);
+//	constexpr FFTL_FORCEINLINE FixedArray(std::initializer_list<T> l);
+	constexpr FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_N); return data()[n]; }
+	constexpr FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_N); return data()[n]; }
+#if !defined(FFTL_64BIT)//	Strange compiler error about ambiguity in 32 bit builds
+	constexpr FFTL_FORCEINLINE T& operator[](int n) { return data()[static_cast<size_t>(n)]; }
+	constexpr FFTL_FORCEINLINE const T& operator[](int n) const { return data()[static_cast<size_t>(n)]; }
+#endif
+	constexpr FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_N); return data() + n; }
+	constexpr FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_N); return data() + n; }
 
-	FFTL_FORCEINLINE static constexpr size_t size() { return T_N; }
-	FFTL_FORCEINLINE const T* begin() const { return data; }
-	FFTL_FORCEINLINE const T* end() const { return data + size(); }
-	FFTL_FORCEINLINE T* begin() { return data; }
-	FFTL_FORCEINLINE T* end() { return data + size(); }
+	constexpr FFTL_FORCEINLINE static size_t size() { return T_N; }
+	constexpr FFTL_FORCEINLINE const T* begin() const { return data(); }
+	constexpr FFTL_FORCEINLINE const T* end() const { return data() + size(); }
+	constexpr FFTL_FORCEINLINE T* begin() { return data(); }
+	constexpr FFTL_FORCEINLINE T* end() { return data() + size(); }
+
+	constexpr FFTL_FORCEINLINE const T* data() const;
+	constexpr FFTL_FORCEINLINE T* data();
 };
+
+template <typename T, size_t T_N>
+constexpr FFTL_FORCEINLINE FixedArray<T, T_N>::FixedArray(const T(&r)[T_N])
+{
+	for (size_t i = 0; i < T_N; ++i)
+		m_data[i] = r[i];
+}
+//template <typename T, size_t T_N>
+//constexpr FFTL_FORCEINLINE FixedArray<T, T_N>::FixedArray(std::initializer_list<T> l)
+//#if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+//	: m_data{ *reinterpret_cast<const std::array<T, T_N>*>(l.begin()) }
+//#endif
+////	: m_data{ l }
+//{
+//	FFTL_ASSERT(l.size() == T_N);
+//#if !defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+//	T* p = &m_data[0];
+//	for (const T& t : l)
+//		*p++ = t;
+//#endif
+//}
+
+template <typename T, size_t T_N>
+constexpr FFTL_FORCEINLINE const T* FixedArray<T, T_N>::data() const
+{
+#if !defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+	return m_data;
+#else
+	return m_data.data();
+#endif
+}
+template <typename T, size_t T_N>
+constexpr FFTL_FORCEINLINE T* FixedArray<T, T_N>::data()
+{
+#if !defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+	return m_data;
+#else
+	return m_data.data();
+#endif
+}
 
 template <typename T, size_t T_MAX_SIZE>
 class Array
 {
 public:
-	FFTL_FORCEINLINE Array() : m_size(0) {}
+	FFTL_FORCEINLINE Array() : m_Data(), m_size(0) {}
+	FFTL_FORCEINLINE Array(size_t nSize) : m_Data(), m_size(nSize) { for (size_t i = 0; i < nSize; ++i) { T* pData = reinterpret_cast<T*>(m_Data + i); ::new(pData) T(); } }
 	FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data[n].m_Bytes); }
 	FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_MAX_SIZE); *reinterpret_cast<const T*>(m_Data[n].m_Bytes); }
 	FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data + n); }
@@ -82,8 +144,21 @@ public:
 	}
 	FFTL_FORCEINLINE void erase_back()
 	{
+		FFTL_ASSERT(m_size > 0);
 		T* pData = reinterpret_cast<T*>(m_Data + m_size--);
 		pData->~T();
+	}
+	FFTL_FORCEINLINE T* erase(T* pItem)
+	{
+		FFTL_ASSERT(m_size > 0);
+		FFTL_ASSERT(pItem >= m_Data && pItem < m_Data + m_size);
+		m_size--;
+		for (T* pNew = pItem; pNew < m_Data + m_size; ++pNew)
+		{
+			pNew->~T();
+			::new(pNew) T(std::move(pNew[1]));
+		}
+		return pItem;
 	}
 
 	struct alignas(T) tAllocStub { byte m_Bytes[sizeof(T)]; };
