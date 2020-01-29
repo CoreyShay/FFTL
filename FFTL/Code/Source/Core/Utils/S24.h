@@ -1,6 +1,6 @@
 #pragma once
 
-#include "defs.h"
+#include "../defs.h"
 
 
 namespace FFTL
@@ -18,11 +18,13 @@ struct s24
 
 FFTL_FORCEINLINE s24::s24()
 {
-#if defined(FFTL_LITTLEENDIAN)
 #if defined(FFTL_ENABLE_ASSERT)
 	static constexpr u8 BYTES[4] = { 0,1,2,3 };
+#	if defined(FFTL_LITTLEENDIAN)
 	FFTL_ASSERT_MSG((u32)0x03020100 == *reinterpret_cast<const u32*>(&BYTES), "Little endian expected!");
-#endif
+#	else
+	FFTL_ASSERT_MSG((u32)0x00010203 == *reinterpret_cast<const u32*>(&BYTES), "Big endian expected!");
+#	endif
 #endif
 }
 
@@ -38,17 +40,9 @@ FFTL_FORCEINLINE constexpr s24::s24(int r)
 FFTL_FORCEINLINE /*constexpr*/ s24::operator int() const
 {
 #if defined(FFTL_LITTLEENDIAN)
-#if 0
-	s32 i = *reinterpret_cast<const s32*>(static_cast<const u8*>(b) - 1);
-	i >>= 8;
-#else
 	s32 i = ((s32)b[0] << 8) | ((s32)b[1] << 16) | ((s32)b[2] << 24);
 	i >>= 8;
-#endif
 #else
-	static constexpr u8 BYTES[4] = { 0,1,2,3 };
-	FFTL_ASSERT_MSG((u32)0x00010203 == *reinterpret_cast<const u32*>(&BYTES), "Big endian expected!");
-
 	s32 i = ((s32)b[0] << 24) | ((s32)b[1] << 16) | ((s32)b[2] << 8);
 	i >>= 8;
 #endif

@@ -1,7 +1,8 @@
 #pragma once
 
 
-#include "_pch_Core.h"
+#include "../defs.h"
+#include "../Utils/Casts.h"
 #include <random>
 
 

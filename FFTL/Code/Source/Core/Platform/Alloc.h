@@ -1,7 +1,7 @@
 #pragma once
 
-#include "defs.h"
-#include "Math/MathCommon.h"
+#include "../defs.h"
+#include "../Math/MathCommon.h"
 
 #if defined(_POSIX_VERSION)
 #	include <stdlib.h>

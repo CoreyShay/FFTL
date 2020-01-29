@@ -31,41 +31,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <limits>
-#include <memory>
-#include <new>
-#include <random>
-#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <type_traits>
 #if defined(__GNUC__)
-#	include <unistd.h>
+#	include <unistd.h> // _POSIX_VERSION
 #endif
-
-#if defined(_DURANGO)
-#	define NOMINMAX //	Kills the stupid min / max macros in windef.h
-#	include <xdk.h>
-#	include <wrl.h>
-#elif defined(_MSC_VER)
-struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error: 'identifier' was unexpected here" when using /permissive-
-#	define NOMINMAX //	Kills the stupid min / max macros in windef.h
-#	include <SDKDDKVer.h>
-#	include <windows.h>
-#endif
-
 
 #if !defined(__cplusplus)
 #	error "C compilers not supported."
 #endif
 
-#if (__cplusplus >= 201703L) || (defined(_MSC_VER) && _MSC_VER >= 1911)
+#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #	define FFTL_CPP_VERSION 17
-#elif (__cplusplus >= 201402) || (defined(_MSC_VER) && _MSC_VER >= 1910)
+#elif (__cplusplus >= 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
 #	define FFTL_CPP_VERSION 14
 #else
 #	error "C++14 compiler or greater required."
@@ -385,12 +362,6 @@ typedef char			tchar;
 
 } // namespace FFTL
 
-
-
-
-
-#define FFTL_MAX_FILTER_CUTOFF_HZ (24000)
-#define FFTL_MIN_FILTER_CUTOFF_HZ (0)
 
 #if /*defined(__ORBIS__) ||*/ defined(__ANDROID__)
 #	define FFTL_THREAD_USE_POSIX 1

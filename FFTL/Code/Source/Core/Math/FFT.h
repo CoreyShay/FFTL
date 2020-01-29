@@ -31,11 +31,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "defs.h"
+#include "../defs.h"
 
 #include "ComplexNumber.h"
 #include "MathCommon.h"
-#include "Containers/Array.h"
+#include "../Containers/Array.h"
 
 #define FFTL_STAGE_TIMERS 0
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Utils/Casts.h"
 
 namespace FFTL
 {

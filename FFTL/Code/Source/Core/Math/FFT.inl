@@ -32,9 +32,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _FFTL_FFT_INL
 #define _FFTL_FFT_INL
 
-#include "Platform/Log.h"
-#include "Utils/Casts.h"
-#include "Utils/StdFunctions.h"
+#include "../Platform/Log.h"
+#include "../Utils/Casts.h"
+#include "../Utils/StdFunctions.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)

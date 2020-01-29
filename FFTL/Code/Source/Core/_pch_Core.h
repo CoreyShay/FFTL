@@ -1,6 +1,23 @@
 #pragma once
 
 
+#if defined(_MSC_VER)
+struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error: 'identifier' was unexpected here" when using /permissive-
+#	ifndef NOMINMAX
+#		define NOMINMAX //	Kills the stupid min / max macros in windef.h
+#	endif
+#	ifndef WIN32_LEAN_AND_MEAN
+#		define WIN32_LEAN_AND_MEAN
+#	endif
+#	include <SDKDDKVer.h>
+#	include <windows.h>
+#endif
+
+#if defined(_DURANGO)
+#	include <xdk.h>
+#	include <wrl.h>
+#endif
+
 #include "defs.h"
 #include "ReturnCodes.h"
 #include "Math/MathCommon.h"

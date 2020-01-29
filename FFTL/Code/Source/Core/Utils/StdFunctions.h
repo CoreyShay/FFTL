@@ -2,10 +2,11 @@
 
 // Fixed array string template
 
-#include "defs.h"
+#include "../defs.h"
 
-#include "Math/MathCommon.h"
-#include "Containers/Array.h"
+#include "Casts.h"
+#include "../Math/MathCommon.h"
+#include "../Containers/Array.h"
 #include <string.h>
 #include <limits>
 
@@ -28,7 +29,7 @@
 #	include <arm_neon.h>
 #endif
 
-#include "Containers/Array.h"
+#include "../Containers/Array.h"
 
 
 namespace FFTL
@@ -100,6 +101,19 @@ FFTL_FORCEINLINE T AlignForward(size_t alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (alignment - 1)) & ~(alignment - 1);
+}
+
+template<uint T_ALIGNMENT, typename T>
+FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
+{
+	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
+	return offset & ~(T_ALIGNMENT - 1);
+}
+template<typename T>
+FFTL_FORCEINLINE T AlignBackward(size_t alignment, const T& offset)
+{
+	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
+	return offset & ~(alignment - 1);
 }
 
 template<typename T, size_t N>

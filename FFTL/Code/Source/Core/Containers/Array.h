@@ -31,7 +31,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include "../defs.h"
+
 #include <new>
+#include <array>
 
 // Arrays
 

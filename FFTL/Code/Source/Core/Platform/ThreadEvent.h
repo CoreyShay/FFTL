@@ -1,6 +1,6 @@
 #pragma once
 
-#include "defs.h"
+#include "../defs.h"
 
 #if defined(_MSC_VER)
 #	include <synchapi.h>

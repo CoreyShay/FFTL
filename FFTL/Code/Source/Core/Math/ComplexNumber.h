@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "defs.h"
+#include "../defs.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)

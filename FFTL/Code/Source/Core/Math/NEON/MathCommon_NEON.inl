@@ -45,8 +45,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	pragma clang diagnostic ignored "-Wuninitialized"
 #endif
 
-#include "Utils/Casts.h"
-
 #define FFTL_SIMD_DIVIDE_APPROXIMATE 1
 
 
@@ -465,7 +463,7 @@ FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()
 		);
 
 	//	Store the flush-to-zero bit.
-	m_prevMode = safestatic_cast<u32>(x & (1<<24));
+	m_prevMode = static_cast<u32>(x & (1<<24));
 	
 	//	Enable the flush-to-zero bit.
 	x |= (1<<24);

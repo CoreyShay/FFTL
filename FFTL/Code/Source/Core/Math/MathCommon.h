@@ -32,9 +32,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifndef _FFTL_MATH_H
 #define _FFTL_MATH_H
 
-#include "defs.h"
+#include "../defs.h"
+#include "../Containers/Array.h"
 
 #include <cmath>
+#include <limits>
 //#undef _USE_MATH_DEFINES
 
 #if defined(FFTL_SSE)
@@ -71,12 +73,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #if defined(FFTL_SSE)
-#	include "Math/SSE/Utils_SSE.h"
+#	include "SSE/Utils_SSE.h"
 #elif FFTL_ARM_NEON
-#	include "Math/NEON/Utils_NEON.h"
+#	include "NEON/Utils_NEON.h"
 #endif
-
-#include "Containers/Array.h"
 
 //	Fires off in clang tidy here for some reason when not appropriate
 #if defined(__clang__)
@@ -796,7 +796,7 @@ constexpr inline std::size_t max_factorial()
 {
 	std::size_t i = 0;
 	long double d = 0;
-	while ((d = factorial(i)) < std::numeric_limits<long double>::max())
+	while ((d = factorial(i)) < (std::numeric_limits<long double>::max)())
 	{
 		++i;
 	}

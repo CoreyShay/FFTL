@@ -2,9 +2,9 @@
 
 // Fixed array string template
 
-#include "defs.h"
+#include "../defs.h"
 
-#include "Containers/Array.h"
+#include "../Containers/Array.h"
 #include <string.h>
 
 

@@ -1,7 +1,10 @@
 #pragma once
 
 
-#include "defs.h"
+#include "../defs.h"
+#include "../Math/MathCommon.h"
+#include <limits>
+#include <type_traits>
 
 
 namespace FFTL

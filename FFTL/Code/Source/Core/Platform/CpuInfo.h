@@ -31,7 +31,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "_pch_Core.h"
+#include "../defs.h"
+#include "../ReturnCodes.h"
+#include "../Utils/StdFunctions.h"
 
 #if defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
 #	define FFTL_CPU_INFO_COND_CONSTEXPR constexpr

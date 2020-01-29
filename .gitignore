@@ -42,3 +42,4 @@
 #Build Output Directory
 Output/
 FFTL/Code/VS14/Generated/
+FFTL/Code/VS14/.vs/FFTL_Test/DesignTimeBuild/.dtbcache

@@ -31,11 +31,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #if defined(_MSC_VER)
-#	include <intrin.h>
-#	if !defined(_DURANGO)
-#		include <windows.h>
-#		include <profileapi.h>
+#	ifndef WIN32_LEAN_AND_MEAN
+#		define WIN32_LEAN_AND_MEAN
 #	endif
+#	include <windows.h>
+#	include <profileapi.h>
+#	include <intrin.h>
 #elif defined(__ORBIS__) || defined(__PROSPERO__)
 #	include <kernel.h>
 #	include <rtc.h>

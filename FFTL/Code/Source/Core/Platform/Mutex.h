@@ -37,6 +37,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include <kernel.h>
 #	include <sys/_defines/_sce_ok.h>
 #elif defined(_MSC_VER)
+#	ifndef WIN32_LEAN_AND_MEAN
+#		define WIN32_LEAN_AND_MEAN
+#	endif
 #	include <windows.h>
 #elif defined(_POSIX_VERSION) || defined(FFTL_THREAD_USE_POSIX)
 #	include <pthread.h>
@@ -133,8 +136,8 @@ private:
 public:
 	Mutex() 
 #if FFTL_MUTEX_DEADLOCK_HELP
-	:lastThreadId(0),
-	lockCount(0)
+	: lastThreadId(0)
+	, lockCount(0)
 #endif
 	{
 		InitializeCriticalSection(&m_cs);

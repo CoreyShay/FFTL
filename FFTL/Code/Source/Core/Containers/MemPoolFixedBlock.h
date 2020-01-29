@@ -31,7 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "Platform/Mutex.h"
+#include "../Platform/Mutex.h"
+#include "../Utils/Casts.h"
 
 //	This totally works, but surprisingly, it appears that using mutexes performs slightly better, regardless of contention.
 //#define FFTL_FIXEDBLOCKPOOL_ATOMIC 1

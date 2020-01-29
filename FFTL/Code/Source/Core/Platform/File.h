@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../defs.h"
 #include <stdio.h>
 
 namespace FFTL
@@ -18,8 +19,6 @@ public:
 	};
 
 	File();
-#if defined(FFTL_WCHAR)
-#endif
 	~File();
 
 	File(const char* pszFileName, OpenMode mode);

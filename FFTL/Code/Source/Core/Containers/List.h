@@ -31,6 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include "../defs.h"
+
 // Intrusive linked lists by containment
 namespace FFTL
 {

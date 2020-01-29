@@ -31,8 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "defs.h"
-#include "ReturnCodes.h"
+#include "../defs.h"
+#include "../ReturnCodes.h"
 
 #if defined(_MSC_VER)
 #	if _MSC_VER < 1700
