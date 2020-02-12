@@ -44,7 +44,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include "Platform/Timer.h"
 #endif
 
-
+#ifdef _MSC_VER
+#	pragma warning(push)
+#	pragma warning(disable : 4324) // structure was padded due to alignment specifier
+#endif
 
 
 namespace FFTL
@@ -316,29 +319,42 @@ public:
 	static constexpr uint N = 1<<M;
 	static constexpr uint N_2 = N >> 1;
 	static constexpr uint _2N = N << 1;
-
-	Convolver();
-	~Convolver();
-
-	void InitKernel(const T* pKernelInput, size_t byteSize);
-	void Convolve(FixedArray<T,N>& fInOutput);
-	void Destroy();
-
-private:
-	//	Our FFT computer
-	static constexpr FFT_Real<M+1, T, T_Twiddle> sm_fft{ };
+	static constexpr size_t SingleKernelSize_Bytes() { return sizeof( Kernel ); }
 
 	struct Kernel
 	{
 		FixedArray<f32, _2N> t;
 
 		FixedArray<f32, N>& r() { return *reinterpret_cast<FixedArray<f32, N>*>(&t); }
-		FixedArray<f32, N>& i() { return *reinterpret_cast<FixedArray<f32, N>*>(t+N); }
+		FixedArray<f32, N>& i() { return *reinterpret_cast<FixedArray<f32, N>*>(t + N); }
 	};
 
-	FixedArray<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
-	FixedArray<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
-	uint m_KernelCount;
+	Convolver();
+	~Convolver();
+
+	void InitKernel(const T* pKernelInput, size_t kernelLength);
+	void Convolve(FixedArray<T,N>& fInOutput);
+	void Destroy();
+
+	uint GetKernelCount() const { return m_KernelCount; }
+	size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof( Kernel ); }
+	const FixedArray_Aligned32<Kernel, T_MAX_KERNELS>& GetKernelArray_FD() const { return m_KernelArray_FD; }
+	
+	//	You must write directly to the returned array, and set the new kernel count
+	FixedArray_Aligned32<Kernel, T_MAX_KERNELS>& GetKernelArray_FD_ForWriting(uint newKernelCount)
+	{
+		FFTL_ASSERT_MSG( newKernelCount <= T_MAX_KERNELS, "Kernel count overrun" );
+		m_KernelCount = newKernelCount;
+		return m_KernelArray_FD;
+	}
+
+	//	Our FFT computer
+	static constexpr FFT_Real<M + 1, T, T_Twiddle> sm_fft{ };
+
+private:
+	u32 m_KernelCount;
+	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
+	FixedArray_Aligned32<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
 };
 
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>
@@ -359,6 +375,10 @@ private:
 
 } // namespace FFTL
 
+
+#ifdef _MSC_VER
+#	pragma warning(pop)
+#endif
 
 
 #include "FFT.inl"
