@@ -16,6 +16,7 @@
       <FastMath>true</FastMath>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>-std=c++1z %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>FFTL_ASSUME_SSE3=1;FFTL_ASSUME_SSE4=1;FFTL_ASSUME_AVX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>-lScePosix_stub_weak;-lSceSysmodule_stub_weak;-lSceAudioOut_stub_weak;-lSceAudio3d_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>

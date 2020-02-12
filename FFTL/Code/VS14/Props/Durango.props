@@ -21,7 +21,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <DisableSpecificWarnings>4100;4127;4464;4820;5040;5043</DisableSpecificWarnings>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>FFTL_ASSUME_SSE3=1;FFTL_ASSUME_SSE4=1;FFTL_ASSUME_AVX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <FloatingPointModel>Fast</FloatingPointModel>
       <AdditionalOptions>/Zc:__cplusplus /Zc:sizedDealloc- %(AdditionalOptions)</AdditionalOptions>

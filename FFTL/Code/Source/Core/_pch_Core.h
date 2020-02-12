@@ -18,6 +18,15 @@ struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error
 #	include <wrl.h>
 #endif
 
+#include <atomic>
+#include <cmath>
+#include <limits>
+#include <memory>
+#include <new>
+#include <string.h>
+#include <type_traits>
+#include <utility>
+
 #include "defs.h"
 #include "ReturnCodes.h"
 #include "Math/MathCommon.h"

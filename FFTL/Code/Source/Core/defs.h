@@ -95,25 +95,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_AVX512VL 1
 #endif
 
-#if defined(__AVX2__) || defined(FFTL_USE_AVX2)
+#if defined(__AVX2__) || defined(FFTL_ASSUME_AVX2)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
 #	define FFTL_SSE3 1
 #	define FFTL_SSE4 1
 #	define FFTL_AVX 1
 #	define FFTL_AVX2 1
-#elif defined(__AVX__) || defined(FFTL_USE_AVX)
+#elif defined(__AVX__) || defined(FFTL_ASSUME_AVX)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
 #	define FFTL_SSE3 1
 #	define FFTL_SSE4 1
 #	define FFTL_AVX 1
-#elif defined(__SSE4_2__) || defined(FFTL_USE_SSE4)
+#elif defined(__SSE4_2__) || defined(FFTL_ASSUME_SSE4)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
 #	define FFTL_SSE3 1
 #	define FFTL_SSE4 1
-#elif defined(__SSE3__) || defined(FFTL_USE_SSE3)
+#elif defined(__SSE3__) || defined(FFTL_ASSUME_SSE3)
 #	define FFTL_SSE 1
 #	define FFTL_SSE2 1
 #	define FFTL_SSE3 1

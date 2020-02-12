@@ -31,10 +31,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "../defs.h"
-
 #include <new>
-#include <array>
+
+#if defined(_MSC_VER)
+#	define FFTL_FIXED_ARRAY_USES_STD_ARRAY 1
+#endif
+
+#if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
+#	include <array>
+#endif
+
+#include <utility> // std::move
 
 // Arrays
 
@@ -42,18 +49,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 namespace FFTL
 {
 
-#if defined(_MSC_VER)
-#	define FFTL_FIXED_ARRAY_USES_STD_ARRAY 1
-#endif
 
 template <typename T, size_t T_N>
 class FixedArray
 {
 public:
-#if !defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
-	T m_data[T_N];
-#else
+#if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)
 	std::array<T, T_N> m_data;
+#else
+	T m_data[T_N];
 #endif
 
 	constexpr FFTL_FORCEINLINE FixedArray() : m_data() {}
