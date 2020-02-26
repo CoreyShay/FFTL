@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Utils/Casts.h"
+#include <errno.h>
 
 namespace FFTL
 {
@@ -37,11 +38,22 @@ inline bool File::Open(const char* pszFileName, OpenMode mode)
 #if defined(_MSC_VER)
 	const auto result = fopen_s(&m_pFile, pszFileName, mode == OpenRead ? "rb" : "wb");
 	if (result != 0)
+	{
+#if defined(FFTL_ENABLE_ASSERT)
+		char szErr[128];
+		strerror_s(szErr, errno);
+		FFTL_LOG_ERR("File::Open(\"%s\") failed with \"%s\"", pszFileName, szErr);
+#endif
 		return false;
+	}
 #else
 	m_pFile = fopen(pszFileName, mode == OpenRead ? "rb" : "wb");
 	if (m_pFile == nullptr)
+	{
+		const auto szErr = strerror(errno);
+		FFTL_LOG_ERR("File::Open(\"%s\") failed with \"%s\"", pszFileName, szErr);
 		return false;
+	}
 #endif
 
 	if (mode == OpenRead)
@@ -110,7 +122,7 @@ inline void File::Close()
 inline int File::SeekAbs(int nPos)
 {
 	const int seekCount = fseek(m_pFile, nPos, SEEK_SET);
-	m_Pos += seekCount;
+	m_Pos = safestatic_cast<size_t>(nPos);
 	return seekCount;
 }
 

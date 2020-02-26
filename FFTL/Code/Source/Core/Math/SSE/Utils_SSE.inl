@@ -362,6 +362,17 @@ FFTL_FORCEINLINE __m128 sse_SubMul_ss(const __m128& a, const __m128& b, const __
 #endif
 }
 
+FFTL_FORCEINLINE __m128i sse_MulInt32(const __m128i &a, const __m128i &b)
+{
+#if defined(FFTL_SSE4) || defined(FFTL_ASSUME_SSE4)	// modern CPU - use SSE 4.1
+	return _mm_mullo_epi32(a, b);
+#else				// old CPU - use SSE 2
+	__m128i tmp1 = _mm_mul_epu32(a, b); /* mul 2,0*/
+	__m128i tmp2 = _mm_mul_epu32( _mm_srli_si128(a, 4), _mm_srli_si128(b, 4) ); /* mul 3,1 */
+	return _mm_unpacklo_epi32( _mm_shuffle_epi32(tmp1, _MM_SHUFFLE(0,0,2,0)), _mm_shuffle_epi32(tmp2, _MM_SHUFFLE(0,0,2,0)) ); /* shuffle results to [63..0] and pack */
+#endif
+}
+
 FFTL_FORCEINLINE __m128 sse_genMaskXYZ()
 {
 	__m128i a = _mm_setzero_si128();

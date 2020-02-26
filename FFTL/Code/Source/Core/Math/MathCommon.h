@@ -90,13 +90,17 @@ namespace FFTL
 
 #if defined(FFTL_SSE)
 	typedef __m128 Vec4f;
+	typedef __m128i Vec4i;
+	typedef __m128i Vec4u;
 #elif FFTL_ARM_NEON
 	typedef float32x4_t Vec4f;
+	typedef int32x4_t Vec4i;
+	typedef uint32x4_t Vec4u;
 #else
-	struct Vec4f
-	{
-		f32 x,y,z,w;
-	};
+	struct Vec4f { f32 x, y, z, w; };
+	struct Vec4i { s32 x, y, z, w; };
+	struct Vec4u { u32 x, y, z, w; };
+
 #endif
 	
 #if defined(FFTL_SSE2)
@@ -137,6 +141,8 @@ class f32_8;
 	typedef const Vec4f& Vec4f_In;
 	typedef const Vec2d& Vec2d_In;
 	typedef const Vec8f& Vec8f_In;
+	typedef const Vec4u& Vec4u_In;
+	typedef const Vec4i& Vec4i_In;
 
 	typedef const f32_4& f32_4_In;
 	typedef const f64_2& f64_2_In;
@@ -1027,6 +1033,14 @@ Vec8f V8fReverse(Vec8f_In v);
 Vec4f V8fAsV4f(Vec8f_In v);
 Vec4f V8fGet4567(Vec8f_In v);
 
+Vec4u V4uAdd(Vec4u_In a, Vec4u_In b);
+Vec4u V4uSub(Vec4u_In a, Vec4u_In b);
+Vec4u V4uMul(Vec4u_In a, Vec4u_In b);
+Vec4i V4iAdd(Vec4i_In a, Vec4i_In b);
+Vec4i V4iSub(Vec4i_In a, Vec4i_In b);
+Vec4i V4iMul(Vec4i_In a, Vec4i_In b);
+
+Vec4i V4fRoundToVfi(Vec4f_In a);
 
 
 
@@ -1249,6 +1263,106 @@ FFTL_FORCEINLINE f32_8 TransformXandY(const f32_4& v, const f32_8& col0, const f
 	result = col0 * XXXX(v);
 	result += col1 * YYYY(v);
 	return result;
+}
+
+
+FFTL_FORCEINLINE Vec4f Vec4DitherFloat(Vec4u& inout_nSeeds)
+{
+	constexpr f32 fRandToFloat = static_cast<f32>(1.0 / (1 << 16));
+#if defined(FFTL_SSE)
+	const Vec4u A = _mm_setr_epi32(214013, 17405, 214013, 69069);
+	const Vec4u C = _mm_setr_epi32(2531011, 10395331, 13737667, 1);
+	const Vec4u n65536 = _mm_set1_epi32(1 << 16);
+	const Vec4f vRandToFloat = _mm_set1_ps(fRandToFloat);
+
+	auto a = sse_MulInt32(A, inout_nSeeds);
+	auto b = _mm_add_epi32(C, a);
+	const auto r0 = _mm_srli_epi32(b, 16);
+	a = sse_MulInt32(A, b);
+	b = _mm_add_epi32(C, a);
+	const auto r1 = _mm_srli_epi32(b, 16);
+	inout_nSeeds = b;
+
+	const auto nDither = _mm_sub_epi32(_mm_add_epi32(r0, r1), n65536);
+	const auto fDither = _mm_mul_ps(_mm_cvtepi32_ps(nDither), vRandToFloat);
+#elif defined(FFTL_ARM_NEON)
+	const Vec4u A = { 214013, 17405, 214013, 69069 };
+	const Vec4u C = { 2531011, 10395331, 13737667, 1 };
+	const Vec4i n65536 = vdupq_n_s32(1 << 16);
+	const Vec4f vRandToFloat = vdupq_n_f32(fRandToFloat);
+
+	auto a = vmulq_u32(A, inout_nSeeds);
+	auto b = vaddq_u32(C, a);
+	const auto r0 = vshrq_n_u32(b, 16);
+	a = vmulq_u32(A, b);
+	b = vaddq_u32(C, a);
+	const auto r1 = vshrq_n_u32(b, 16);
+	inout_nSeeds = b;
+
+	const auto nDither = vsubq_s32(vreinterpretq_s32_u32(vaddq_u32(r0, r1)), n65536);
+	const auto fDither = vmulq_f32(vcvtq_f32_s32(nDither), vRandToFloat);
+#else
+	const Vec4u A = { 214013, 17405, 214013, 69069 };
+	const Vec4u C = { 2531011, 10395331, 13737667, 1 };
+	const Vec4i n65536 = { 1 << 16, 1 << 16, 1 << 16, 1 << 16 };
+	const Vec4f vRandToFloat = { fRandToFloat, fRandToFloat, fRandToFloat, fRandToFloat };
+
+	Vec4u a = V4uMul(A, inout_nSeeds);
+	Vec4u b = V4uAdd(C, a);
+	const Vec4u r0 = { b.x >> 16, b.y >> 16, b.z >> 16, b.w >> 16 };
+	a = V4uMul(A, b);
+	b = V4uAdd(C, a);
+	const Vec4u r1 = { b.x >> 16, b.y >> 16, b.z >> 16, b.w >> 16 };
+	inout_nSeeds = b;
+
+	const auto r = V4uAdd(r0, r1);
+	const auto nDither = V4iSub(*reinterpret_cast<const Vec4i*>(&r), n65536);
+	const Vec4f nDitherf = { (f32)nDither.x, (f32)nDither.y, (f32)nDither.z, (f32)nDither.w };
+	const auto fDither = V4fMul(nDitherf, vRandToFloat);
+#endif
+
+	return fDither;
+}
+
+FFTL_FORCEINLINE Vec4i Vec4AddDitherInt32(const Vec4i& in_n32Signal, const Vec4f& fScale, Vec4u& inout_nSeeds)
+{
+	const auto vDitherf = Vec4DitherFloat(inout_nSeeds);
+#if defined(FFTL_SSE)
+	const auto vDithered = V4fAddMul(vDitherf, _mm_cvtepi32_ps(in_n32Signal), fScale);
+#elif defined(FFTL_ARM_NEON)
+	const auto vDithered = V4fAddMul(vDitherf, vcvtq_f32_s32(in_n32Signal), fScale);
+#else
+	const Vec4f in_f32Signal = { (f32)in_n32Signal.x, (f32)in_n32Signal.y, (f32)in_n32Signal.z, (f32)in_n32Signal.w };
+	const auto vDithered = V4fAddMul(vDitherf, in_f32Signal, fScale);
+#endif
+	return V4fRoundToVfi(vDithered);
+}
+
+FFTL_FORCEINLINE Vec4i Vec4AddDitherFloat32(const Vec4f& in_f32Signal, const Vec4f& fScale, Vec4u& inout_nSeeds)
+{
+	const auto vDitherf = Vec4DitherFloat(inout_nSeeds);
+	const auto vDithered = V4fAddMul(vDitherf, in_f32Signal, fScale);
+	return V4fRoundToVfi(vDithered);
+}
+
+FFTL_FORCEINLINE f32 DitherFloat(u32& inout_nSeed, size_t n)
+{
+	alignas(16) static constexpr u32 A[4] = { 214013, 17405, 214013, 69069 };
+	alignas(16) static constexpr u32 C[4] = { 2531011, 10395331, 13737667, 1 };
+	constexpr s32 n65536 = 1 << 16;
+	constexpr f32 fRandToFloat = static_cast<f32>(1.0 / n65536);
+
+	auto a = A[n] * inout_nSeed;
+	auto b = C[n] + a;
+	const auto r0 = b >> 16;
+	a = A[n] * b;
+	b = C[n] + a;
+	inout_nSeed = b;
+	const auto r1 = b >> 16;
+
+	const auto nDither = static_cast<s32>(r0 + r1) - n65536;
+	const auto fDither = static_cast<f32>(nDither) * fRandToFloat;
+	return fDither;
 }
 
 

@@ -55,6 +55,21 @@ public:
 		SSE4,
 		AVX,
 		AVX2,
+		AVX512_F,			// AVX-512 Foundation
+		AVX512_DQ,			// AVX-512 Doubleword and Quadword Instructions
+		AVX512_IFMA,		// AVX-512 Integer Fused Multiply-Add Instructions
+		AVX512_PF,			// AVX-512 Prefetch Instructions
+		AVX512_ER,			// AVX-512 Exponential and Reciprocal Instructions
+		AVX512_CD,			// AVX-512 Conflict Detection Instructions
+		AVX512_BW,			// AVX-512 Byte and Word Instructions
+		AVX512_VL,			// AVX-512 Vector Length Extensions
+		AVX512_VBMI,		// AVX-512 Vector Bit Manipulation Instructions
+		AVX512_VBMI2,		// AVX-512 Vector Bit Manipulation Instructions 2
+		AVX512_VNNI,		// AVX-512 Vector Neural Network Instructions
+		AVX512_BITALG,		// AVX-512 BITALG instructions
+		AVX512_VPOPCNTDQ,	// AVX-512 Vector Population Count Double and Quad-word
+		AVX512_4VNNIW,		// AVX-512 4-register Neural Network Instructions
+		AVX512_4FMAPS,		// AVX-512 4-register Multiply Accumulation Single precision
 		COUNT
 	};
 
@@ -66,18 +81,48 @@ public:
 		"Architecture::SSE4",
 		"Architecture::AVX",
 		"Architecture::AVX2",
+		"Architecture::AVX512_F",
+		"Architecture::AVX512_DQ",
+		"Architecture::AVX512_IFMA",
+		"Architecture::AVX512_PF",
+		"Architecture::AVX512_ER",
+		"Architecture::AVX512_CD",
+		"Architecture::AVX512_BW",
+		"Architecture::AVX512_VL",
+		"Architecture::AVX512_VBMI",
+		"Architecture::AVX512_VBMI2",
+		"Architecture::AVX512_VNNI",
+		"Architecture::AVX512_BITALG",
+		"Architecture::AVX512_VPOPCNTDQ",
+		"Architecture::AVX512_4VNNIW",
+		"Architecture::AVX512_4FMAPS",
 	};
 	static_assert(ArraySize(ARCH_NAMES) == underlying_cast(Architecture::COUNT), "Size of ARCH_NAMES vs Architecture enum doesn't match");
 
-	enum class ArchFlags : u8
+	enum class ArchFlags : u32
 	{
-		DEFAULT	=	0,
-		SSE		=	1 << underlying_cast(Architecture::SSE),
-		SSE2	=	1 << underlying_cast(Architecture::SSE2),
-		SSE3	=	1 << underlying_cast(Architecture::SSE3),
-		SSE4	=	1 << underlying_cast(Architecture::SSE4),
-		AVX		=	1 << underlying_cast(Architecture::AVX),
-		AVX2	=	1 << underlying_cast(Architecture::AVX2),
+		DEFAULT				=	0,
+		SSE					=	1 << underlying_cast(Architecture::SSE),
+		SSE2				=	1 << underlying_cast(Architecture::SSE2),
+		SSE3				=	1 << underlying_cast(Architecture::SSE3),
+		SSE4				=	1 << underlying_cast(Architecture::SSE4),
+		AVX					=	1 << underlying_cast(Architecture::AVX),
+		AVX2				=	1 << underlying_cast(Architecture::AVX2),
+		AVX512_F			=	1 << underlying_cast(Architecture::AVX512_F),
+		AVX512_DQ			=	1 << underlying_cast(Architecture::AVX512_DQ),
+		AVX512_IFMA			=	1 << underlying_cast(Architecture::AVX512_IFMA),
+		AVX512_PF			=	1 << underlying_cast(Architecture::AVX512_PF),
+		AVX512_ER			=	1 << underlying_cast(Architecture::AVX512_ER),
+		AVX512_CD			=	1 << underlying_cast(Architecture::AVX512_CD),
+		AVX512_BW			=	1 << underlying_cast(Architecture::AVX512_BW),
+		AVX512_VL			=	1 << underlying_cast(Architecture::AVX512_VL),
+		AVX512_VBMI			=	1 << underlying_cast(Architecture::AVX512_VBMI),
+		AVX512_VBMI2		=	1 << underlying_cast(Architecture::AVX512_VBMI2),
+		AVX512_VNNI			=	1 << underlying_cast(Architecture::AVX512_VNNI),
+		AVX512_BITALG		=	1 << underlying_cast(Architecture::AVX512_BITALG),
+		AVX512_VPOPCNTDQ	=	1 << underlying_cast(Architecture::AVX512_VPOPCNTDQ),
+		AVX512_4VNNIW		=	1 << underlying_cast(Architecture::AVX512_4VNNIW),
+		AVX512_4FMAPS		=	1 << underlying_cast(Architecture::AVX512_4FMAPS),
 	};
 
 	enum class Extension : u8
@@ -112,6 +157,7 @@ public:
 	static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsExtensionEnabled(Extension ext);
 	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetArchitectureEnabled(Architecture arch, bool bEnable);
 	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetExtensionEnabled(Extension ext, bool bEnable);
+	static void ClearArchFlags();
 	static constexpr const char* GetArchitectureName(Architecture arch);
 	static constexpr const char* GetExtensionName(Extension ext);
 	static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName(ArchFlags archFlags, Architecture startFrom = Architecture::COUNT - 1);
@@ -176,6 +222,13 @@ FFTL_FORCEINLINE FFTL_CPU_INFO_COND_CONSTEXPR bool CpuInfo::GetIsArchitectureEna
 FFTL_FORCEINLINE FFTL_CPU_INFO_COND_CONSTEXPR bool CpuInfo::GetIsExtensionEnabled(Extension ext)
 {
 	return underlying_cast(GetExtFlags() & ToFlag(ext)) != 0;
+}
+
+FFTL_FORCEINLINE void CpuInfo::ClearArchFlags()
+{
+#if !defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
+	s_archFlags = ArchFlags::DEFAULT;
+#endif
 }
 
 FFTL_FORCEINLINE constexpr const char* CpuInfo::GetArchitectureName(Architecture arch)

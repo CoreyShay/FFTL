@@ -77,6 +77,8 @@ void CpuInfo::Init()
 #if !(defined(__ORBIS__) || defined(__PROSPERO__) || defined(_DURANGO)) && defined(FFTL_SSE)
 CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 {
+	//	https://en.wikipedia.org/wiki/CPUID
+
 	ArchFlags retFlags = ArchFlags::DEFAULT;
 
 	int cpuInfo[4];
@@ -110,8 +112,22 @@ CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 				if (nExIds >= 7)
 				{
 					__cpuid(cpuInfo, 7);
-					if ((cpuInfo[1] & (1 << 5)) != 0)
-						retFlags |= ArchFlags::AVX2;
+					retFlags |= ((cpuInfo[1] & (1 <<  5))) != 0 ? ArchFlags::AVX2				: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 16))) != 0 ? ArchFlags::AVX512_F			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 17))) != 0 ? ArchFlags::AVX512_DQ			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 21))) != 0 ? ArchFlags::AVX512_IFMA		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 26))) != 0 ? ArchFlags::AVX512_PF			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 27))) != 0 ? ArchFlags::AVX512_ER			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 28))) != 0 ? ArchFlags::AVX512_CD			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 30))) != 0 ? ArchFlags::AVX512_BW			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[1] & (1 << 31))) != 0 ? ArchFlags::AVX512_VL			: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[2] & (1 <<  1))) != 0 ? ArchFlags::AVX512_VBMI		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[2] & (1 <<  6))) != 0 ? ArchFlags::AVX512_VBMI2		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[2] & (1 << 11))) != 0 ? ArchFlags::AVX512_VNNI		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[2] & (1 << 12))) != 0 ? ArchFlags::AVX512_BITALG		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[2] & (1 << 14))) != 0 ? ArchFlags::AVX512_VPOPCNTDQ	: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[3] & (1 <<  2))) != 0 ? ArchFlags::AVX512_4VNNIW		: ArchFlags::DEFAULT;
+					retFlags |= ((cpuInfo[3] & (1 <<  3))) != 0 ? ArchFlags::AVX512_4FMAPS		: ArchFlags::DEFAULT;
 				}
 			}
 		}

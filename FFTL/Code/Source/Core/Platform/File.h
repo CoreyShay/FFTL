@@ -37,6 +37,7 @@ public:
 	size_t WriteObj(const T* pBuffer);
 
 	size_t GetSize() const { return m_Size; }
+	size_t GetPos() const { return m_Pos; }
 	bool GetIsOpen() const { return m_pFile != nullptr; }
 	bool GetIsEnd() const { return m_Pos >= m_Size; }
 

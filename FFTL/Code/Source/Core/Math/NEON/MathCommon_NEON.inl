@@ -445,6 +445,45 @@ FFTL_FORCEINLINE Vec4f V4fPermute<6, 2, 7, 3>(Vec4f_In a, Vec4f_In b)
 
 
 
+FFTL_FORCEINLINE Vec4u V4uAdd(Vec4u_In a, Vec4u_In b)
+{
+	return vaddq_u32(a, b);
+}
+FFTL_FORCEINLINE Vec4u V4uSub(Vec4u_In a, Vec4u_In b)
+{
+	return vsubq_u32(a, b);
+}
+FFTL_FORCEINLINE Vec4u V4uMul(Vec4u_In a, Vec4u_In b)
+{
+	return vmulq_u32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iAdd(Vec4i_In a, Vec4i_In b)
+{
+	return vaddq_s32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iSub(Vec4i_In a, Vec4i_In b)
+{
+	return vsubq_s32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iMul(Vec4i_In a, Vec4i_In b)
+{
+	return vmulq_s32(a, b);
+}
+
+FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
+{
+#if defined(FFTL_64BIT)
+	return vcvtnq_s32_f32(a);
+#else
+	const auto vZero = vdupq_n_f32(0);
+	const auto v0p5 = vdupq_n_f32(0.5f);
+	const auto vMask = vcltq_f32(a, vZero);
+	const auto vRounded = neon_blend(vaddq_f32(a, v0p5), vsubq_f32(a, v0p5), vMask);
+	return vcvtq_s32_f32(vRounded);
+#endif
+}
+
+
 
 
 

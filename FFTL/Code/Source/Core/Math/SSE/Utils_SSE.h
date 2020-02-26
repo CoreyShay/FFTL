@@ -74,6 +74,8 @@ __m128 sse_AddMul_ss(const __m128& a, const __m128& b, const __m128& c);
 __m128 sse_SubMul_ps(const __m128& a, const __m128& b, const __m128& c);
 __m128 sse_SubMul_ss(const __m128& a, const __m128& b, const __m128& c);
 
+__m128i sse_MulInt32(const __m128i &a, const __m128i &b);
+
 __m128 sse_genMaskXYZ();
 
 template<u32 val>

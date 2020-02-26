@@ -671,6 +671,36 @@ FFTL_FORCEINLINE bool V4fIsEqual(Vec2d_In a, Vec2d_In b)
 	return _mm_movemask_pd( _mm_cmpeq_pd(a, b) ) == 3;
 }
 
+FFTL_FORCEINLINE Vec4u V4uAdd(Vec4u_In a, Vec4u_In b)
+{
+	return _mm_add_epi32(a, b);
+}
+FFTL_FORCEINLINE Vec4u V4uSub(Vec4u_In a, Vec4u_In b)
+{
+	return _mm_sub_epi32(a, b);
+}
+FFTL_FORCEINLINE Vec4u V4uMul(Vec4u_In a, Vec4u_In b)
+{
+	return sse_MulInt32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iAdd(Vec4i_In a, Vec4i_In b)
+{
+	return _mm_add_epi32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iSub(Vec4i_In a, Vec4i_In b)
+{
+	return _mm_sub_epi32(a, b);
+}
+FFTL_FORCEINLINE Vec4i V4iMul(Vec4i_In a, Vec4i_In b)
+{
+	return sse_MulInt32(a, b);
+}
+
+FFTL_FORCEINLINE Vec4i V4fRoundToVfi( Vec4f_In a )
+{
+	return _mm_cvtps_epi32(a);
+}
+
 
 FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()
 {

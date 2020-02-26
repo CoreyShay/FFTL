@@ -124,10 +124,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_SSE 1
 #endif
 
-#if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__))
+#if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__) || defined(__FMA3__) || defined(__PROSPERO__))
 #	define FFTL_FMA3 1
 #endif
-#if !defined(FFTL_FMA4) && (defined(FFTL_USE_FMA4) || defined(__FMA3__))
+#if !defined(FFTL_FMA4) && (defined(FFTL_USE_FMA4) || defined(__FMA4__))
 #	define FFTL_FMA4 1
 #endif
 

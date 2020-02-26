@@ -259,7 +259,7 @@ inline bool ScanForConsecutiveZeroes(const f32* pBuffer, size_t nCount, size_t n
 	size_t nZeroCount = 0;
 	for (uint i = 0; i < nCount; ++i)
 	{
-		nZeroCount = pBuffer[i] == 0.f ? nZeroCount += 1 : nZeroCount = 0;
+		nZeroCount += pBuffer[i] == 0.f ? 1 : 0;
 	}
 	return nZeroCount >= nThresholdCountCount;
 }

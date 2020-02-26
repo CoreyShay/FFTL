@@ -347,6 +347,44 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 
 
 
+FFTL_FORCEINLINE Vec4u V4uAdd(Vec4u_In a, Vec4u_In b)
+{
+	const Vec4u r = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4u V4uSub(Vec4u_In a, Vec4u_In b)
+{
+	const Vec4u r = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4u V4uMul(Vec4u_In a, Vec4u_In b)
+{
+	const Vec4u r = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4i V4iAdd(Vec4i_In a, Vec4i_In b)
+{
+	const Vec4i r = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4i V4iSub(Vec4i_In a, Vec4i_In b)
+{
+	const Vec4i r = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+	return r;
+}
+FFTL_FORCEINLINE Vec4i V4iMul(Vec4i_In a, Vec4i_In b)
+{
+	const Vec4i r = { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
+	return r;
+}
+
+FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
+{
+	const Vec4i r = { static_cast<s32>(a.x + 0.5f - (a.x < 0)), static_cast<s32>(a.y + 0.5f - (a.y < 0)), static_cast<s32>(a.z + 0.5f - (a.z < 0)), static_cast<s32>(a.w + 0.5f - (a.w < 0)) };
+	return r;
+}
+
+
 
 
 
