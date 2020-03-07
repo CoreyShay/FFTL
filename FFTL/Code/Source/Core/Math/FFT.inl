@@ -2461,34 +2461,15 @@ Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::~Convolver()
 }
 
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
-void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(const T* pKernelInput, size_t kernelLength)
-{
-	Destroy();
-
-//	const size_t sizeBytes = sizeof(T) * kernelLength;
-	const byte* byteInput = reinterpret_cast<const byte*>(pKernelInput);
-
-	//	Determine the number of kernels we need
-	const uint kernelCount = safestatic_cast<uint>(AlignForward<N>(kernelLength) / N);
-
-	MemZero(m_KernelArray_FD);
-	m_KernelCount = kernelCount;
-
-	constexpr size_t segmentSize = sizeof(Kernel) / 2;
-	for (uint i = 0; i < kernelCount; ++i)
-	{
-		FFTL_ASSERT(kernelLength > 0);
-		Kernel& kernel = m_KernelArray_FD[i];
-//		memcpy(&tempInput, byteInput + i*segmentSize, Min(segmentSize, sizeBytes));
-
-		//	Convert to frequency domain, and store
-		sm_fft.TransformForward_1stHalf(*reinterpret_cast<const FixedArray<T, N>*>(byteInput + i * segmentSize), kernel.r(), kernel.i());
-	}
-}
-
-template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOutput)
 {
+	//	TODO:
+	if (m_pKernelArray_FD == nullptr)
+	{
+		MemZero(fInOutput);
+		return;
+	}
+
 	Kernel inputXFormed;
 	Kernel workBufferA, workBufferB;
 
@@ -2500,7 +2481,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 
 	//	Perform short convolution on the first kernel only, while pushing to the small output buffer
 	{
-		Kernel& kernel = m_KernelArray_FD[0];
+		const Kernel& kernel = m_pKernelArray_FD[0];
 		T* pAccumBuffer = m_AccumulationBuffer + N * 0;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
@@ -2566,7 +2547,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray<T,N>& fInOut
 	//	Perform short convolutions on the remaining kernels, accumulating everything as necessary
 	for (uint k = 1; k < m_KernelCount; ++k)
 	{
-		Kernel& kernel = m_KernelArray_FD[k];
+		const Kernel& kernel = m_pKernelArray_FD[k];
 		T* pAccumBuffer = m_AccumulationBuffer + N * k;
 
 		//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
@@ -2634,6 +2615,44 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Destroy()
 }
 
 
+template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle>
+void Convolver_OwnedKernel<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(const T* pKernelInput_TD, size_t kernelLength)
+{
+	FFTL_ASSERT(kernelLength > 0);
+
+	this->Destroy();
+
+	//	const size_t sizeBytes = sizeof(T) * kernelLength;
+//	const byte* byteInput = reinterpret_cast<const byte*>(pKernelInput_TD);
+
+	//	Determine the number of kernels we need
+	const uint kernelCount = safestatic_cast<uint>(AlignForward<N>(kernelLength) / N);
+	size_t samplesRemaining = kernelLength;
+
+	MemZero(m_KernelArray_FD);
+	this->m_KernelCount = kernelCount;
+
+	for (uint i = 0; i < kernelCount - 1; ++i)
+	{
+		Kernel& kernel = m_KernelArray_FD[i];
+
+		//	Convert to frequency domain, and store
+		sm_fft.TransformForward_1stHalf(*reinterpret_cast<const FixedArray<T, N>*>(pKernelInput_TD + i * N), kernel.r(), kernel.i());
+
+		samplesRemaining -= N;
+	}
+
+	{
+		FixedArray_Aligned32<T, N> temp;
+		MemZero(temp);
+		MemCopy(temp.data(), pKernelInput_TD + N * (kernelCount - 1), samplesRemaining);
+
+		Kernel& kernel = m_KernelArray_FD[kernelCount - 1];
+
+		//	Convert to frequency domain, and store
+		sm_fft.TransformForward_1stHalf(temp, kernel.r(), kernel.i());
+	}
+}
 
 
 

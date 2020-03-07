@@ -258,7 +258,7 @@ FixedArray_Aligned32<fltType, _N> fTestOutput2;
 FixedArray_Aligned32<cxNumber<f32_4>, _N> cxInterleaved4;
 FixedArray_Aligned64<cxNumber<f32_8>, _N> cxInterleaved8;
 
-FFTL::Convolver<_M, 4, float, float> m_Convolver;
+FFTL::Convolver_OwnedKernel<_M, 4, float, float> m_Convolver;
 FFTL::Convolver_Slow<float, _N, _N*4> m_Convolver_Slow;
 
 void convolutionTest()

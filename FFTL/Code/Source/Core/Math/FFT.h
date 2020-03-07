@@ -67,7 +67,7 @@ enum enFftWindowType
 
 
 template <uint M, typename T, typename T_Twiddle = T>
-class FFT_Base
+class FFTL_NODISCARD FFT_Base
 {
 public:
 	typedef u16 T_BR; // can be made larger if size greater than 65536 is needed.
@@ -120,13 +120,13 @@ public:
 	void PrintSetupInfo() const;
 	void PrintTimerInfo(uint iterationCount = 1) const;
 
-	FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
-	FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
-	FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
-	FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleReal(uint n) const { return m_TwiddleFactorsR[n]; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_TwiddleFactorsR + n; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T_Twiddle& GetTwiddleImag(uint n) const { return m_TwiddleFactorsI[n]; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_TwiddleFactorsI + n; }
 
-	FFTL_FORCEINLINE constexpr const FixedArray<T_BR,N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
-	FFTL_FORCEINLINE constexpr T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr const FixedArray<T_BR,N>& GetBitReverseIndices() const { return m_BitReverseIndices; }
+	FFTL_NODISCARD FFTL_FORCEINLINE constexpr T_BR GetBitReverseIndex(uint n) const { return m_BitReverseIndices[n]; }
 
 protected:
 
@@ -161,7 +161,7 @@ public:
 // however, if T is a SIMD type with the appropriate operators overloaded, you basically get
 // that for free, eg, 4 channels at once if T is of type f32_4.
 template <uint M, typename T, typename T_Twiddle = T>
-class FFT : public FFT_Base<M, T, T_Twiddle>
+class FFTL_NODISCARD FFT : public FFT_Base<M, T, T_Twiddle>
 {
 };
 
@@ -223,7 +223,7 @@ protected:
 
 
 template <uint M, typename T, typename T_Twiddle = T>
-class FFT_Real_Base
+class FFTL_NODISCARD FFT_Real_Base
 {
 public:
 
@@ -242,10 +242,10 @@ public:
 	void TransformInverse(const FixedArray<T,N_2>& fFreqInR, const FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 	void TransformInverse_ClobberInput(FixedArray<T,N_2>& fFreqInR, FixedArray<T,N_2>& fFreqInI, FixedArray<T,N>& fTimeOut) const;
 
-	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_PostTwiddlesR[n]; }
-	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_PostTwiddlesR + n; }
-	FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_PostTwiddlesI[n]; }
-	FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_PostTwiddlesI + n; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T_Twiddle& GetTwiddleReal(uint n) const { return m_PostTwiddlesR[n]; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T_Twiddle* GetTwiddleRealPtr(uint n) const { return m_PostTwiddlesR + n; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T_Twiddle& GetTwiddleImag(uint n) const { return m_PostTwiddlesI[n]; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T_Twiddle* GetTwiddleImagPtr(uint n) const { return m_PostTwiddlesI + n; }
 
 	void PrintTimerInfo(uint iterationCount = 1) const { sm_fft.PrintTimerInfo(iterationCount); }
 
@@ -264,7 +264,7 @@ class FFT_Real : public FFT_Real_Base<M, T, T_Twiddle>
 
 #if FFTL_SIMD_F32x4
 template <uint M>
-class FFT_Real<M, f32, f32> : public FFT_Real_Base<M, f32, f32>
+class FFTL_NODISCARD FFT_Real<M, f32, f32> : public FFT_Real_Base<M, f32, f32>
 {
 public:
 	typedef f32 T;
@@ -285,7 +285,7 @@ private:
 };
 #endif
 
-class FFT_RealV_Base
+class FFTL_NODISCARD FFT_RealV_Base
 {
 public:
 	virtual void TransformForward(const f32* fTimeIn, f32* fFreqOutR, f32* fFreqOutI) const = 0;
@@ -296,7 +296,7 @@ public:
 //	Use this class if you need an FFT where the usage M is only known at runtime,
 // eg, use FFT_RealV_Base
 template <uint M>
-class FFT_RealV : public FFT_RealV_Base, public FFT_Real<M, f32>
+class FFTL_NODISCARD FFT_RealV : public FFT_RealV_Base, public FFT_Real<M, f32>
 {
 public:
 	//	Precomputed constants
@@ -312,18 +312,21 @@ public:
 //	This convolver class only processes real data, using a real FFT of size 2N, which itself
 // utilizes a complex FFT of size N.
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
-class Convolver
+class FFTL_NODISCARD Convolver
 {
 public:
 	typedef cxNumber<T> cxT;
 	static constexpr uint N = 1<<M;
 	static constexpr uint N_2 = N >> 1;
 	static constexpr uint _2N = N << 1;
-	static constexpr size_t SingleKernelSize_Bytes() { return sizeof( Kernel ); }
+	static constexpr size_t SingleKernelSize_Bytes() { return sizeof(Kernel); }
 
 	struct Kernel
 	{
 		FixedArray<f32, _2N> t;
+
+		const FixedArray<f32, N>& r() const { return *reinterpret_cast<const FixedArray<f32, N>*>(&t); }
+		const FixedArray<f32, N>& i() const { return *reinterpret_cast<const FixedArray<f32, N>*>(t + N); }
 
 		FixedArray<f32, N>& r() { return *reinterpret_cast<FixedArray<f32, N>*>(&t); }
 		FixedArray<f32, N>& i() { return *reinterpret_cast<FixedArray<f32, N>*>(t + N); }
@@ -332,33 +335,53 @@ public:
 	Convolver();
 	~Convolver();
 
-	void InitKernel(const T* pKernelInput, size_t kernelLength);
 	void Convolve(FixedArray<T,N>& fInOutput);
 	void Destroy();
 
-	uint GetKernelCount() const { return m_KernelCount; }
-	size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof( Kernel ); }
-	const FixedArray_Aligned32<Kernel, T_MAX_KERNELS>& GetKernelArray_FD() const { return m_KernelArray_FD; }
-	
-	//	You must write directly to the returned array, and set the new kernel count
-	FixedArray_Aligned32<Kernel, T_MAX_KERNELS>& GetKernelArray_FD_ForWriting(uint newKernelCount)
+	FFTL_NODISCARD uint GetKernelCount() const { return m_KernelCount; }
+	FFTL_NODISCARD size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof(Kernel); }
+	FFTL_NODISCARD const Kernel* GetKernelArray_FD() const { return m_pKernelArray_FD; }
+
+	void SetKernel(const Kernel* pKernelArray_FD, u32 newKernelCount)
 	{
-		FFTL_ASSERT_MSG( newKernelCount <= T_MAX_KERNELS, "Kernel count overrun" );
+		FFTL_ASSERT_MSG(newKernelCount <= T_MAX_KERNELS, "Kernel count overrun");
+		m_pKernelArray_FD = pKernelArray_FD;
 		m_KernelCount = newKernelCount;
-		return m_KernelArray_FD;
 	}
 
 	//	Our FFT computer
 	static constexpr FFT_Real<M + 1, T, T_Twiddle> sm_fft{ };
 
-private:
+protected:
 	u32 m_KernelCount;
-	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
+	const Kernel* m_pKernelArray_FD = nullptr;
 	FixedArray_Aligned32<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
 };
 
+template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
+class Convolver_OwnedKernel : public Convolver<M, T_MAX_KERNELS, T, T_Twiddle>
+{
+public:
+	using typename Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Kernel;
+	using Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::N;
+	using Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::sm_fft;
+
+	Convolver_OwnedKernel()
+	{
+		this->m_pKernelArray_FD = m_KernelArray_FD.data();
+	}
+
+	void InitKernel(const T* pKernelInput_TD, size_t kernelLength);
+
+	//	Disallow changing the kernel pointer when it is owned
+	void SetKernel(const Kernel* pKernelArray_FD, u32 newKernelCount) = delete;
+
+private:
+	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
+};
+
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>
-class Convolver_Slow
+class FFTL_NODISCARD Convolver_Slow
 {
 public:
 

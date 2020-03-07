@@ -17,10 +17,10 @@ namespace FFTL
 //
 //	Functions unique to vec3
 //
-vec3		Cross(const vec3& a, const vec3& b);
-void		Transpose3x3(vec3& a, vec3& b, vec3& c);
-void		Transpose3x3SaveW(vec3& a, vec3& b, vec3& c); // Preserves the original W values rather than overwriting.
-void		Transpose4x3(vec4& io_a, vec4& io_b, vec4& io_c, const vec4& in_d);
+FFTL_NODISCARD vec3	Cross(const vec3& a, const vec3& b);
+void				Transpose3x3(vec3& a, vec3& b, vec3& c);
+void				Transpose3x3SaveW(vec3& a, vec3& b, vec3& c); // Preserves the original W values rather than overwriting.
+void				Transpose4x3(vec4& io_a, vec4& io_b, vec4& io_c, const vec4& in_d);
 
 
 

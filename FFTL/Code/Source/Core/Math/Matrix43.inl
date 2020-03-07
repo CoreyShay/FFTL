@@ -471,7 +471,7 @@ inline void mat43::Orthonormalize()
 	r = Normalize(r);
 	f = Normalize(f - (DotV(r, f) * r));
 	u = Normalize(u - (DotV(r, u) * r + DotV(f, u) * f));
-	p.InsertW(1.f);
+	p = InsertW(p, 1.f);
 
 	FFTL_MATH_ASSERT(IsOrthonormal3x3());
 }
@@ -486,7 +486,7 @@ inline void mat43::OrthonormalizeFast()
 	r = NormalizeFast(r);
 	f = NormalizeFast(f - (DotV(r, f) * r));
 	u = NormalizeFast(u - (DotV(r, u) * r + DotV(f, u) * f));
-	p.InsertW(1.f);
+	p = InsertW(p, 1.f);
 }
 
 inline void mat43::CopyFrom(const mat43& rhs)
@@ -590,7 +590,7 @@ inline mat43 Mul(const mat43& a, const mat43& b)
 inline void Mul3x3(const mat43& a, const mat43& b, mat43& out)
 {
 	Mul(a.AsMat33(), b.AsMat33(), out.AsMat33());
-	out.Row<0>().Zero();
+	out.Row<0>() = vec3::Zero();
 }
 
 inline mat43 Mul3x3(const mat43& a, const mat43& b)
@@ -607,7 +607,7 @@ inline void Mul3x3Part(const mat43& a, const mat43& b, mat43& out)
 	out.Row<0>() = b.Transform3x3(a.Row<0>());
 	out.Row<1>() = b.Transform3x3(a.Row<1>());
 	out.Row<2>() = b.Transform3x3(a.Row<2>());
-	out.Row<3>().Zero();
+	out.Row<3>() = vec3::Zero();
 }
 
 inline mat43 Mul3x3Part(const mat43& a, const mat43& b)

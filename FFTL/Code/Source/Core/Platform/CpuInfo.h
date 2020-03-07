@@ -44,7 +44,7 @@ namespace FFTL
 {
 
 
-class CpuInfo
+class FFTL_NODISCARD CpuInfo
 {
 public:
 	enum class Architecture : u8
@@ -151,34 +151,34 @@ public:
 
 
 	static void Init();
-	static FFTL_CPU_INFO_COND_CONSTEXPR ArchFlags GetArchFlags();
-	static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags GetExtFlags();
-	static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsArchitectureEnabled(Architecture arch);
-	static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsExtensionEnabled(Extension ext);
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ArchFlags GetArchFlags();
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags GetExtFlags();
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsArchitectureEnabled(Architecture arch);
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsExtensionEnabled(Extension ext);
 	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetArchitectureEnabled(Architecture arch, bool bEnable);
 	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetExtensionEnabled(Extension ext, bool bEnable);
 	static void ClearArchFlags();
-	static constexpr const char* GetArchitectureName(Architecture arch);
-	static constexpr const char* GetExtensionName(Extension ext);
-	static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName(ArchFlags archFlags, Architecture startFrom = Architecture::COUNT - 1);
-	static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName();
-	static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestExtensionName(ExtFlags extFlags, Extension startFrom = Extension::COUNT - 1);
+	FFTL_NODISCARD static constexpr const char* GetArchitectureName(Architecture arch);
+	FFTL_NODISCARD static constexpr const char* GetExtensionName(Extension ext);
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName(ArchFlags archFlags, Architecture startFrom = Architecture::COUNT - 1);
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName();
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestExtensionName(ExtFlags extFlags, Extension startFrom = Extension::COUNT - 1);
 
-	static FFTL_SSE_ONLY(constexpr) bool GetSupports_SSE();
-	static FFTL_SSE2_ONLY(constexpr) bool GetSupports_SSE2();
-	static FFTL_SSE3_ONLY(constexpr) bool GetSupports_SSE3();
-	static FFTL_SSE4_ONLY(constexpr) bool GetSupports_SSE4();
-	static FFTL_AVX_ONLY(constexpr) bool GetSupports_AVX();
-	static FFTL_AVX2_ONLY(constexpr) bool GetSupports_AVX2();
+	FFTL_NODISCARD static FFTL_SSE_ONLY(constexpr) bool GetSupports_SSE();
+	FFTL_NODISCARD static FFTL_SSE2_ONLY(constexpr) bool GetSupports_SSE2();
+	FFTL_NODISCARD static FFTL_SSE3_ONLY(constexpr) bool GetSupports_SSE3();
+	FFTL_NODISCARD static FFTL_SSE4_ONLY(constexpr) bool GetSupports_SSE4();
+	FFTL_NODISCARD static FFTL_AVX_ONLY(constexpr) bool GetSupports_AVX();
+	FFTL_NODISCARD static FFTL_AVX2_ONLY(constexpr) bool GetSupports_AVX2();
 
-	static FFTL_SIMD_F32x8_ONLY(constexpr) bool GetSupports_SIMD_F32x8();
-	static FFTL_SIMD_I32x8_ONLY(constexpr) bool GetSupports_SIMD_I32x8();
-	static FFTL_SIMD_F32x4_ONLY(constexpr) bool GetSupports_SIMD_F32x4();
-	static FFTL_SIMD_I32x4_ONLY(constexpr) bool GetSupports_SIMD_I32x4();
+	FFTL_NODISCARD static FFTL_SIMD_F32x8_ONLY(constexpr) bool GetSupports_SIMD_F32x8();
+	FFTL_NODISCARD static FFTL_SIMD_I32x8_ONLY(constexpr) bool GetSupports_SIMD_I32x8();
+	FFTL_NODISCARD static FFTL_SIMD_F32x4_ONLY(constexpr) bool GetSupports_SIMD_F32x4();
+	FFTL_NODISCARD static FFTL_SIMD_I32x4_ONLY(constexpr) bool GetSupports_SIMD_I32x4();
 
 private:
-	static FFTL_CPU_INFO_COND_CONSTEXPR ArchFlags DetectArchitectureSupport();
-	static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags DetectExtensionSupport();
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ArchFlags DetectArchitectureSupport();
+	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags DetectExtensionSupport();
 
 #if defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
 #	if defined(__ORBIS__) || defined(_DURANGO)

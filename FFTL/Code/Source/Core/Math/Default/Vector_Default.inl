@@ -198,30 +198,30 @@ inline int vecT<N>::GetAsIntW() const
 //
 
 template<uint N>
-inline vecT<N> vecT<N>::InsertX(f32 f) const
+inline vecT<N> InsertX(const vecT<N>& v, f32 f)
 {
-	auto r = m_v;
+	auto r = v.m_v;
 	r[0] = f;
 	return r;
 }
 template<uint N>
-inline vecT<N> vecT<N>::InsertY(f32 f) const
+inline vecT<N> InsertY(const vecT<N>& v, f32 f)
 {
-	auto r = m_v;
+	auto r = v.m_v;
 	r[1] = f;
 	return r;
 }
 template<uint N>
-inline vecT<N> vecT<N>::InsertZ(f32 f) const
+inline vecT<N> InsertZ(const vecT<N>& v, f32 f)
 {
-	auto r = m_v;
+	auto r = v.m_v;
 	r[2] = f;
 	return r;
 }
 template<uint N>
-inline vecT<N> vecT<N>::InsertW(f32 f) const
+inline vecT<N> InsertW(const vecT<N>& v, f32 f)
 {
-	auto r = m_v;
+	auto r = v.m_v;
 	r[3] = f;
 	return r;
 }

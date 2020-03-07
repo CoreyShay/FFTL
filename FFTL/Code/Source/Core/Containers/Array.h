@@ -51,7 +51,7 @@ namespace FFTL
 
 
 template <typename T, size_t T_N>
-class FixedArray
+class FFTL_NODISCARD FixedArray
 {
 public:
 #if defined(FFTL_FIXED_ARRAY_USES_STD_ARRAY)

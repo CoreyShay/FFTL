@@ -10,7 +10,7 @@
 namespace FFTL
 {
 
-class RandomNumberGenerator
+class FFTL_NODISCARD RandomNumberGenerator
 {
 public:
 	static void Init();

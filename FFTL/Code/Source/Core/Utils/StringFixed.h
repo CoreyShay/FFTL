@@ -38,8 +38,8 @@ public:
 		return *this;
 	}
 
-	operator const char*() const { return this->data(); }
-	operator char*() { return this->data(); }
+	FFTL_NODISCARD operator const char*() const { return this->data(); }
+	FFTL_NODISCARD operator char*() { return this->data(); }
 };
 
 #if defined(FFTL_WCHAR)
@@ -87,8 +87,8 @@ public:
 		return *this;
 	}
 
-	operator const wchar_t*() const { return this->data(); }
-	operator wchar_t*() { return this->data(); }
+	FFTL_NODISCARD operator const wchar_t*() const { return this->data(); }
+	FFTL_NODISCARD operator wchar_t*() { return this->data(); }
 };
 
 template <uint N>
@@ -99,14 +99,14 @@ using TStringFixed = StringFixed<N>;
 #endif
 
 /// default values recommended by http://isthe.com/chongo/tech/comp/fnv/
-constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
+FFTL_NODISCARD constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
 {
 	const u32 PRIME = 0x01000193; //   16777619
 	return (oneChar ^ hash) * PRIME;
 }
 
 /// hash a C-style string
-constexpr u32 StringHash(const char* text, u32 uHash)
+FFTL_NODISCARD constexpr u32 StringHash(const char* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -119,14 +119,14 @@ constexpr u32 StringHash(const char* text, u32 uHash)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-constexpr u32 StringHash(const char* text)
+FFTL_NODISCARD constexpr u32 StringHash(const char* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);
 }
 
 #if defined(FFTL_WCHAR)
-constexpr u32 StringHash(const wchar_t* text, u32 uHash)
+FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -139,7 +139,7 @@ constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-constexpr u32 StringHash(const wchar_t* text)
+FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);

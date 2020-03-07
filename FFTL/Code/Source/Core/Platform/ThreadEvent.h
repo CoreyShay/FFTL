@@ -53,11 +53,11 @@ public:
 #endif //platform
 
 #if (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
-	HandleType GetHandle() const { return m_Handle; }
-	HandleType GetHandle() { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #else
-	HandleType const GetHandle() const { return m_Handle; }
-	HandleType GetHandle() { return m_Handle; }
+	FFTL_NODISCARD HandleType const GetHandle() const { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #endif
 
 private:

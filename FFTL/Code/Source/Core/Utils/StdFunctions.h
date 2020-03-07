@@ -38,11 +38,13 @@ namespace FFTL
 
 //	Compares blocks of memory of a size known at compile time in the fastest way possible.
 // Powers of 2 sizes <= 64 are branchless.
-template<size_t T_BYTE_COUNT> bool CompareBytesEQ(const void* a, const void* b);
+template<size_t T_BYTE_COUNT>
+FFTL_NODISCARD bool CompareBytesEQ(const void* a, const void* b);
 
 //	Copies the number of bytes in the template param from pSrc to pDst.
 // Uses MemCopy, except sometimes just a few, fast, tiny instructions if the size is optimal.
-template<size_t T_BYTE_COUNT> void* CopyBytes(void* pDst, const void* pSrc);
+template<size_t T_BYTE_COUNT>
+FFTL_NODISCARD void* CopyBytes(void* pDst, const void* pSrc);
 
 
 
@@ -91,45 +93,45 @@ FFTL_FORCEINLINE T* MemZero(T& dst)
 }
 
 template<uint T_ALIGNMENT, typename T>
-FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
 {
 	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (T_ALIGNMENT - 1)) & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_FORCEINLINE T AlignForward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE T AlignForward(size_t alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (alignment - 1)) & ~(alignment - 1);
 }
 
 template<uint T_ALIGNMENT, typename T>
-FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
 {
 	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_FORCEINLINE T AlignBackward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE T AlignBackward(size_t alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(alignment - 1);
 }
 
 template<typename T, size_t N>
-FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&arr)[N])
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&arr)[N])
 {
 	return sizeof(arr) / sizeof(T);
 }
 
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<1>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<1>(const void* a, const void* b)
 {
 	return *reinterpret_cast<const byte*>(a) == *reinterpret_cast<const byte*>(b);
 }
 
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<2>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<2>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u16 u; };
@@ -139,7 +141,7 @@ FFTL_FORCEINLINE bool CompareBytesEQ<2>(const void* a, const void* b)
 }
 
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<4>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<4>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u32 u; };
@@ -148,7 +150,7 @@ FFTL_FORCEINLINE bool CompareBytesEQ<4>(const void* a, const void* b)
 }
 
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u64 u; };
@@ -159,7 +161,7 @@ FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void* b)
 
 #if defined(FFTL_SSE2)
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
 {
 	const __m128i vA = _mm_loadu_si128((const __m128i*)a);
 	const __m128i vB = _mm_loadu_si128((const __m128i*)b);
@@ -167,7 +169,7 @@ FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
 }
 
 template<>
-FFTL_FORCEINLINE bool CompareBytesEQ<32>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<32>(const void* a, const void* b)
 {
 #if defined(FFTL_AVX2)
 	const __m256i vA = _mm256_loadu_si256((const __m256i*)a);
@@ -188,7 +190,7 @@ FFTL_FORCEINLINE bool CompareBytesEQ<32>(const void* a, const void* b)
 
 
 template<size_t T_BYTE_COUNT>
-FFTL_FORCEINLINE bool CompareBytesEQ(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ(const void* a, const void* b)
 {
 	return memcmp(a, b, T_BYTE_COUNT) == 0;
 }
@@ -234,7 +236,7 @@ FFTL_FORCEINLINE void* CopyBytes<4>(void* pDst, const void* pSrc)
 	return pDst;
 }
 
-inline bool ScanForAnyNonzero(const f32* pBuffer, size_t nCount)
+FFTL_NODISCARD inline bool ScanForAnyNonzero(const f32* pBuffer, size_t nCount)
 {
 	for (uint i = 0; i < nCount; ++i)
 	{
@@ -244,7 +246,7 @@ inline bool ScanForAnyNonzero(const f32* pBuffer, size_t nCount)
 	return false;
 }
 
-inline bool ScanForAnyAboveThreshold(const f32* pBuffer, size_t nCount, f32 fThreshold)
+FFTL_NODISCARD inline bool ScanForAnyAboveThreshold(const f32* pBuffer, size_t nCount, f32 fThreshold)
 {
 	for (uint i = 0; i < nCount; ++i)
 	{
@@ -254,7 +256,7 @@ inline bool ScanForAnyAboveThreshold(const f32* pBuffer, size_t nCount, f32 fThr
 	return false;
 }
 
-inline bool ScanForConsecutiveZeroes(const f32* pBuffer, size_t nCount, size_t nThresholdCountCount)
+FFTL_NODISCARD inline bool ScanForConsecutiveZeroes(const f32* pBuffer, size_t nCount, size_t nThresholdCountCount)
 {
 	size_t nZeroCount = 0;
 	for (uint i = 0; i < nCount; ++i)
@@ -294,11 +296,11 @@ inline void ByteReverse(void* pObj, size_t objSize)
 		Swap(*pFnt, *pEnd);
 }
 
-FFTL_FORCEINLINE bool StringEquals(const char* pszA, const char* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringEquals(const char* pszA, const char* pszB)
 {
 	return strcmp(pszA, pszB) == 0;
 }
-FFTL_FORCEINLINE bool StringIEquals(const char* pszA, const char* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringIEquals(const char* pszA, const char* pszB)
 {
 #if defined(_POSIX_VERSION)
 	return strcasecmp(pszA, pszB) == 0;
@@ -307,11 +309,11 @@ FFTL_FORCEINLINE bool StringIEquals(const char* pszA, const char* pszB)
 #endif
 }
 #if defined(FFTL_WCHAR)
-FFTL_FORCEINLINE bool StringEquals(const wchar_t* pszA, const wchar_t* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringEquals(const wchar_t* pszA, const wchar_t* pszB)
 {
 	return wcscmp(pszA, pszB) == 0;
 }
-inline bool StringEquals(const wchar_t* pszA, const char* pszB)
+FFTL_NODISCARD inline bool StringEquals(const wchar_t* pszA, const char* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -324,7 +326,7 @@ inline bool StringEquals(const wchar_t* pszA, const char* pszB)
 	}
 	return true;
 }
-inline bool StringEquals(const char* pszA, const wchar_t* pszB)
+FFTL_NODISCARD inline bool StringEquals(const char* pszA, const wchar_t* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -337,7 +339,7 @@ inline bool StringEquals(const char* pszA, const wchar_t* pszB)
 	}
 	return true;
 }
-FFTL_FORCEINLINE bool StringIEquals(const wchar_t* pszA, const wchar_t* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringIEquals(const wchar_t* pszA, const wchar_t* pszB)
 {
 #if defined(_POSIX_VERSION)
 	return wcscasecmp(pszA, pszB) == 0;
@@ -345,7 +347,7 @@ FFTL_FORCEINLINE bool StringIEquals(const wchar_t* pszA, const wchar_t* pszB)
 	return _wcsicmp(pszA, pszB) == 0;
 #endif
 }
-inline bool StringIEquals(const wchar_t* pszA, const char* pszB)
+FFTL_NODISCARD inline bool StringIEquals(const wchar_t* pszA, const char* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -358,7 +360,7 @@ inline bool StringIEquals(const wchar_t* pszA, const char* pszB)
 	}
 	return true;
 }
-inline bool StringIEquals(const char* pszA, const wchar_t* pszB)
+FFTL_NODISCARD inline bool StringIEquals(const char* pszA, const wchar_t* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -391,9 +393,9 @@ inline size_t ToASCII(char* s, const wchar_t* w, size_t uSize)
 		}
 		else
 		{
-			safestatic_cast<char>(*q++ = 0xE0 + (c >> 12));
-			safestatic_cast<char>(*q++ = 0x80 + ((c >> 6) & 63));
-			safestatic_cast<char>(*q++ = 0x80 + (c & 63));
+			*q++ = safestatic_cast<char>(0xE0 + (c >> 12));
+			*q++ = safestatic_cast<char>(0x80 + ((c >> 6) & 63));
+			*q++ = safestatic_cast<char>(0x80 + (c & 63));
 		}
 	}
 	*q = 0;

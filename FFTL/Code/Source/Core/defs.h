@@ -52,9 +52,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if (FFTL_CPP_VERSION >= 17)
 #	define FFTL_IF_CONSTEXPR(__expr__) if constexpr (__expr__)
 #	define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
+#	define FFTL_NODISCARD [[nodiscard]]
 #else
 #	define FFTL_IF_CONSTEXPR(__expr__) if (__expr__)
 #	define FFTL_SWITCH_FALLTHROUGH
+#	define FFTL_NODISCARD
 #endif
 
 #if defined(__powerpc__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_XENON)
@@ -349,14 +351,10 @@ typedef unsigned int	uint;
 
 #if defined(FFTL_WCHAR)
 typedef wchar_t			tchar;
-#	if !defined(_T)
-#		define _T(x)	L ## x
-#	endif
+#	define FFTL_T(x)	L ## x
 #else
 typedef char			tchar;
-#	if !defined(_T)
-#		define _T(x)	x
-#	endif
+#	define FFTL_T(x)	x
 #endif
 
 

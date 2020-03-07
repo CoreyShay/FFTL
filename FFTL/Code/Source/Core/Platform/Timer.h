@@ -37,7 +37,7 @@ namespace FFTL
 {
 
 
-class TimerBase
+class FFTL_NODISCARD TimerBase
 {
 public:
 	TimerBase() = default;
@@ -52,7 +52,7 @@ protected:
 
 //	The CPU timer class offers the highest resolution timer possible on supported platforms
 // as it uses the actual CPU time stamp counter which counts the number of elapsed CPU cycles.
-class CpuTimer : public TimerBase
+class FFTL_NODISCARD CpuTimer : public TimerBase
 {
 public:
 	static void StaticInit();
@@ -84,7 +84,7 @@ private:
 // simply calls the CPU time stamp counter, and QueryPerformanceFrequency simply returns the
 // constant value of 1745620598 Hz. FYI, PS4 runs at 1593726008 Hz.
 #if !defined(_DURANGO)
-class Timer : public TimerBase
+class FFTL_NODISCARD Timer : public TimerBase
 {
 public:
 	static void StaticInit();
@@ -94,16 +94,16 @@ public:
 	void Stop();		// Stamps the time from the last start
 	void StopAccum();	// Adds the time from the last start to the current stamped value
 
-	f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
-	f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
-	f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
-	f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
+	FFTL_NODISCARD f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
 
-	static inline f64 ToMicroseconds(u64 t)	{ return t * sm_TicksToUsScalar; }
-	static inline f64 ToMilliseconds(u64 t)	{ return t * sm_TicksToUsScalar / 1000.0; }
-	static inline f64 ToSeconds(u64 t)		{ return t * sm_TicksToUsScalar / 1000000.0; }
+	FFTL_NODISCARD static inline f64 ToMicroseconds(u64 t)	{ return t * sm_TicksToUsScalar; }
+	FFTL_NODISCARD static inline f64 ToMilliseconds(u64 t)	{ return t * sm_TicksToUsScalar / 1000.0; }
+	FFTL_NODISCARD static inline f64 ToSeconds(u64 t)		{ return t * sm_TicksToUsScalar / 1000000.0; }
 
-	static const char* GetTickUnitsString();
+	FFTL_NODISCARD static const char* GetTickUnitsString();
 
 private:
 	static f64 sm_TicksToUsScalar;

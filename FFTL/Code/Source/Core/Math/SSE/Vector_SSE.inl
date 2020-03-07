@@ -216,24 +216,24 @@ FFTL_FORCEINLINE int vecT<N>::GetAsIntW() const
 //
 
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertX(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertX(const vecT<N>& v, f32 f)
 {
-	return V4fPermute<B0, A1, A2, A3>(m_v, _mm_set_ss(f));
+	return V4fPermute<B0, A1, A2, A3>(v.m_v, _mm_set_ss(f));
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertY(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertY(const vecT<N>& v, f32 f)
 {
-	return V4fPermute<A0, B0, A2, A3>(m_v, _mm_set_ss(f));
+	return V4fPermute<A0, B0, A2, A3>(v.m_v, _mm_set_ss(f));
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertZ(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertZ(const vecT<N>& v, f32 f)
 {
-	return V4fPermute<A0, A1, B0, A3>(m_v, _mm_set_ss(f));
+	return V4fPermute<A0, A1, B0, A3>(v.m_v, _mm_set_ss(f));
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertW(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertW(const vecT<N>& v, f32 f)
 {
-	return V4fPermute<A0, A1, A2, B0>(m_v, _mm_set_ss(f));
+	return V4fPermute<A0, A1, A2, B0>(v.m_v, _mm_set_ss(f));
 }
 
 template<uint N>

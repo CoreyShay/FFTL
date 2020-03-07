@@ -208,24 +208,24 @@ FFTL_FORCEINLINE int vecT<N>::GetAsIntW() const
 //
 
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertX(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertX(const vecT<N>& v, f32 f)
 {
-	return vsetq_lane_f32(f, m_v, 0);
+	return vsetq_lane_f32(f, v.m_v, 0);
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertY(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertY(const vecT<N>& v, f32 f)
 {
-	return vsetq_lane_f32(f, m_v, 1);
+	return vsetq_lane_f32(f, v.m_v, 1);
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertZ(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertZ(const vecT<N>& v, f32 f)
 {
-	return vsetq_lane_f32(f, m_v, 2);
+	return vsetq_lane_f32(f, v.m_v, 2);
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::InsertW(f32 f) const
+FFTL_FORCEINLINE vecT<N> InsertW(const vecT<N>& v, f32 f)
 {
-	return vsetq_lane_f32(f, m_v, 3);
+	return vsetq_lane_f32(f, v.m_v, 3);
 }
 
 template<uint N>

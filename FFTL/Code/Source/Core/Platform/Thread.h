@@ -104,14 +104,14 @@ public:
 	ThreadHandle() {}
 	ThreadHandle(ThreadId id) : m_ID(id) {}
 
-	ThreadId GetId() const { return m_ID; }
+	FFTL_NODISCARD ThreadId GetId() const { return m_ID; }
 	ThreadHandle& operator=(ThreadId id) { m_ID = id; return *this; }
-	bool operator==(ThreadId id) const { return m_ID == id; }
-	bool operator!=(ThreadId id) const { return m_ID != id; }
-	bool operator>(ThreadId id) const { return m_ID > id; }
-	bool operator<(ThreadId id) const { return m_ID < id; }
-	bool operator>=(ThreadId id) const { return m_ID >= id; }
-	bool operator<=(ThreadId id) const { return m_ID <= id; }
+	FFTL_NODISCARD bool operator==(ThreadId id) const { return m_ID == id; }
+	FFTL_NODISCARD bool operator!=(ThreadId id) const { return m_ID != id; }
+	FFTL_NODISCARD bool operator>(ThreadId id) const { return m_ID > id; }
+	FFTL_NODISCARD bool operator<(ThreadId id) const { return m_ID < id; }
+	FFTL_NODISCARD bool operator>=(ThreadId id) const { return m_ID >= id; }
+	FFTL_NODISCARD bool operator<=(ThreadId id) const { return m_ID <= id; }
 private:
 	ThreadId m_ID;
 };
@@ -125,10 +125,10 @@ private:
 
 
 //	Gets the thread id of the thread of the calling function.
-ThreadId GetThreadIdCurrent();
+FFTL_NODISCARD ThreadId GetThreadIdCurrent();
 
 //	Gets the thread handle of the thread of the calling function.
-ThreadHandle GetThreadHandleCurrent();
+FFTL_NODISCARD ThreadHandle GetThreadHandleCurrent();
 
 //	Sets the name of a thread. All platforms.
 void SetThreadName(ThreadHandle handle, const char* pszName);
@@ -151,12 +151,13 @@ void UnpauseThread(ThreadHandle handle);
 #	pragma warning(push)
 #	pragma warning( disable : 4407 ) //warning C4407: cast between different pointer to member representations, compiler may generate incorrect code
 #endif
-class FFTL_DLLEXPORT ThreadOwner
+class FFTL_DLLEXPORT FFTL_NODISCARD ThreadOwner
 {
 public:
 	virtual ~ThreadOwner() {}
 	typedef ThreadResult(ThreadOwner::*RunFunction)();
-	template <typename T> static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
+	template <typename T>
+	FFTL_NODISCARD static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
 };
 #if defined(_MSC_VER)
 #	pragma warning(pop)
@@ -178,11 +179,11 @@ public:
 	void Pause();
 	void Unpause();
 
-	ThreadHandle GetThreadHandle() const;
-	ThreadId GetThreadId() const;
-	ThreadResult GetRunResult();
-	bool GetIsRunning() const;
-	bool GetIsFlaggedForStop() const;
+	FFTL_NODISCARD ThreadHandle GetThreadHandle() const;
+	FFTL_NODISCARD ThreadId GetThreadId() const;
+	FFTL_NODISCARD ThreadResult GetRunResult();
+	FFTL_NODISCARD bool GetIsRunning() const;
+	FFTL_NODISCARD bool GetIsFlaggedForStop() const;
 
 private:
 	void Run();

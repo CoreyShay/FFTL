@@ -58,21 +58,21 @@ FFTL_FORCEINLINE f32 quat::GetW() const
 // Element insertion (preserves the remaining elements in this)
 //
 
-FFTL_FORCEINLINE void quat::InsertX(f32 f)
+FFTL_FORCEINLINE quat InsertX(const quat& q, f32 f)
 {
-	m_v.InsertX(f);
+	return quat(InsertX(q.m_v, f));
 }
-FFTL_FORCEINLINE void quat::InsertY(f32 f)
+FFTL_FORCEINLINE quat InsertY(const quat& q, f32 f)
 {
-	m_v.InsertY(f);
+	return quat(InsertY(q.m_v, f));
 }
-FFTL_FORCEINLINE void quat::InsertZ(f32 f)
+FFTL_FORCEINLINE quat InsertZ(const quat& q, f32 f)
 {
-	m_v.InsertZ(f);
+	return quat(InsertZ(q.m_v, f));
 }
-FFTL_FORCEINLINE void quat::InsertW(f32 f)
+FFTL_FORCEINLINE quat InsertW(const quat& q, f32 f)
 {
-	m_v.InsertW(f);
+	return quat(InsertW(q.m_v, f));
 }
 
 
@@ -377,7 +377,7 @@ inline void quat::BuildFromMatOrtho(const mat33& m)
 	{
 		if (distsq <= 0.0f)
 		{
-			m_v.InsertW(1.f);
+			m_v = InsertW(m_v, 1.f);
 		}
 		else
 		{
@@ -391,7 +391,7 @@ FFTL_FORCEINLINE void quat::BuildFromAxisAngle(const vec3& axis, f32 angleRad)
 	angleRad *= 0.5f;
 	const f32 s = sinf( angleRad );
 	vec4 v = Normalize(axis).CastTo<4>() * s;
-	v.InsertW(cosf(angleRad));
+	v = InsertW(v, cosf(angleRad));
 	m_v = v;
 }
 
