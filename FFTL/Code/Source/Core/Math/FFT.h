@@ -347,13 +347,15 @@ public:
 		FFTL_ASSERT_MSG(newKernelCount <= T_MAX_KERNELS, "Kernel count overrun");
 		m_pKernelArray_FD = pKernelArray_FD;
 		m_KernelCount = newKernelCount;
+		m_KernelCountPrev = Max(m_KernelCountPrev, newKernelCount);
 	}
 
 	//	Our FFT computer
 	static constexpr FFT_Real<M + 1, T, T_Twiddle> sm_fft{ };
 
 protected:
-	u32 m_KernelCount;
+	u32 m_KernelCount = 0;
+	u32 m_KernelCountPrev = 0;
 	const Kernel* m_pKernelArray_FD = nullptr;
 	FixedArray_Aligned32<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
 };
