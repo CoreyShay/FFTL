@@ -153,16 +153,16 @@ class f32_8;
 #define FFTL_PERMUTEMASK(x) (x & 3)
 
 template <typename T>
-constexpr T PI = 3.14159265358979323846264338327L;
+constexpr T PI_ = 3.14159265358979323846264338327L; // Trailing underscore to prevent conflicts with #define PI_
 
 template <>
-constexpr f64 PI<f64> = 3.14159265358979323846264338327;
+constexpr f64 PI_<f64> = 3.14159265358979323846264338327;
 
 template <>
-constexpr f32 PI<f32> = 3.14159265358979323846264338327f;
+constexpr f32 PI_<f32> = 3.14159265358979323846264338327f;
 
-constexpr f32 PI_32 = PI<f32>;
-constexpr f64 PI_64 = PI<f64>;
+constexpr f32 PI_32 = PI_<f32>;
+constexpr f64 PI_64 = PI_<f64>;
 
 constexpr f64 invLog2_64 = 1.4426950408889634073599246810019;
 constexpr f32 invLog2_32 = 1.4426950408889634073599246810019f;
@@ -346,7 +346,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T FSel(T test, T retGE, T retLT)
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T CosInterpolate(T mu, T from, T to)
 {
-	T scale2 = ( (T)1 - Cos(mu * PI<T>)) * (T)0.5;
+	T scale2 = ( (T)1 - Cos(mu * PI_<T>)) * (T)0.5;
 	return Lerp(scale2, from, to);
 }
 
@@ -412,13 +412,13 @@ FFTL_NODISCARD FFTL_FORCEINLINE T LinearToCents(T linear)
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T DegreesToRadians(T deg)
 {
-	return (PI<T> / (T)180) * deg;
+	return (PI_<T> / (T)180) * deg;
 }
 
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T RadiansToDegrees(T rad)
 {
-	return ((T)180 / PI<T>) * rad;
+	return ((T)180 / PI_<T>) * rad;
 }
 
 #if defined(FFTL_SSE)
@@ -1118,6 +1118,7 @@ FFTL_NODISCARD Vec4f V4fHSumV(Vec4f_In v);
 FFTL_NODISCARD Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD int V4fToIntMask(Vec4f_In v);
 FFTL_NODISCARD bool V4fIsEqual(Vec4f_In a, Vec4f_In b);
+FFTL_NODISCARD bool V4fIsAllZero(Vec4f_In v);
 
 FFTL_NODISCARD f32 V4fGetX(Vec4f_In v);
 FFTL_NODISCARD f32 V4fGetY(Vec4f_In v);
@@ -1157,6 +1158,7 @@ FFTL_NODISCARD Vec2d V2dMul(Vec2d_In a, Vec2d_In b);
 FFTL_NODISCARD Vec2d V2dDiv(Vec2d_In a, Vec2d_In b);
 FFTL_NODISCARD Vec2d V2dSqrt(Vec2d_In v);
 FFTL_NODISCARD bool V2dIsEqual(Vec2d_In a, Vec2d_In b);
+FFTL_NODISCARD bool V2dIsAllZero(Vec2d_In v);
 
 
 
@@ -1192,10 +1194,13 @@ FFTL_NODISCARD Vec8f V8fSub(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fMul(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fMul(Vec8f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec8f V8fDiv(Vec8f_In a, Vec8f_In b);
+FFTL_NODISCARD Vec8f V8fAddMul(Vec8f_In a, Vec8f_In b, Vec8f_In c);
+FFTL_NODISCARD Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c);
 FFTL_NODISCARD Vec8f V8fSqrt(Vec8f_In v);
 FFTL_NODISCARD Vec8f V8fCompareEqual(Vec8f_In a, Vec8f_In b);
-int V8fToIntMask(Vec8f_In v);
-bool V8fIsEqual(Vec8f_In a, Vec8f_In b);
+FFTL_NODISCARD int V8fToIntMask(Vec8f_In v);
+FFTL_NODISCARD bool V8fIsEqual(Vec8f_In a, Vec8f_In b);
+FFTL_NODISCARD bool V8fIsAllZero(Vec8f_In v);
 FFTL_NODISCARD Vec8f V8fReverse(Vec8f_In v);
 FFTL_NODISCARD Vec4f V8fAsV4f(Vec8f_In v);
 FFTL_NODISCARD Vec4f V8fGet4567(Vec8f_In v);
@@ -1289,7 +1294,8 @@ public:
 	FFTL_FORCEINLINE f32_4 operator+() const			{ return *this; }
 	FFTL_FORCEINLINE f32_4 operator-() const			{ return Zero() - *this; }
 
-	FFTL_FORCEINLINE bool operator==(f32_4_In b) const	{ return V4fIsEqual(m_v, b.m_v); }
+	FFTL_FORCEINLINE bool operator==(f32_4_In b) const		{ return V4fIsEqual(m_v, b.m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool IsAllZero() const	{ return V4fIsAllZero(m_v); }
 
 	FFTL_FORCEINLINE const Vec4f& GetNative() const		{ return m_v; }
 
@@ -1410,6 +1416,7 @@ public:
 	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator-() const			{ return Zero() - *this; }
 
 	FFTL_NODISCARD FFTL_FORCEINLINE bool operator==(f32_8_In b) const	{ return V8fIsEqual(m_v, b.m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool IsAllZero() const				{ return V8fIsAllZero(m_v); }
 
 	FFTL_NODISCARD FFTL_FORCEINLINE const Vec8f& GetNative() const		{ return m_v; }
 
@@ -1423,6 +1430,9 @@ FFTL_FORCEINLINE void StoreU(f32* pf, f32_8_In v)		{ v.StoreU(pf); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Sqrt(f32_8_In v)					{ return f32_8(V8fSqrt(v.GetNative())); }
 
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Reverse(f32_8_In v)				{ return f32_8(V8fReverse(v.GetNative())); }
+
+FFTL_NODISCARD FFTL_FORCEINLINE f32_8 AddMul(f32_8_In a, f32_8_In b, f32_8_In c) { return V8fAddMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a+b*c
+FFTL_NODISCARD FFTL_FORCEINLINE f32_8 SubMul(f32_8_In a, f32_8_In b, f32_8_In c) { return V8fSubMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a-b*c
 
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 TransformXandY(const f32_4& v, const f32_8& col0, const f32_8& col1)
 {

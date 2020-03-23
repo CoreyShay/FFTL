@@ -50,11 +50,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #if (FFTL_CPP_VERSION >= 17)
-#	define FFTL_IF_CONSTEXPR(__expr__) if constexpr (__expr__)
+#	define FFTL_IF_CONSTEXPR if constexpr
 #	define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
 #	define FFTL_NODISCARD [[nodiscard]]
 #else
-#	define FFTL_IF_CONSTEXPR(__expr__) if (__expr__)
+#	define FFTL_IF_CONSTEXPR if
 #	define FFTL_SWITCH_FALLTHROUGH
 #	define FFTL_NODISCARD
 #endif

@@ -232,6 +232,20 @@ FFTL_FORCEINLINE Vec8f V8fDiv(Vec8f_In a, Vec8f_In b)
 	r.b = V4fDiv(a.b, b.b);
 	return r;
 }
+FFTL_FORCEINLINE Vec8f V8fAddMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
+{
+	Vec8f r;
+	r.a = V4fAddMul(a.a, b.a, c.a);
+	r.b = V4fAddMul(a.b, b.b, c.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
+{
+	Vec8f r;
+	r.a = V4fSubMul(a.a, b.a, c.a);
+	r.b = V4fSubMul(a.b, b.b, c.b);
+	return r;
+}
 FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 {
 	Vec8f r;
@@ -256,6 +270,13 @@ FFTL_FORCEINLINE bool V8fIsEqual(Vec8f_In a, Vec8f_In b)
 {
 	Vec4f cmp1 = V4fCompareEqual(a.a, b.a);
 	Vec4f cmp2 = V4fCompareEqual(a.b, b.b);
+	Vec4f vAnd = V4fAnd(cmp1, cmp2);
+	return V4fToIntMask(vAnd) == 15;
+}
+FFTL_FORCEINLINE bool V8fIsAllZero(Vec8f_In v)
+{
+	Vec4f cmp1 = V4fCompareEqual(v.a, V4fZero());
+	Vec4f cmp2 = V4fCompareEqual(v.b, V4fZero());
 	Vec4f vAnd = V4fAnd(cmp1, cmp2);
 	return V4fToIntMask(vAnd) == 15;
 }

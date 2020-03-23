@@ -140,38 +140,38 @@ FFTL_FORCEINLINE Vec4f V4fAnd(Vec4f_In a, Vec4f_In b)
 {
 	const u32* pA = reinterpret_cast<const u32*>(&a);
 	const u32* pB = reinterpret_cast<const u32*>(&b);
-	const u32 r[4] = { pA[0]&pB[0], pA[1]&pB[1], pA[2]&pB[2], pA[3]&pB[3] };
+	const u32 r[4] = { pA[0] & pB[0], pA[1] & pB[1], pA[2] & pB[2], pA[3] & pB[3] };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b)
 {
 	const u32* pA = reinterpret_cast<const u32*>(&a);
 	const u32* pB = reinterpret_cast<const u32*>(&b);
-	const u32 r[4] = { ~pA[0]&pB[0], ~pA[1]&pB[1], ~pA[2]&pB[2], ~pA[3]&pB[3] };
+	const u32 r[4] = { ~pA[0] & pB[0], ~pA[1] & pB[1], ~pA[2] & pB[2], ~pA[3] & pB[3] };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE Vec4f V4fOr(Vec4f_In a, Vec4f_In b)
 {
 	const u32* pA = reinterpret_cast<const u32*>(&a);
 	const u32* pB = reinterpret_cast<const u32*>(&b);
-	const u32 r[4] = { pA[0]|pB[0], pA[1]|pB[1], pA[2]|pB[2], pA[3]|pB[3] };
+	const u32 r[4] = { pA[0] | pB[0], pA[1] | pB[1], pA[2] | pB[2], pA[3] | pB[3] };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE Vec4f V4fXOr(Vec4f_In a, Vec4f_In b)
 {
 	const u32* pA = reinterpret_cast<const u32*>(&a);
 	const u32* pB = reinterpret_cast<const u32*>(&b);
-	const u32 r[4] = { pA[0]^pB[0], pA[1]^pB[1], pA[2]^pB[2], pA[3]^pB[3] };
+	const u32 r[4] = { pA[0] ^ pB[0], pA[1] ^ pB[1], pA[2] ^ pB[2], pA[3] ^ pB[3] };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE Vec4f V4fAdd(Vec4f_In a, Vec4f_In b)
 {
-	const Vec4f r = { a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w };
+	const Vec4f r = { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 	return r;
 }
 FFTL_FORCEINLINE Vec4f V4fSub(Vec4f_In a, Vec4f_In b)
 {
-	const Vec4f r = { a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w };
+	const Vec4f r = { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
 	return r;
 }
 FFTL_FORCEINLINE Vec4f V4fMul(Vec4f_In a, Vec4f_In b)
@@ -181,7 +181,7 @@ FFTL_FORCEINLINE Vec4f V4fMul(Vec4f_In a, Vec4f_In b)
 }
 FFTL_FORCEINLINE Vec4f V4fDiv(Vec4f_In a, Vec4f_In b)
 {
-	const Vec4f r = { a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w };
+	const Vec4f r = { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w };
 	return r;
 }
 FFTL_FORCEINLINE Vec4f V4fMin(Vec4f_In a, Vec4f_In b)
@@ -194,12 +194,12 @@ FFTL_FORCEINLINE Vec4f V4fMax(Vec4f_In a, Vec4f_In b)
 }
 FFTL_FORCEINLINE Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
 {
-	const Vec4f r = { a.x+b.x*c.x, a.y+b.y*c.y, a.z+b.z*c.z, a.w+b.w*c.w };
+	const Vec4f r = { a.x + b.x*c.x, a.y + b.y*c.y, a.z + b.z*c.z, a.w + b.w*c.w };
 	return r;
 }
 FFTL_FORCEINLINE Vec4f V4fSubMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
 {
-	const Vec4f r = { a.x-b.x*c.x, a.y-b.y*c.y, a.z-b.z*c.z, a.w-b.w*c.w };
+	const Vec4f r = { a.x - b.x*c.x, a.y - b.y*c.y, a.z - b.z*c.z, a.w - b.w*c.w };
 	return r;
 }
 FFTL_FORCEINLINE Vec4f V4fNegate(Vec4f_In v)
@@ -224,7 +224,7 @@ FFTL_FORCEINLINE Vec4f V4fRcpSqrt(Vec4f_In v)
 }
 FFTL_FORCEINLINE Vec4f V4fRcp(Vec4f_In v)
 {
-	const Vec4f r = { 1/v.x, 1/v.y, 1/v.z, 1/v.w };
+	const Vec4f r = { 1 / v.x, 1 / v.y, 1 / v.z, 1 / v.w };
 	return r;
 }
 FFTL_FORCEINLINE f32 V4fHSumF(Vec4f_In v)
@@ -237,18 +237,18 @@ FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 }
 FFTL_FORCEINLINE Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b)
 {
-	const u32 r[4] = { a.x==b.x ? 0xffffffff : 0, a.y==b.y ? 0xffffffff : 0, a.z==b.z ? 0xffffffff : 0, a.w==b.w ? 0xffffffff : 0 };
+	const u32 r[4] = { a.x == b.x ? 0xffffffff : 0, a.y == b.y ? 0xffffffff : 0, a.z == b.z ? 0xffffffff : 0, a.w == b.w ? 0xffffffff : 0 };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE int V4fToIntMask(Vec4f_In v)
 {
 	const u32* u = reinterpret_cast<const u32*>(&v);
-	const int r = (u[0]>>31) | ((u[1]>>30)&2) | ((u[1]>>29)&4) | ((u[1]>>28)&8);
+	const int r = (u[0] >> 31) | ((u[1] >> 30) & 2) | ((u[1] >> 29) & 4) | ((u[1] >> 28) & 8);
 	return r;
 }
 FFTL_FORCEINLINE bool V4fIsEqual(Vec4f_In a, Vec4f_In b)
 {
-	return a.x==b.x && a.y==b.y && a.z==b.z && a.w==b.w;
+	return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 }
 FFTL_FORCEINLINE Vec4f V4fMergeXY(Vec4f_In a, Vec4f_In b)
 {
@@ -390,72 +390,89 @@ FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
 
 
 
-#if 0
 FFTL_FORCEINLINE Vec2d V2dZero()
 {
-	return _mm_setzero_pd();
+	const Vec2d r = { 0, 0 };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dLoadA(const f64* pf)
 {
-	return _mm_load_pd(pf);
+	return *reinterpret_cast<const Vec2d*>(pf);
 }
 FFTL_FORCEINLINE Vec2d V2dLoadU(const f64* pf)
 {
-	return _mm_loadu_pd(pf);
+	return *reinterpret_cast<const Vec2d*>(pf);
 }
 FFTL_FORCEINLINE void V2dStoreA(f64* pf, Vec2d v)
 {
-	_mm_store_pd(pf, v);
+	*reinterpret_cast<Vec2d*>(pf) = v;
 }
 FFTL_FORCEINLINE void V2dStoreU(f64* pf, Vec2d_In v)
 {
-	_mm_storeu_pd(pf, v);
+	*reinterpret_cast<Vec2d*>(pf) = v;
 }
 FFTL_FORCEINLINE Vec2d V2dSet(f64 x, f64 y)
 {
-	return _mm_setr_pd(x, y);
+	const Vec2d r = { x, y };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dAnd(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_and_pd(a, b);
+	const u64* pA = reinterpret_cast<const u64*>(&a);
+	const u64* pB = reinterpret_cast<const u64*>(&b);
+	const u64 r[2] = { pA[0] & pB[0], pA[1] & pB[1] };
+	return *reinterpret_cast<const Vec2d_In*>(&r);
 }
 FFTL_FORCEINLINE Vec2d V2dAndNot(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_andnot_pd(a, b);
+	const u64* pA = reinterpret_cast<const u64*>(&a);
+	const u64* pB = reinterpret_cast<const u64*>(&b);
+	const u64 r[2] = { ~pA[0] & pB[0], ~pA[1] & pB[1] };
+	return *reinterpret_cast<const Vec2d_In*>(&r);
 }
 FFTL_FORCEINLINE Vec2d V2dOr(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_or_pd(a, b);
+	const u64* pA = reinterpret_cast<const u64*>(&a);
+	const u64* pB = reinterpret_cast<const u64*>(&b);
+	const u64 r[2] = { pA[0] | pB[0], pA[1] | pB[1] };
+	return *reinterpret_cast<const Vec2d_In*>(&r);
 }
 FFTL_FORCEINLINE Vec2d V2dXOr(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_xor_pd(a, b);
+	const u64* pA = reinterpret_cast<const u64*>(&a);
+	const u64* pB = reinterpret_cast<const u64*>(&b);
+	const u64 r[2] = { pA[0] ^ pB[0], pA[1] ^ pB[1] };
+	return *reinterpret_cast<const Vec2d_In*>(&r);
 }
 FFTL_FORCEINLINE Vec2d V2dAdd(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_add_pd(a, b);
+	const Vec2d r = { a.x + b.x, a.y + b.y };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dSub(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_sub_pd(a, b);
+	const Vec2d r = { a.x - b.x, a.y - b.y };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dMul(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_mul_pd(a, b);
+	const Vec2d r = { a.x * b.x, a.y * b.y };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dDiv(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_div_pd(a, b);
+	const Vec2d r = { a.x / b.x, a.y / b.y };
+	return r;
 }
 FFTL_FORCEINLINE Vec2d V2dSqrt(Vec2d_In v)
 {
-	return _mm_sqrt_pd(v);
+	const Vec2d r = { Sqrt(v.x), Sqrt(v.y) };
+	return r;
 }
-FFTL_FORCEINLINE bool V4fIsEqual(Vec2d_In a, Vec2d_In b)
+FFTL_FORCEINLINE bool V2dIsEqual(Vec2d_In a, Vec2d_In b)
 {
-	return _mm_movemask_pd( _mm_cmpeq_pd(a, b) ) == 3;
+	return a.x == b.x && a.y == b.y;
 }
-#endif
 
 
 FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()

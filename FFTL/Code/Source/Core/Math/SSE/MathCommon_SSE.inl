@@ -304,6 +304,11 @@ FFTL_FORCEINLINE bool V4fIsEqual(Vec4f_In a, Vec4f_In b)
 {
 	return _mm_movemask_ps( _mm_cmpeq_ps(a, b) ) == 15;
 }
+FFTL_FORCEINLINE bool V4fIsAllZero(Vec4f_In v)
+{
+	return _mm_movemask_ps( _mm_cmpeq_ps(v, _mm_setzero_ps()) ) == 15;
+}
+
 FFTL_FORCEINLINE Vec4f V4fMergeXY(Vec4f_In a, Vec4f_In b)
 {
 	return _mm_unpacklo_ps(a, b);
@@ -666,9 +671,13 @@ FFTL_FORCEINLINE Vec2d V2dSqrt(Vec2d_In v)
 {
 	return _mm_sqrt_pd(v);
 }
-FFTL_FORCEINLINE bool V4fIsEqual(Vec2d_In a, Vec2d_In b)
+FFTL_FORCEINLINE bool V2dIsEqual(Vec2d_In a, Vec2d_In b)
 {
 	return _mm_movemask_pd( _mm_cmpeq_pd(a, b) ) == 3;
+}
+FFTL_FORCEINLINE bool V2dIsAllZero(Vec2d_In v)
+{
+	return _mm_movemask_pd( _mm_cmpeq_pd(v, _mm_setzero_pd()) ) == 3;
 }
 
 FFTL_FORCEINLINE Vec4u V4uAdd(Vec4u_In a, Vec4u_In b)

@@ -316,7 +316,7 @@ class FFTL_NODISCARD Convolver
 {
 public:
 	typedef cxNumber<T> cxT;
-	static constexpr uint N = 1<<M;
+	static constexpr uint N = 1 << M;
 	static constexpr uint N_2 = N >> 1;
 	static constexpr uint _2N = N << 1;
 	static constexpr size_t SingleKernelSize_Bytes() { return sizeof(Kernel); }
@@ -339,7 +339,8 @@ public:
 	void Destroy();
 
 	FFTL_NODISCARD uint GetKernelCount() const { return m_KernelCount; }
-	FFTL_NODISCARD size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof(Kernel); }
+	FFTL_NODISCARD uint GetLeftoverKernels() const { return m_KernelCountPrev; }
+	FFTL_NODISCARD size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof( Kernel ); }
 	FFTL_NODISCARD const Kernel* GetKernelArray_FD() const { return m_pKernelArray_FD; }
 
 	void SetKernel(const Kernel* pKernelArray_FD, u32 newKernelCount)
@@ -357,7 +358,8 @@ protected:
 	u32 m_KernelCount = 0;
 	u32 m_KernelCountPrev = 0;
 	const Kernel* m_pKernelArray_FD = nullptr;
-	FixedArray_Aligned32<T, T_MAX_KERNELS * N + N> m_AccumulationBuffer;
+	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_AccumulationBuffer;
+	FixedArray_Aligned32<T, N> m_PrevTail;
 };
 
 template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>

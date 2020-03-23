@@ -47,7 +47,12 @@ FFTL_FORCEINLINE Vec8f V8fZero()
 }
 FFTL_FORCEINLINE Vec8f V8fLoadA(const f32* pf)
 {
+	// LoadA / StoreA is explicitly aligned for performance reasons.
+	// If the assert fires, be sure to align your data accordingly,
+	// or use LoadU / StoreU if necessary.
+	FFTL_ASSERT(((size_t)pf & 31) == 0);
 	return _mm256_load_ps(pf);
+//	return *reinterpret_cast<const Vec8f*>(pf);
 }
 FFTL_FORCEINLINE Vec8f V8fLoadU(const f32* pf)
 {
@@ -85,7 +90,13 @@ FFTL_FORCEINLINE Vec8f V8fLoadUR(const f32* pf)
 }
 FFTL_FORCEINLINE void V8fStoreA(f32* pf, Vec8f_In v)
 {
+	// LoadA / StoreA is explicitly aligned for performance reasons.
+	// If the assert fires, be sure to align your data accordingly,
+	// or use LoadU / StoreU if necessary.
+	FFTL_ASSERT(((size_t)pf & 31) == 0);
 	_mm256_store_ps(pf, v);
+//	*reinterpret_cast<Vec8f*>(pf) = v;
+
 }
 FFTL_FORCEINLINE void V8fStoreU(f32* pf, Vec8f_In v)
 {
@@ -175,6 +186,30 @@ FFTL_FORCEINLINE Vec8f V8fDiv(Vec8f_In a, Vec8f_In b)
 {
 	return _mm256_div_ps(a, b);
 }
+FFTL_FORCEINLINE Vec8f V8fAddMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
+{
+#if defined(FFTL_FMA4)
+	return _mm256_macc_ps(b, c, a);
+#elif defined(FFTL_FMA3)
+	return _mm256_fmadd_ps(b, c, a);
+#else
+	__m256 r = _mm256_mul_ps(b, c);
+	r = _mm256_add_ps(a, r);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
+{
+#if defined(FFTL_FMA4)
+	return _mm256_nmacc_ps(b, c, a);
+#elif defined(FFTL_FMA3)
+	return _mm256_fnmadd_ps(b, c, a);
+#else
+	__m256 r = _mm256_mul_ps(b, c);
+	r = _mm256_sub_ps(a, r);
+	return r;
+#endif
+}
 FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 {
 	return _mm256_sqrt_ps(v);
@@ -190,6 +225,10 @@ FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
 FFTL_FORCEINLINE bool V8fIsEqual(Vec8f_In a, Vec8f_In b)
 {
 	return _mm256_movemask_ps( _mm256_cmp_ps(a, b, _CMP_EQ_OQ) ) == 255;
+}
+FFTL_FORCEINLINE bool V8fIsAllZero(Vec8f_In v)
+{
+	return _mm256_movemask_ps( _mm256_cmp_ps(v, _mm256_setzero_ps(), _CMP_EQ_OQ) ) == 255;
 }
 FFTL_FORCEINLINE Vec8f V8fReverse(Vec8f_In v)
 {
