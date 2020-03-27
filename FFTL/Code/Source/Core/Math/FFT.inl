@@ -201,7 +201,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::ApplyWindow(FixedArray<cxT, N>&
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const cxT& cxU, cxT* __restrict pcxCurr, cxT* __restrict pcxNext)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const cxT& cxU, cxT* pcxCurr, cxT* pcxNext)
 {
 	const cxT W = *pcxNext * cxU;
 	*pcxNext = *pcxCurr - W;
@@ -209,7 +209,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const cx
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(cxT* __restrict pcxCurr, cxT* __restrict pcxNext)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(cxT* pcxCurr, cxT* pcxNext)
 {
 	const cxT W = *pcxNext;
 	*pcxNext = *pcxCurr - W;
@@ -217,7 +217,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(cxT* _
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const cxT& cxU, cxT* __restrict pcxCurr, cxT* __restrict pcxNext)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const cxT& cxU, cxT* pcxCurr, cxT* pcxNext)
 {
 	const cxT W = *pcxCurr - *pcxNext;
 	*pcxCurr += *pcxNext;
@@ -225,7 +225,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const cx
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const T& fUReal, const T& fUImag, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const T& fUReal, const T& fUImag, T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	const T Wr = *pfNextR*fUReal - *pfNextI*fUImag;
 	const T Wi = *pfNextR*fUImag + *pfNextI*fUReal;
@@ -238,7 +238,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIT(const T&
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	const T Wr = *pfNextR;
 	const T Wi = *pfNextI;
@@ -251,7 +251,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(T* __r
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(const T& fCurR, const T& fCurI, const T& fNextR, const T& fNextI, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(const T& fCurR, const T& fCurI, const T& fNextR, const T& fNextI, T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	*pfCurR = fCurR + fNextR;
 	*pfCurI = fCurI + fNextI;
@@ -261,7 +261,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_Unity(const 
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const T& fUReal, const T& fUImag, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const T& fUReal, const T& fUImag, T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	const T Wr = *pfCurR - *pfNextR;
 	const T Wi = *pfCurI - *pfNextI;
@@ -466,14 +466,14 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<c
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
-			//cxT* __restrict pcxCurr = &cxOutput[uButterfly];
-			//cxT* __restrict pcxNext = &cxOutput[uButterflyNext];
+			//cxT* pcxCurr = &cxOutput[uButterfly];
+			//cxT* pcxNext = &cxOutput[uButterflyNext];
 			//CalculateButterfly_DIT(pcxCurr, pcxNext);
 
-			T* __restrict pfCurR = &cxOutput[uButterfly].r;
-			T* __restrict pfCurI = &cxOutput[uButterfly].i;
-			T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-			T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+			T* pfCurR = &cxOutput[uButterfly].r;
+			T* pfCurI = &cxOutput[uButterfly].i;
+			T* pfNextR = &cxOutput[uButterflyNext].r;
+			T* pfNextI = &cxOutput[uButterflyNext].i;
 			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 
@@ -488,14 +488,14 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<c
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
-				//cxT* __restrict pcxCurr = &cxOutput[uButterfly];
-				//cxT* __restrict pcxNext = &cxOutput[uButterflyNext];
+				//cxT* pcxCurr = &cxOutput[uButterfly];
+				//cxT* pcxNext = &cxOutput[uButterflyNext];
 				//CalculateButterfly_DIT(cxU, pcxCurr, pcxNext);
 
-				T* __restrict pfCurR = &cxOutput[uButterfly].r;
-				T* __restrict pfCurI = &cxOutput[uButterfly].i;
-				T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-				T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+				T* pfCurR = &cxOutput[uButterfly].r;
+				T* pfCurI = &cxOutput[uButterfly].i;
+				T* pfNextR = &cxOutput[uButterflyNext].r;
+				T* pfNextI = &cxOutput[uButterflyNext].i;
 				this->CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -517,10 +517,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(Fi
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
-			T* __restrict pfCurR = &cxOutput[uButterfly].r;
-			T* __restrict pfCurI = &cxOutput[uButterfly].i;
-			T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-			T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+			T* pfCurR = &cxOutput[uButterfly].r;
+			T* pfCurI = &cxOutput[uButterfly].i;
+			T* pfNextR = &cxOutput[uButterflyNext].r;
+			T* pfNextI = &cxOutput[uButterflyNext].i;
 			this->CalculateButterfly_Unity(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
 		}
 
@@ -536,10 +536,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(Fi
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
 
-				T* __restrict pfCurR = &cxOutput[uButterfly].r;
-				T* __restrict pfCurI = &cxOutput[uButterfly].i;
-				T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-				T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+				T* pfCurR = &cxOutput[uButterfly].r;
+				T* pfCurI = &cxOutput[uButterfly].i;
+				T* pfNextR = &cxOutput[uButterflyNext].r;
+				T* pfNextI = &cxOutput[uButterflyNext].i;
 				this->CalculateButterfly_DIT(uR, uI, pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
 			}
 		}
@@ -573,10 +573,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<c
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
 
-				T* __restrict pfCurR = &cxOutput[uButterfly].r;
-				T* __restrict pfCurI = &cxOutput[uButterfly].i;
-				T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-				T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+				T* pfCurR = &cxOutput[uButterfly].r;
+				T* pfCurI = &cxOutput[uButterfly].i;
+				T* pfNextR = &cxOutput[uButterflyNext].r;
+				T* pfNextI = &cxOutput[uButterflyNext].i;
 				this->CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -586,10 +586,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<c
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
-			T* __restrict pfCurR = &cxOutput[uButterfly].r;
-			T* __restrict pfCurI = &cxOutput[uButterfly].i;
-			T* __restrict pfNextR = &cxOutput[uButterflyNext].r;
-			T* __restrict pfNextI = &cxOutput[uButterflyNext].i;
+			T* pfCurR = &cxOutput[uButterfly].r;
+			T* pfCurI = &cxOutput[uButterfly].i;
+			T* pfNextR = &cxOutput[uButterflyNext].r;
+			T* pfNextI = &cxOutput[uButterflyNext].i;
 			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 
@@ -613,10 +613,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<T
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
-			T* __restrict pfCurR = fOutR + uButterfly;
-			T* __restrict pfCurI = fOutI + uButterfly;
-			T* __restrict pfNextR = fOutR + uButterflyNext;
-			T* __restrict pfNextI = fOutI + uButterflyNext;
+			T* pfCurR = fOutR + uButterfly;
+			T* pfCurI = fOutI + uButterfly;
+			T* pfNextR = fOutR + uButterflyNext;
+			T* pfNextI = fOutI + uButterflyNext;
 			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 
@@ -631,10 +631,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<T
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* __restrict pfCurR = fOutR + uButterfly;
-				T* __restrict pfCurI = fOutI + uButterfly;
-				T* __restrict pfNextR = fOutR + uButterflyNext;
-				T* __restrict pfNextI = fOutI + uButterflyNext;
+				T* pfCurR = fOutR + uButterfly;
+				T* pfCurI = fOutI + uButterfly;
+				T* pfNextR = fOutR + uButterflyNext;
+				T* pfNextI = fOutI + uButterflyNext;
 				this->CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -662,10 +662,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<T
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
 
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				this->CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -675,10 +675,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<T
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 
@@ -700,10 +700,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 		const uint nR0 = m_BitReverseIndices[n+0];
 		const uint nR1 = m_BitReverseIndices[n+1];
 
-		T* __restrict pfCurR = &cxOutput[n].r;
-		T* __restrict pfCurI = &cxOutput[n].i;
-		T* __restrict pfNextR = &cxOutput[n+1].r;
-		T* __restrict pfNextI = &cxOutput[n+1].i;
+		T* pfCurR = &cxOutput[n].r;
+		T* pfCurI = &cxOutput[n].i;
+		T* pfNextR = &cxOutput[n+1].r;
+		T* pfNextI = &cxOutput[n+1].i;
 		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
@@ -729,10 +729,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 		const uint nR0 = m_BitReverseIndices[n + 0];
 		const uint nR1 = m_BitReverseIndices[n + 1];
 
-		T* __restrict pfCurR = fOutR + n;
-		T* __restrict pfCurI = fOutI + n;
-		T* __restrict pfNextR = fOutR + n + 1;
-		T* __restrict pfNextI = fOutI + n + 1;
+		T* pfCurR = fOutR + n;
+		T* pfCurI = fOutI + n;
+		T* pfNextR = fOutR + n + 1;
+		T* pfNextI = fOutI + n + 1;
 		this->CalculateButterfly_Unity(fInR[nR0], fInI[nR0], fInR[nR1], fInI[nR1], pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
@@ -759,10 +759,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 		const uint nR0 = m_BitReverseIndices[n + 0];
 		const uint nR1 = m_BitReverseIndices[n + 1];
 
-		T* __restrict pfCurR = fOutR + n;
-		T* __restrict pfCurI = fOutI + n;
-		T* __restrict pfNextR = fOutR + n + 1;
-		T* __restrict pfNextI = fOutI + n + 1;
+		T* pfCurR = fOutR + n;
+		T* pfCurI = fOutI + n;
+		T* pfNextR = fOutR + n + 1;
+		T* pfNextI = fOutI + n + 1;
 		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
@@ -791,10 +791,10 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const 
 		const uint nR0 = m_BitReverseIndices[n + 0];
 //		const uint nR1 = m_BitReverseIndices[n + 1];
 
-		T* __restrict pfCurR = fOutR + n + 0;
-		T* __restrict pfCurI = fOutI + n + 0;
-		T* __restrict pfNextR = fOutR + n + 1;
-		T* __restrict pfNextI = fOutI + n + 1;
+		T* pfCurR = fOutR + n + 0;
+		T* pfCurI = fOutI + n + 0;
+		T* pfNextR = fOutR + n + 1;
+		T* pfNextI = fOutI + n + 1;
 //		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
 		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i,           zero,           zero, pfCurR, pfCurI, pfNextR, pfNextI);
 	}
@@ -1101,10 +1101,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly+nStageExp_2;
 
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 #else
@@ -1117,10 +1117,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly+nStageExp_2;
 
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 #endif //FFTL_SIMD_F32x8
@@ -1149,10 +1149,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly+=nStageExp)
 			{
 				const uint uButterflyNext = uButterfly+nStageExp_2;
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -1167,10 +1167,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly+=nStageExp)
 			{
 				const uint uButterflyNext = uButterfly+nStageExp_2;
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -1197,10 +1197,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 		for (uint uButterfly = 0; uButterfly < N; uButterfly+=nStageExp)
 		{
 			const uint uButterflyNext = uButterfly+nStageExp_2;
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 
@@ -1222,8 +1222,8 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
 		{
-			T* __restrict pfR = &fOutR[uButterfly];
-			T* __restrict pfI = &fOutI[uButterfly];
+			T* pfR = &fOutR[uButterfly];
+			T* pfI = &fOutI[uButterfly];
 
 			Calculate4Butterflies_DIF_Stage1(vUr, vUi, pfR, pfI);
 		}
@@ -1300,25 +1300,49 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 	{
 		//	Loop for each 4 butterflies
 
-		const uint nR0 = m_BitReverseIndices[n + 0];
-		const uint nR1 = m_BitReverseIndices[n + 1];
-		const uint nR2 = m_BitReverseIndices[n + 2];
-		const uint nR3 = m_BitReverseIndices[n + 3];
-		const uint nR4 = m_BitReverseIndices[n + 4];
-		const uint nR5 = m_BitReverseIndices[n + 5];
-		const uint nR6 = m_BitReverseIndices[n + 6];
-		const uint nR7 = m_BitReverseIndices[n + 7];
+#if defined(FFTL_AVX2) && 0 // This approach is actually slower. Don't use it.
+		FFTL_IF_CONSTEXPR (sizeof(T_BR) == 2)
+		{
+			//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
+			const __m128i v16Indices = _mm_load_si128(reinterpret_cast<const __m128i*>(m_BitReverseIndices + n));
+			const __m128i v32Indices_0_3 = _mm_unpacklo_epi16(v16Indices, _mm_setzero_si128());
+			const __m128i v32Indices_4_7 = _mm_unpackhi_epi16(v16Indices, _mm_setzero_si128());
+			const __m128i v32Indices_Ev = _mm_castps_si128( _mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(0,2,0,2)) );
+			const __m128i v32Indices_Od = _mm_castps_si128( _mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(1,3,1,3)) );
 
-		//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
-		const f32_4 vCurR = V4fSet(fInReal[nR0], fInReal[nR2], fInReal[nR4], fInReal[nR6]);
-		const f32_4 vCurI = V4fSet(fInImag[nR0], fInImag[nR2], fInImag[nR4], fInImag[nR6]);
+			const f32_4 vCurR = _mm_i32gather_ps(fInReal.data(), v32Indices_Ev, 4);
+			const f32_4 vCurI = _mm_i32gather_ps(fInImag.data(), v32Indices_Ev, 4);
 
-		const f32_4 vNextR = V4fSet(fInReal[nR1], fInReal[nR3], fInReal[nR5], fInReal[nR7]);
-		const f32_4 vNextI = V4fSet(fInImag[nR1], fInImag[nR3], fInImag[nR5], fInImag[nR7]);
+			const f32_4 vNextR = _mm_i32gather_ps(fInReal.data(), v32Indices_Od, 4);
+			const f32_4 vNextI = _mm_i32gather_ps(fInImag.data(), v32Indices_Od, 4);
 
-		//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
-		// Also the input is already pre-shuffled.
-		Calculate4Butterflies_DIT_Stage0(vCurR, vNextR, vCurI, vNextI, &fOutR[n], &fOutI[n]);
+			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
+			// Also the input is already pre-shuffled.
+			Calculate4Butterflies_DIT_Stage0(vCurR, vNextR, vCurI, vNextI, &fOutR[n], &fOutI[n]);
+		}
+		else
+#endif
+		{
+			const uint nR0 = m_BitReverseIndices[n + 0];
+			const uint nR1 = m_BitReverseIndices[n + 1];
+			const uint nR2 = m_BitReverseIndices[n + 2];
+			const uint nR3 = m_BitReverseIndices[n + 3];
+			const uint nR4 = m_BitReverseIndices[n + 4];
+			const uint nR5 = m_BitReverseIndices[n + 5];
+			const uint nR6 = m_BitReverseIndices[n + 6];
+			const uint nR7 = m_BitReverseIndices[n + 7];
+
+			//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
+			const f32_4 vCurR = V4fSet(fInReal[nR0], fInReal[nR2], fInReal[nR4], fInReal[nR6]);
+			const f32_4 vCurI = V4fSet(fInImag[nR0], fInImag[nR2], fInImag[nR4], fInImag[nR6]);
+
+			const f32_4 vNextR = V4fSet(fInReal[nR1], fInReal[nR3], fInReal[nR5], fInReal[nR7]);
+			const f32_4 vNextI = V4fSet(fInImag[nR1], fInImag[nR3], fInImag[nR5], fInImag[nR7]);
+
+			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
+			// Also the input is already pre-shuffled.
+			Calculate4Butterflies_DIT_Stage0(vCurR, vNextR, vCurI, vNextI, &fOutR[n], &fOutI[n]);
+		}
 	}
 
 #if FFTL_STAGE_TIMERS
@@ -1429,8 +1453,8 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
 		{
-			T* __restrict pfR = &fOutR[uButterfly];
-			T* __restrict pfI = &fOutI[uButterfly];
+			T* pfR = &fOutR[uButterfly];
+			T* pfI = &fOutI[uButterfly];
 
 			Calculate4Butterflies_DIT_Stage1(vUr, vUi, pfR, pfI);
 		}
@@ -1460,10 +1484,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 			for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -1493,10 +1517,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -1508,13 +1532,13 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
 
 			//	Loop for each 4 butterflies
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly+=nStageExp)
+			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
 				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* __restrict pfCurR = &fOutR[uButterfly];
-				T* __restrict pfCurI = &fOutI[uButterfly];
-				T* __restrict pfNextR = &fOutR[uButterflyNext];
-				T* __restrict pfNextI = &fOutI[uButterflyNext];
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
 				CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 			}
 		}
@@ -1544,10 +1568,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 #else
@@ -1559,10 +1583,10 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
-			T* __restrict pfCurR = &fOutR[uButterfly];
-			T* __restrict pfCurI = &fOutI[uButterfly];
-			T* __restrict pfNextR = &fOutR[uButterflyNext];
-			T* __restrict pfNextI = &fOutI[uButterflyNext];
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
 			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 #endif //FFTL_SIMD_F32x8
@@ -1616,7 +1640,7 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const Fixed
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_In vUr, f32_4_In vUi, T* __restrict pfR, T* __restrict pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_In vUr, f32_4_In vUi, T* pfR, T* pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
 	const f32_4 vCurR = f32_4::LoadA(pfR + 0);
@@ -1625,13 +1649,13 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_I
 	const f32_4 vCurI = f32_4::LoadA(pfI + 0);
 	const f32_4 vNextI = f32_4::LoadA(pfI + 4);
 
-	const f32_4 Wr = ( (vNextR*vUr) - (vNextI*vUi) );
-	const f32_4 Wi = ( (vNextR*vUi) + (vNextI*vUr) );
+	const f32_4 Wr = SubMul(vNextR * vUr, vNextI, vUi);
+	const f32_4 Wi = AddMul(vNextR * vUi, vNextI, vUr);
 
-	const f32_4 vNewNextR = (vCurR - Wr);
-	const f32_4 vNewNextI = (vCurI - Wi);
 	const f32_4 vNewCurR = (vCurR + Wr);
 	const f32_4 vNewCurI = (vCurI + Wi);
+	const f32_4 vNewNextR = (vCurR - Wr);
+	const f32_4 vNewNextI = (vCurI - Wi);
 
 	//	Now shuffle them for the subsequent stages, and store
 	const f32_4 vCCNNr0 = Permute<0,1,4,5>(vNewCurR, vNewNextR);
@@ -1646,7 +1670,7 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_I
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_In vUr, f32_4_In vUi, T* __restrict pfR, T* __restrict pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_In vUr, f32_4_In vUi, T* pfR, T* pfI)
 {
 	//	For DIF processing, we're running backwards, so there was no pre-shuffling in stage 2.
 
@@ -1667,8 +1691,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_I
 
 	const f32_4 vNewCurR = (vCurR + vNextR);
 	const f32_4 vNewCurI = (vCurI + vNextI);
-	const f32_4 vNewNextR = ( ( Wr * vUr) - ( Wi * vUi) );
-	const f32_4 vNewNextI = ( ( Wr * vUi) + ( Wi * vUr) );
+	const f32_4 vNewNextR = SubMul(Wr * vUr, Wi, vUi);
+	const f32_4 vNewNextI = AddMul(Wr * vUi, Wi, vUr);
 
 	//	Don't pre-shuffle for stage 0. Stage 0 will self-correct.
 	StoreA(pfR + 0, vNewCurR);
@@ -1678,7 +1702,7 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_I
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* __restrict pfR, T* __restrict pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* pfR, T* pfI)
 {
 	//	Shuffle the input around for the first stage so we can properly process 4 at a time.
 
@@ -1694,10 +1718,10 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* __re
 	const f32_4 vCurI =  Permute<0,2,4,6>(vCNCN0i, vCNCN1i);
 	const f32_4 vNextI = Permute<1,3,5,7>(vCNCN0i, vCNCN1i);
 
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
 	const f32_4 vNewCurR = (vCurR + vNextR);
 	const f32_4 vNewCurI = (vCurI + vNextI);
+	const f32_4 vNewNextR = (vCurR - vNextR);
+	const f32_4 vNewNextI = (vCurI - vNextI);
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
 	const f32_4 vCCNNr0 = Permute<0,4,2,6>(vNewCurR, vNewNextR);
@@ -1712,7 +1736,7 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* __re
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* __restrict pfR, T* __restrict pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* pfR, T* pfI)
 {
 	//	For DIF processing, we're running backwards, so stage 1 has processed before us, and we need to correct for its order.
 
@@ -1728,10 +1752,10 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* __re
 	const f32_4 vCurI =  Permute<0,4,2,6>(vs1_0i, vs1_1i);
 	const f32_4 vNextI = Permute<1,5,3,7>(vs1_0i, vs1_1i);
 
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
 	const f32_4 vNewCurR = (vCurR + vNextR);
 	const f32_4 vNewCurI = (vCurI + vNextI);
+	const f32_4 vNewNextR = (vCurR - vNextR);
+	const f32_4 vNewNextI = (vCurI - vNextI);
 
 	//	Now post shuffle them back to the normal (final) order.
 	const f32_4 vCNCNr0 = Permute<0,4,1,5>(vNewCurR, vNewNextR);
@@ -1746,13 +1770,13 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* __re
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* __restrict pfR, T* __restrict pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* pfR, T* pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
 	const f32_4 vNewCurR = (vCurR + vNextR);
 	const f32_4 vNewCurI = (vCurI + vNextI);
+	const f32_4 vNewNextR = (vCurR - vNextR);
+	const f32_4 vNewNextI = (vCurI - vNextI);
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
 	const f32_4 vCCNNr0 = Permute<0,4,2,6>(vNewCurR, vNewNextR);
@@ -1768,20 +1792,31 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32_4_I
 
 template <uint M>
 template <typename V>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIT(const V& vUr, const V& vUi, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIT(V vUr, V vUi, T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	const V vCurR = V::LoadA(pfCurR);
 	const V vCurI = V::LoadA(pfCurI);
 	const V vNextR = V::LoadA(pfNextR);
 	const V vNextI = V::LoadA(pfNextI);
 
-	const V Wr = ( (vNextR*vUr) - (vNextI*vUi) );
-	const V Wi = ( (vNextR*vUi) + (vNextI*vUr) );
+#if defined(FFTL_HAS_FMA) && 0 // Doesn't quite work for vUr values that are zero
+	vUi = vUi / vUr;
+	const V Wr = SubMul(vNextR, vNextI, vUi);
+	const V Wi = AddMul(vNextI, vNextR, vUi);
 
+	const V vNewCurR =	AddMul(vCurR, Wr, vUr);
+	const V vNewCurI =	AddMul(vCurI, Wi, vUr);
+	const V vNewNextR = SubMul(vCurR, Wr, vUr);
+	const V vNewNextI = SubMul(vCurI, Wi, vUr);
+#else
+	const V Wr = SubMul(vNextR * vUr, vNextI, vUi);
+	const V Wi = AddMul(vNextR * vUi, vNextI, vUr);
+
+	const V vNewCurR =	(vCurR + Wr);
+	const V vNewCurI =	(vCurI + Wi);
 	const V vNewNextR = (vCurR - Wr);
 	const V vNewNextI = (vCurI - Wi);
-	const V vNewCurR = (vCurR + Wr);
-	const V vNewCurI = (vCurI + Wi);
+#endif
 
 	StoreA(pfNextR, vNewNextR);
 	StoreA(pfNextI, vNewNextI);
@@ -1791,7 +1826,7 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIT(const V& vUr, 
 
 template <uint M>
 template <typename V>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, const V& vUi, T* __restrict pfCurR, T* __restrict pfCurI, T* __restrict pfNextR, T* __restrict pfNextI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, const V& vUi, T* pfCurR, T* pfCurI, T* pfNextR, T* pfNextI)
 {
 	const V vCurR = V::LoadA(pfCurR);
 	const V vCurI = V::LoadA(pfCurI);
@@ -1803,8 +1838,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, 
 
 	const V vNewCurR = (vCurR + vNextR);
 	const V vNewCurI = (vCurI + vNextI);
-	const V vNewNextR = ( ( Wr * vUr) - ( Wi * vUi) );
-	const V vNewNextI = ( ( Wr * vUi) + ( Wi * vUr) );
+	const V vNewNextR = SubMul(Wr * vUr, Wi, vUi);
+	const V vNewNextI = AddMul(Wr * vUi, Wi, vUr);
 	
 	StoreA(pfNextR, vNewNextR);
 	StoreA(pfNextI, vNewNextI);
