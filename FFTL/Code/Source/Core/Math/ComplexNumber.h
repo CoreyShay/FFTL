@@ -44,7 +44,7 @@ namespace FFTL
 
 
 template <typename T>
-class alignas(2*alignof(T)) cxNumber
+class alignas(2* alignof(T)) cxNumber
 {
 public:
 	T r;
@@ -54,26 +54,26 @@ public:
 	FFTL_FORCEINLINE cxNumber(const T& real, const T& imag) : r(real), i(imag) {}
 	FFTL_FORCEINLINE cxNumber(const cxNumber& c) : r(c.r), i(c.i)		{}
 	FFTL_FORCEINLINE cxNumber(const T& init) : r(init), i(init)			{}
-	FFTL_FORCEINLINE cxNumber& operator=(const cxNumber& c)						{ r=c.r; i=c.i; return *this; }
-	FFTL_FORCEINLINE cxNumber& operator=(const T& init)							{ r=init; i=init; return *this; }
-	FFTL_NODISCARD FFTL_FORCEINLINE bool operator==(const cxNumber& c) const	{ return r==c.r && i==c.i; }
-	FFTL_NODISCARD FFTL_FORCEINLINE bool operator!=(const cxNumber& c) const	{ return r!=c.r || i!=c.i; }
-	FFTL_NODISCARD FFTL_FORCEINLINE bool operator>(const T& f) const			{ return r>f; }
-	FFTL_NODISCARD FFTL_FORCEINLINE bool operator<(const T& f) const			{ return r<f; }
-	FFTL_FORCEINLINE void Zero()												{ r=0; i=0; }
-	FFTL_FORCEINLINE void Set(const T& real, const T& imag)						{ r=real; i=imag; }
+	FFTL_FORCEINLINE cxNumber& operator=(const cxNumber& c)						{ r = c.r; i = c.i; return *this; }
+	FFTL_FORCEINLINE cxNumber& operator=(const T& init)							{ r = init; i = init; return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool operator==(const cxNumber& c) const	{ return r == c.r && i == c.i; }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool operator!=(const cxNumber& c) const	{ return r != c.r || i != c.i; }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool operator>(const T& f) const			{ return r > f; }
+	FFTL_NODISCARD FFTL_FORCEINLINE bool operator<(const T& f) const			{ return r < f; }
+	FFTL_FORCEINLINE void Zero()												{ r = 0; i = 0; }
+	FFTL_FORCEINLINE void Set(const T& real, const T& imag)						{ r = real; i = imag; }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator+(const cxNumber& c) const	{ return cxNumber(r+c.r, i+c.i); }
-	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator-(const cxNumber& c) const	{ return cxNumber(r-c.r, i-c.i); }
-	FFTL_FORCEINLINE cxNumber& operator+=(const cxNumber& c)					{ r+=c.r; i+=c.i; return *this; }
-	FFTL_FORCEINLINE cxNumber& operator-=(const cxNumber& c)					{ r-=c.r; i-=c.i; return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator+(const cxNumber& c) const	{ return cxNumber(r + c.r, i + c.i); }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator-(const cxNumber& c) const	{ return cxNumber(r - c.r, i - c.i); }
+	FFTL_FORCEINLINE cxNumber& operator+=(const cxNumber& c)					{ r += c.r; i += c.i; return *this; }
+	FFTL_FORCEINLINE cxNumber& operator-=(const cxNumber& c)					{ r -= c.r; i -= c.i; return *this; }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const cxNumber& c) const	{ return cxNumber(r*c.r - i*c.i, r*c.i + i*c.r); }
-	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const T& n) const		{ return cxNumber(r*n, i*n); }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const cxNumber& c) const	{ return cxNumber(r * c.r - i * c.i, r * c.i + i * c.r); }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const T& n) const		{ return cxNumber(r * n, i * n); }
 	FFTL_FORCEINLINE cxNumber& operator*=(const cxNumber& c)					{ return *this = *this * c; }
 	FFTL_FORCEINLINE cxNumber& operator*=(const T& n)							{ return *this = *this * n; }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator/(const T& n) const		{ return cxNumber(r/n, i/n); }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator/(const T& n) const		{ return cxNumber(r / n, i / n); }
 	FFTL_FORCEINLINE cxNumber& operator/=(const T& n)							{ return *this = *this / n; }
 
 	//	Unary operators
@@ -83,8 +83,8 @@ public:
 	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber Conj() const						{ return cxNumber(r, -i); }
 	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber Flip() const						{ return cxNumber(i, r); }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE T Dot(const cxNumber& c) const				{ return r*c.r + i*c.i; }
-	FFTL_NODISCARD FFTL_FORCEINLINE T Mag2() const								{ return r*r + i*i; }
+	FFTL_NODISCARD FFTL_FORCEINLINE T Dot(const cxNumber& c) const				{ return r * c.r + i * c.i; }
+	FFTL_NODISCARD FFTL_FORCEINLINE T Mag2() const								{ return r * r + i * i; }
 	FFTL_NODISCARD FFTL_FORCEINLINE T Mag() const								{ return sqrt(Mag2()); }
 };
 
