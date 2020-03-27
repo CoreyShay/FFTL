@@ -292,9 +292,29 @@ FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 #endif
 	return r;
 }
-FFTL_FORCEINLINE Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b)
+FFTL_FORCEINLINE Vec4f V4fCompareEq(Vec4f_In a, Vec4f_In b)
 {
 	return _mm_cmpeq_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareNq(Vec4f_In a, Vec4f_In b)
+{
+	return _mm_cmpneq_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareGt(Vec4f_In a, Vec4f_In b)
+{
+	return _mm_cmpgt_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareLt(Vec4f_In a, Vec4f_In b)
+{
+	return _mm_cmplt_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareGe(Vec4f_In a, Vec4f_In b)
+{
+	return _mm_cmpge_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareLe(Vec4f_In a, Vec4f_In b)
+{
+	return _mm_cmple_ps(a, b);
 }
 FFTL_FORCEINLINE int V4fToIntMask(Vec4f_In v)
 {

@@ -253,11 +253,46 @@ FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 	r.b = V4fSqrt(v.b);
 	return r;
 }
-FFTL_FORCEINLINE Vec8f V8fCompareEqual(Vec8f_In a, Vec8f_In b)
+FFTL_FORCEINLINE Vec8f V8fCompareEq(Vec8f_In a, Vec8f_In b)
 {
 	Vec8f r;
-	r.a = V4fCompareEqual(a.a, b.a);
-	r.b = V4fCompareEqual(a.b, b.b);
+	r.a = V4fCompareEq(a.a, b.a);
+	r.b = V4fCompareEq(a.b, b.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fCompareNq(Vec8f_In a, Vec8f_In b)
+{
+	Vec8f r;
+	r.a = V4fCompareNq(a.a, b.a);
+	r.b = V4fCompareNq(a.b, b.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fCompareGt(Vec8f_In a, Vec8f_In b)
+{
+	Vec8f r;
+	r.a = V4fCompareGt(a.a, b.a);
+	r.b = V4fCompareGt(a.b, b.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fCompareLt(Vec8f_In a, Vec8f_In b)
+{
+	Vec8f r;
+	r.a = V4fCompareLt(a.a, b.a);
+	r.b = V4fCompareLt(a.b, b.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fCompareGe(Vec8f_In a, Vec8f_In b)
+{
+	Vec8f r;
+	r.a = V4fCompareGe(a.a, b.a);
+	r.b = V4fCompareGe(a.b, b.b);
+	return r;
+}
+FFTL_FORCEINLINE Vec8f V8fCompareLe(Vec8f_In a, Vec8f_In b)
+{
+	Vec8f r;
+	r.a = V4fCompareLe(a.a, b.a);
+	r.b = V4fCompareLe(a.b, b.b);
 	return r;
 }
 FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
@@ -268,15 +303,15 @@ FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
 }
 FFTL_FORCEINLINE bool V8fIsEqual(Vec8f_In a, Vec8f_In b)
 {
-	Vec4f cmp1 = V4fCompareEqual(a.a, b.a);
-	Vec4f cmp2 = V4fCompareEqual(a.b, b.b);
+	Vec4f cmp1 = V4fCompareEq(a.a, b.a);
+	Vec4f cmp2 = V4fCompareEq(a.b, b.b);
 	Vec4f vAnd = V4fAnd(cmp1, cmp2);
 	return V4fToIntMask(vAnd) == 15;
 }
 FFTL_FORCEINLINE bool V8fIsAllZero(Vec8f_In v)
 {
-	Vec4f cmp1 = V4fCompareEqual(v.a, V4fZero());
-	Vec4f cmp2 = V4fCompareEqual(v.b, V4fZero());
+	Vec4f cmp1 = V4fCompareEq(v.a, V4fZero());
+	Vec4f cmp2 = V4fCompareEq(v.b, V4fZero());
 	Vec4f vAnd = V4fAnd(cmp1, cmp2);
 	return V4fToIntMask(vAnd) == 15;
 }

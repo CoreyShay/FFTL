@@ -235,9 +235,34 @@ FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 {
 	return V4fSplat4(V4fHSumF(v));
 }
-FFTL_FORCEINLINE Vec4f V4fCompareEqual(Vec4f_In a, Vec4f_In b)
+FFTL_FORCEINLINE Vec4f V4fCompareEq(Vec4f_In a, Vec4f_In b)
 {
 	const u32 r[4] = { a.x == b.x ? 0xffffffff : 0, a.y == b.y ? 0xffffffff : 0, a.z == b.z ? 0xffffffff : 0, a.w == b.w ? 0xffffffff : 0 };
+	return *reinterpret_cast<const Vec4f*>(&r);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareNq(Vec4f_In a, Vec4f_In b)
+{
+	const u32 r[4] = { a.x != b.x ? 0xffffffff : 0, a.y != b.y ? 0xffffffff : 0, a.z != b.z ? 0xffffffff : 0, a.w != b.w ? 0xffffffff : 0 };
+	return *reinterpret_cast<const Vec4f*>(&r);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareGt(Vec4f_In a, Vec4f_In b)
+{
+	const u32 r[4] = { a.x > b.x ? 0xffffffff : 0, a.y > b.y ? 0xffffffff : 0, a.z > b.z ? 0xffffffff : 0, a.w > b.w ? 0xffffffff : 0 };
+	return *reinterpret_cast<const Vec4f*>(&r);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareLt(Vec4f_In a, Vec4f_In b)
+{
+	const u32 r[4] = { a.x < b.x ? 0xffffffff : 0, a.y < b.y ? 0xffffffff : 0, a.z < b.z ? 0xffffffff : 0, a.w < b.w ? 0xffffffff : 0 };
+	return *reinterpret_cast<const Vec4f*>(&r);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareGe(Vec4f_In a, Vec4f_In b)
+{
+	const u32 r[4] = { a.x >= b.x ? 0xffffffff : 0, a.y >= b.y ? 0xffffffff : 0, a.z >= b.z ? 0xffffffff : 0, a.w >= b.w ? 0xffffffff : 0 };
+	return *reinterpret_cast<const Vec4f*>(&r);
+}
+FFTL_FORCEINLINE Vec4f V4fCompareLe(Vec4f_In a, Vec4f_In b)
+{
+	const u32 r[4] = { a.x <= b.x ? 0xffffffff : 0, a.y <= b.y ? 0xffffffff : 0, a.z <= b.z ? 0xffffffff : 0, a.w <= b.w ? 0xffffffff : 0 };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 FFTL_FORCEINLINE int V4fToIntMask(Vec4f_In v)

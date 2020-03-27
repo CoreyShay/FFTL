@@ -214,9 +214,29 @@ FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 {
 	return _mm256_sqrt_ps(v);
 }
-FFTL_FORCEINLINE Vec8f V8fCompareEqual(Vec8f_In a, Vec8f_In b)
+FFTL_FORCEINLINE Vec8f V8fCompareEq(Vec8f_In a, Vec8f_In b)
 {
 	return _mm256_cmp_ps(a, b, _CMP_EQ_OQ);
+}
+FFTL_FORCEINLINE Vec8f V8fCompareNq(Vec8f_In a, Vec8f_In b)
+{
+	return _mm256_cmp_ps(a, b, _CMP_NEQ_OQ);
+}
+FFTL_FORCEINLINE Vec8f V8fCompareGt(Vec8f_In a, Vec8f_In b)
+{
+	return _mm256_cmp_ps(a, b, _CMP_GT_OQ);
+}
+FFTL_FORCEINLINE Vec8f V8fCompareLt(Vec8f_In a, Vec8f_In b)
+{
+	return _mm256_cmp_ps(a, b, _CMP_LT_OQ);
+}
+FFTL_FORCEINLINE Vec8f V8fCompareGe(Vec8f_In a, Vec8f_In b)
+{
+	return _mm256_cmp_ps(a, b, _CMP_GE_OQ);
+}
+FFTL_FORCEINLINE Vec8f V8fCompareLe(Vec8f_In a, Vec8f_In b)
+{
+	return _mm256_cmp_ps(a, b, _CMP_LE_OQ);
 }
 FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
 {

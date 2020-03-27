@@ -271,7 +271,7 @@ FFTL_FORCEINLINE vecT<N> NormalizeSafe(const vecT<N>& v)
 	const auto r = V4fDiv(v.m_v, vLen);
 
 	//	If the normalized result turns out to be non finite, this will mask it off and force it to zero.
-	const auto vMask = V4fCompareEqual(V4fSub(r, r), V4fZero());
+	const auto vMask = V4fCompareEq(V4fSub(r, r), V4fZero());
 	return V4fAnd(r, vMask);
 }
 
@@ -289,7 +289,7 @@ FFTL_FORCEINLINE vecT<N> NormalizeFastSafe(const vecT<N>& v)
 	const auto r = V4fMul(v.m_v, vInvSqrt);
 
 	//	If the normalized result turns out to be non finite, this will mask it off and force it to zero.
-	const auto vMask = V4fCompareEqual(V4fSub(r, r), V4fZero());
+	const auto vMask = V4fCompareEq(V4fSub(r, r), V4fZero());
 	return V4fAnd(r, vMask);
 }
 
