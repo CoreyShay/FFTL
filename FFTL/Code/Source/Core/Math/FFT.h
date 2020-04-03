@@ -216,7 +216,7 @@ protected:
 	static void Calculate4Butterflies_DIT_Stage1(f32_4_In vUR, f32_4_In vUI, T* pfReal, T* pfImag);
 	static void Calculate4Butterflies_DIF_Stage1(f32_4_In vUR, f32_4_In vUI, T* pfReal, T* pfImag);
 
-	template <typename V> static void CalculateVButterflies_DIT(V vUR, V vUI, T* pfCurReal, T* pfCurImag, T* pfNextReal, T* pfNextImag);
+	template <typename V> static void CalculateVButterflies_DIT(const V& vUR, const V& vUI, T* pfCurReal, T* pfCurImag, T* pfNextReal, T* pfNextImag);
 	template <typename V> static void CalculateVButterflies_DIF(const V& vUR, const V& vUI, T* pfCurReal, T* pfCurImag, T* pfNextReal, T* pfNextImag);
 };
 #endif
@@ -250,7 +250,7 @@ public:
 	void PrintTimerInfo(uint iterationCount = 1) const { sm_fft.PrintTimerInfo(iterationCount); }
 
 public:
-	static constexpr FFT<M-1, T, T_Twiddle> sm_fft{ };
+	static constexpr FFT<M - 1, T, T_Twiddle> sm_fft{ };
 private:
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesR;
 	FixedArray_Aligned32<T_Twiddle,N_4> m_PostTwiddlesI;
@@ -311,7 +311,7 @@ public:
 
 //	This convolver class only processes real data, using a real FFT of size 2N, which itself
 // utilizes a complex FFT of size N.
-template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle = T>
 class FFTL_NODISCARD Convolver
 {
 public:
@@ -325,64 +325,35 @@ public:
 	{
 		FixedArray_Aligned32<f32, _2N> t;
 
-		const FixedArray<f32, N>& r() const { return *reinterpret_cast<const FixedArray<f32, N>*>(&t); }
-		const FixedArray<f32, N>& i() const { return *reinterpret_cast<const FixedArray<f32, N>*>(t + N); }
+		const FixedArray_Aligned32<f32, N>& r() const { return *reinterpret_cast<const FixedArray_Aligned32<f32, N>*>(&t); }
+		const FixedArray_Aligned32<f32, N>& i() const { return *reinterpret_cast<const FixedArray_Aligned32<f32, N>*>(t + N); }
 
-		FixedArray<f32, N>& r() { return *reinterpret_cast<FixedArray<f32, N>*>(&t); }
-		FixedArray<f32, N>& i() { return *reinterpret_cast<FixedArray<f32, N>*>(t + N); }
+		FixedArray_Aligned32<f32, N>& r() { return *reinterpret_cast<FixedArray_Aligned32<f32, N>*>(&t); }
+		FixedArray_Aligned32<f32, N>& i() { return *reinterpret_cast<FixedArray_Aligned32<f32, N>*>(t + N); }
 	};
 
 	Convolver();
-	~Convolver();
+	~Convolver() = default;
 
-	void Convolve(FixedArray<T, N>& fInOutput);
-	void Destroy();
+	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t newKernelCount);
 
-	FFTL_NODISCARD uint GetKernelCount() const { return m_KernelCount; }
-	FFTL_NODISCARD uint GetLeftoverKernels() const { return m_KernelCountPrev; }
-	FFTL_NODISCARD size_t GetKernelSize_Bytes() const { return m_KernelCount * sizeof(Kernel); }
-	FFTL_NODISCARD const Kernel* GetKernelArray_FD() const { return m_pKernelArray_FD; }
+	FFTL_NODISCARD size_t GetLeftoverKernels() const { return m_KernelCountPrev; }
 
-	void SetKernel(const Kernel* pKernelArray_FD, u32 newKernelCount)
-	{
-		FFTL_ASSERT_MSG(newKernelCount <= T_MAX_KERNELS, "Kernel count overrun");
-		m_pKernelArray_FD = pKernelArray_FD;
-		m_KernelCount = newKernelCount;
-		m_KernelCountPrev = Max(m_KernelCountPrev, newKernelCount);
-	}
+	static void InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength);
 
 	//	Our FFT computer
 	static constexpr FFT_Real<M + 1, T, T_Twiddle> sm_fft{ };
 
 protected:
-	u32 m_KernelCount = 0;
-	u32 m_KernelCountPrev = 0;
-	const Kernel* m_pKernelArray_FD = nullptr;
+	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ);
+	static void AddArrays(FixedArray_Aligned32<T, N>& output, const FixedArray_Aligned32<T, N>& inA, const FixedArray_Aligned32<T, N>& inB);
+
+	size_t m_KernelCountPrev = 0;
 	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_AccumulationBuffer;
 	FixedArray_Aligned32<T, N> m_PrevTail;
 };
 
-template <uint M, uint T_MAX_KERNELS, typename T, typename T_Twiddle = T>
-class Convolver_OwnedKernel : public Convolver<M, T_MAX_KERNELS, T, T_Twiddle>
-{
-public:
-	using typename Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Kernel;
-	using Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::N;
-	using Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::sm_fft;
 
-	Convolver_OwnedKernel()
-	{
-		this->m_pKernelArray_FD = m_KernelArray_FD.data();
-	}
-
-	void InitKernel(const T* pKernelInput_TD, size_t kernelLength);
-
-	//	Disallow changing the kernel pointer when it is owned
-	void SetKernel(const Kernel* pKernelArray_FD, u32 newKernelCount) = delete;
-
-private:
-	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_KernelArray_FD;
-};
 
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>
 class FFTL_NODISCARD Convolver_Slow
@@ -392,7 +363,7 @@ public:
 	Convolver_Slow() { MemZero(m_AccumulationBuffer); }
 
 	void SetKernel(const FixedArray<T, T_KERNEL_LENGTH>& fKernel) { MemCopy(m_Kernel, fKernel); }
-	void Convolve(const FixedArray<T,T_N>& fInput, FixedArray<T,T_N>& fOutput);
+	void Convolve(const FixedArray<T, T_N>& fInput, FixedArray<T, T_N>& fOutput);
 
 private:
 	FixedArray<T, T_KERNEL_LENGTH> m_Kernel;

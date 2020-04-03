@@ -54,7 +54,8 @@ unsigned int sceLibcHeapExtendedAlloc = 1;
 #include <stdio.h>
 
 #if defined(_MSC_VER)
-#pragma warning(disable : 4996)
+#	include <conio.h>
+#	pragma warning(disable : 4996)
 #endif
 
 //#include <intrin.h>
@@ -147,7 +148,7 @@ void fft(u32 n, u32 m, float x[], float y[])
 #endif
 
 
-constexpr u32 _M = 9;
+constexpr u32 _M = 8;
 constexpr u32 _N = 1<<_M;
 
 typedef float fltType;
@@ -258,7 +259,8 @@ FixedArray_Aligned32<fltType, _N> fTestOutput2;
 FixedArray_Aligned32<cxNumber<f32_4>, _N> cxInterleaved4;
 FixedArray_Aligned64<cxNumber<f32_8>, _N> cxInterleaved8;
 
-FFTL::Convolver_OwnedKernel<_M, 4, float, float> m_Convolver;
+FFTL::Convolver<_M, 4, float, float> m_Convolver;
+FFTL::FixedArray< FFTL::Convolver<_M, 4, float, float>::Kernel, 4 > m_KernelFD;
 FFTL::Convolver_Slow<float, _N, _N*4> m_Convolver_Slow;
 
 void convolutionTest()
@@ -583,7 +585,7 @@ void verifyConvolution()
 #endif
 
 	m_Convolver_Slow.SetKernel(fKernel);
-	m_Convolver.InitKernel(fKernel.data(), fKernel.size());
+	m_Convolver.InitKernel(m_KernelFD.data(), fKernel.data(), fKernel.size());
 
 //	for (uint k = 0; k < 1000; ++k)
 	{
@@ -610,7 +612,7 @@ void verifyConvolution()
 #endif
 
 		m_Convolver_Slow.Convolve(fInput2, fOutput1);
-		m_Convolver.Convolve(fInput2);
+		m_Convolver.Convolve(fInput2, m_KernelFD.data(), m_KernelFD.size());
 
 		for (uint n = 0; n < _N; ++n)
 		{
@@ -619,7 +621,7 @@ void verifyConvolution()
 		}
 
 		m_Convolver_Slow.Convolve(fInput2, fOutput1);
-		m_Convolver.Convolve(fInput2);
+		m_Convolver.Convolve(fInput2, m_KernelFD.data(), m_KernelFD.size());
 
 		for ( uint n = 0; n < _N; ++n )
 		{
@@ -730,6 +732,7 @@ void perfTest()
 		{
 			fft.TransformInverse_InPlace_DIT(fInput1, fInput2);
 		}
+		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Inverse in-place FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 		fft.PrintTimerInfo(loopCount);
 	}
@@ -781,15 +784,17 @@ void perfTest()
 #endif
 	}
 
-//	_getch();
+#if defined(_MSC_VER)
+	_getch();
+#endif
 }
 
 void RunTests()
 {
-	FFTL::verifyConvolution();
-	FFTL::convolutionTest();
 	FFTL::verifyFFT();
 	FFTL::verifyRealFFT();
+	FFTL::verifyConvolution();
+	FFTL::convolutionTest();
 	FFTL::perfTest();
 }
 
