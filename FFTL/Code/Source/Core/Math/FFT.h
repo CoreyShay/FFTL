@@ -325,10 +325,10 @@ public:
 	{
 		FixedArray_Aligned32<f32, _2N> t;
 
-		const FixedArray_Aligned32<f32, N>& r() const { return *reinterpret_cast<const FixedArray_Aligned32<f32, N>*>(&t); }
+		const FixedArray_Aligned32<f32, N>& r() const { return *reinterpret_cast<const FixedArray_Aligned32<f32, N>*>(t + 0); }
 		const FixedArray_Aligned32<f32, N>& i() const { return *reinterpret_cast<const FixedArray_Aligned32<f32, N>*>(t + N); }
 
-		FixedArray_Aligned32<f32, N>& r() { return *reinterpret_cast<FixedArray_Aligned32<f32, N>*>(&t); }
+		FixedArray_Aligned32<f32, N>& r() { return *reinterpret_cast<FixedArray_Aligned32<f32, N>*>(t + 0); }
 		FixedArray_Aligned32<f32, N>& i() { return *reinterpret_cast<FixedArray_Aligned32<f32, N>*>(t + N); }
 	};
 
@@ -336,21 +336,26 @@ public:
 	~Convolver() = default;
 
 	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t newKernelCount);
+	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArrayA_FD, size_t newKernelCountA, T fGainA, const Kernel* pKernelArrayB_FD, size_t newKernelCountB, T fGainB);
 
 	FFTL_NODISCARD size_t GetLeftoverKernels() const { return m_KernelCountPrev; }
 
-	static void InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength);
+	static uint InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength);
 
 	//	Our FFT computer
 	static constexpr FFT_Real<M + 1, T, T_Twiddle> sm_fft{ };
 
 protected:
-	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ);
+	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW); //	output = inX * inY + inW
+	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW, T fGainY); //	output = inX * (inY * fGainY) + inW
+	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ, const Kernel& inW, T fGainY, T fGainZ); //	output = inX * (inY * fGainY + inZ * fGainZ) + inW
 	static void AddArrays(FixedArray_Aligned32<T, N>& output, const FixedArray_Aligned32<T, N>& inA, const FixedArray_Aligned32<T, N>& inB);
 
 	size_t m_KernelCountPrev = 0;
 	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_AccumulationBuffer;
 	FixedArray_Aligned32<T, N> m_PrevTail;
+	Kernel m_tempBufferA, m_tempBufferB;
+	Kernel m_tempBufferX; // Normally used for the FFT output of the input
 };
 
 

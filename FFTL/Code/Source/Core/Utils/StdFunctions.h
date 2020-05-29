@@ -99,7 +99,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
 	return (offset + (T_ALIGNMENT - 1)) & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T AlignForward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(size_t alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (alignment - 1)) & ~(alignment - 1);
@@ -112,16 +112,22 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
 	return offset & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T AlignBackward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(size_t alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(alignment - 1);
 }
 
 template<typename T, size_t N>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&arr)[N])
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&)[N])
 {
-	return sizeof(arr) / sizeof(T);
+	return N;
+}
+
+template <typename T, size_t N>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const FixedArray<T, N>&)
+{
+	return N;
 }
 
 template<>

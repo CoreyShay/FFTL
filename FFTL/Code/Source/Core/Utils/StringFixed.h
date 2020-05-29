@@ -101,8 +101,9 @@ using TStringFixed = StringFixed<N>;
 /// default values recommended by http://isthe.com/chongo/tech/comp/fnv/
 FFTL_NODISCARD constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
 {
-	const u32 PRIME = 0x01000193; //   16777619
-	return (oneChar ^ hash) * PRIME;
+	//	Use 64 bit integers to prevent Warning C4307 '+': integral constant overflow with constant evaluated string literals
+	constexpr u64 PRIME = 0x01000193; //   16777619
+	return static_cast<u32>((oneChar ^ hash) * PRIME);
 }
 
 /// hash a C-style string

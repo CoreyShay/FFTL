@@ -2487,55 +2487,54 @@ Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolver()
 {
 	MemZero(m_AccumulationBuffer);
 	MemZero(m_PrevTail);
+	MemZero(m_PrevTail);
+	MemZero(m_tempBufferA);
+	MemZero(m_tempBufferB);
+	MemZero(m_tempBufferX);
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t newKernelCount)
 {
-	Kernel inputXFormed;
-	Kernel workBufferA, workBufferB;
-
 	m_KernelCountPrev = Max(m_KernelCountPrev, newKernelCount);
 
-	if (newKernelCount > 0 && pKernelArray_FD != nullptr)
+	if (newKernelCount > 0)
 	{
+		FFTL_ASSERT(pKernelArray_FD != nullptr);
+
 		//	Convert the time domain input to freq domain
-		sm_fft.TransformForward_1stHalf(fInOutput, inputXFormed.r(), inputXFormed.i());
+		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
 
 		//	Convolve the first segment, perform IFFT, and write to the output
-		{
-			const Kernel& kernel = pKernelArray_FD[0];
-			Kernel& curBuffer = m_AccumulationBuffer[0];
+		const Kernel& kernel = pKernelArray_FD[0];
+		Kernel& curBuffer = m_AccumulationBuffer[0];
 
-			//	Frequency domain convolution
-			ConvolveFD(workBufferA, inputXFormed, kernel, curBuffer);
+		//	Frequency domain convolution
+		ConvolveFD(m_tempBufferA, m_tempBufferX, kernel, curBuffer);
 
-			//	Convert the new frequency domain signal back to the time domain
-			sm_fft.TransformInverse_ClobberInput(workBufferA.r(), workBufferA.i(), workBufferB.t);
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
-			//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
-			AddArrays(fInOutput, m_PrevTail, workBufferB.r());
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
 
-			//	Store the 2nd half of the IFFT buffer (reverb tail)
-			MemCopy(m_PrevTail, workBufferB.i());
-		}
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
 	}
 	else
 	{
 		//	If nothing to convolve anymore, fill in the previous convolution segments
-		{
-			//	No convolution is necessary here because the input is effectively zero
-			workBufferA = m_AccumulationBuffer[0];
+		//	No convolution is necessary here because the input is effectively zero
+		m_tempBufferA = m_AccumulationBuffer[0];
 
-			//	Convert the new frequency domain signal back to the time domain
-			sm_fft.TransformInverse_ClobberInput(workBufferA.r(), workBufferA.i(), workBufferB.t);
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
-			//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
-			AddArrays(fInOutput, m_PrevTail, workBufferB.r());
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
 
-			//	Store the 2nd half of the IFFT buffer (reverb tail)
-			MemCopy(m_PrevTail, workBufferB.i());
-		}
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
 	}
 
 	//	Perform short convolutions on the remaining kernels, accumulating everything as necessary
@@ -2546,7 +2545,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		Kernel& prvBuffer = m_AccumulationBuffer[k - 1];
 
 		//	Frequency domain convolution
-		ConvolveFD(prvBuffer, inputXFormed, kernel, curBuffer);
+		ConvolveFD(prvBuffer, m_tempBufferX, kernel, curBuffer);
 	}
 
 	//	Finish up the previous decay if we've switched to a shorter kernel
@@ -2564,11 +2563,157 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ)
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArrayA_FD, size_t newKernelCountA, T fGainA, const Kernel* pKernelArrayB_FD, size_t newKernelCountB, T fGainB)
+{
+	const size_t maxNewKernelCount = Max(newKernelCountA, newKernelCountB);
+	const size_t minNewKernelCount = Min(newKernelCountA, newKernelCountB);
+
+	m_KernelCountPrev = Max(m_KernelCountPrev, maxNewKernelCount);
+
+	if (minNewKernelCount > 0)
+	{
+		FFTL_ASSERT(pKernelArrayA_FD != nullptr);
+		FFTL_ASSERT(pKernelArrayB_FD != nullptr);
+
+		//	Convert the time domain input to freq domain
+		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+
+		//	Convolve the first segment, perform IFFT, and write to the output
+		const Kernel& kernelA = pKernelArrayA_FD[0];
+		const Kernel& kernelB = pKernelArrayB_FD[0];
+		Kernel& curBuffer = m_AccumulationBuffer[0];
+
+		//	Frequency domain convolution
+		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelA, kernelB, curBuffer, fGainA, fGainB);
+
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
+
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
+	}
+	else if (newKernelCountA > 0)
+	{
+		FFTL_ASSERT(pKernelArrayA_FD != nullptr);
+
+		//	Convert the time domain input to freq domain
+		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+
+		//	Convolve the first segment, perform IFFT, and write to the output
+		const Kernel& kernelA = pKernelArrayA_FD[0];
+		Kernel& curBuffer = m_AccumulationBuffer[0];
+
+		//	Frequency domain convolution
+		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelA, curBuffer, fGainA);
+
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
+
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
+	}
+	else if (newKernelCountB > 0)
+	{
+		FFTL_ASSERT(pKernelArrayB_FD != nullptr);
+
+		//	Convert the time domain input to freq domain
+		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+
+		//	Convolve the first segment, perform IFFT, and write to the output
+		const Kernel& kernelB = pKernelArrayB_FD[0];
+		Kernel& curBuffer = m_AccumulationBuffer[0];
+
+		//	Frequency domain convolution
+		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelB, curBuffer, fGainB);
+
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
+
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
+	}
+	else
+	{
+		//	If nothing to convolve anymore, fill in the previous convolution segments
+		//	No convolution is necessary here because the input is effectively zero
+		m_tempBufferA = m_AccumulationBuffer[0];
+
+		//	Convert the new frequency domain signal back to the time domain
+		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+
+		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
+		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
+
+		//	Store the 2nd half of the IFFT buffer (reverb tail)
+		MemCopy(m_PrevTail, m_tempBufferB.i());
+	}
+
+	//	Perform short convolutions on the remaining kernels, accumulating everything as necessary
+	for (size_t k = 1; k < minNewKernelCount; ++k)
+	{
+		const Kernel& kernelA = pKernelArrayA_FD[k];
+		const Kernel& kernelB = pKernelArrayB_FD[k];
+		Kernel& curBuffer = m_AccumulationBuffer[k];
+		Kernel& prvBuffer = m_AccumulationBuffer[k - 1];
+
+		//	Frequency domain convolution
+		ConvolveFD(prvBuffer, m_tempBufferX, kernelA, kernelB, curBuffer, fGainA, fGainB);
+	}
+
+	if (newKernelCountA > newKernelCountB)
+	{
+		for (size_t k = Max(minNewKernelCount, 1u); k < maxNewKernelCount; ++k)
+		{
+			const Kernel& kernelA = pKernelArrayA_FD[k];
+			Kernel& curBuffer = m_AccumulationBuffer[k];
+			Kernel& prvBuffer = m_AccumulationBuffer[k - 1];
+
+			//	Frequency domain convolution
+			ConvolveFD(prvBuffer, m_tempBufferX, kernelA, curBuffer, fGainA);
+		}
+	}
+	else
+	{
+		for (size_t k = Max(minNewKernelCount, 1u); k < maxNewKernelCount; ++k)
+		{
+			const Kernel& kernelB = pKernelArrayB_FD[k];
+			Kernel& curBuffer = m_AccumulationBuffer[k];
+			Kernel& prvBuffer = m_AccumulationBuffer[k - 1];
+
+			//	Frequency domain convolution
+			ConvolveFD(prvBuffer, m_tempBufferX, kernelB, curBuffer, fGainB);
+		}
+	}
+
+	//	Finish up the previous decay if we've switched to a shorter kernel
+	for (size_t k = Max(maxNewKernelCount, 1u); k < m_KernelCountPrev; ++k)
+	{
+		Kernel& curBuffer = m_AccumulationBuffer[k];
+		Kernel& prvBuffer = m_AccumulationBuffer[k - 1];
+
+		prvBuffer = curBuffer;
+		MemZero(curBuffer);
+	}
+
+	if (m_KernelCountPrev > maxNewKernelCount)
+		--m_KernelCountPrev;
+}
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW)
 {
 	//	Cache dc and Nyquist bins
-	const T dc = AddMul(inZ.r()[0], inX.r()[0], inY.r()[0]);
-	const T nq = AddMul(inZ.i()[0], inX.i()[0], inY.i()[0]);
+	const T dc = AddMul(inW.r()[0], inX.r()[0], inY.r()[0]);
+	const T nq = AddMul(inW.i()[0], inX.i()[0], inY.i()[0]);
 
 	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
 	FFTL_IF_CONSTEXPR (std::is_same<T, f32>::value)
@@ -2579,11 +2724,11 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 			const f32_8 xI = f32_8::LoadA(inX.i() + n);
 			const f32_8 yR = f32_8::LoadA(inY.r() + n);
 			const f32_8 yI = f32_8::LoadA(inY.i() + n);
-			const f32_8 zR = f32_8::LoadA(inZ.r() + n);
-			const f32_8 zI = f32_8::LoadA(inZ.i() + n);
+			const f32_8 wR = f32_8::LoadA(inW.r() + n);
+			const f32_8 wI = f32_8::LoadA(inW.i() + n);
 
-			const f32_8 rR = AddMul(SubMul(zR, xI, yI), xR, yR);
-			const f32_8 rI = AddMul(AddMul(zI, yR, xI), xR, yI);
+			const f32_8 rR = AddMul(SubMul(wR, xI, yI), xR, yR);
+			const f32_8 rI = AddMul(AddMul(wI, xI, yR), xR, yI);
 
 //			const f32_8 rR = (xR * yR - xI * yI + zR);
 //			const f32_8 rI = (xR * yI + xI * yR + zI);
@@ -2605,14 +2750,139 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 			const T& xI = inX.i()[n];
 			const T& yR = inY.r()[n];
 			const T& yI = inY.i()[n];
-			const T& zR = inZ.r()[n];
-			const T& zI = inZ.i()[n];
+			const T& wR = inW.r()[n];
+			const T& wI = inW.i()[n];
 
-			const T rR = AddMul(SubMul(zR, xI, yI), xR, yR);
-			const T rI = AddMul(AddMul(zI, yR, xI), xR, yI);
+			const T rR = AddMul(SubMul(wR, xI, yI), xR, yR);
+			const T rI = AddMul(AddMul(wI, xI, yR), xR, yI);
 
 //			const T rR = xR * yR - xI * yI + zR;
 //			const T rI = xR * yI + xI * yR + zI;
+			output.r()[n] = rR;
+			output.i()[n] = rI;
+		}
+	}
+}
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW, T fGainY)
+{
+	//	Cache dc and Nyquist bins
+	const T dc = AddMul(inW.r()[0], inX.r()[0], inY.r()[0] * fGainY);
+	const T nq = AddMul(inW.i()[0], inX.i()[0], inY.i()[0] * fGainY);
+
+	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
+	FFTL_IF_CONSTEXPR (std::is_same<T, f32>::value)
+	{
+		const f32_8 vGainY = f32_8::Splat8(fGainY);
+
+		for (uint n = 0; n < N; n += 8)
+		{
+			const f32_8 xR = f32_8::LoadA(inX.r() + n);
+			const f32_8 xI = f32_8::LoadA(inX.i() + n);
+			const f32_8 yR = f32_8::LoadA(inY.r() + n);
+			const f32_8 yI = f32_8::LoadA(inY.i() + n);
+			const f32_8 wR = f32_8::LoadA(inW.r() + n);
+			const f32_8 wI = f32_8::LoadA(inW.i() + n);
+
+			const f32_8 aR = yR * vGainY;
+			const f32_8 aI = yI * vGainY;
+
+			const f32_8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const f32_8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+
+			rR.StoreA(output.r() + n);
+			rI.StoreA(output.i() + n);
+		}
+
+		output.r()[0] = dc;
+		output.i()[0] = nq;
+	}
+	else
+	{
+		output.r()[0] = dc;
+		output.i()[0] = nq;
+
+		for (uint n = 1; n < N; n += 1)
+		{
+			const T& xR = inX.r()[n];
+			const T& xI = inX.i()[n];
+			const T& yR = inY.r()[n];
+			const T& yI = inY.i()[n];
+			const T& wR = inW.r()[n];
+			const T& wI = inW.i()[n];
+	
+			const T aR = yR * fGainY;
+			const T aI = yI * fGainY;
+	
+			const T rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const T rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+
+			output.r()[n] = rR;
+			output.i()[n] = rI;
+		}
+	}
+}
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ, const Kernel& inW, T fGainY, T fGainZ)
+{
+	//	Cache dc and Nyquist bins
+	const T dc = AddMul(inW.r()[0], inX.r()[0], AddMul(inY.r()[0] * fGainY, inZ.r()[0], fGainZ));
+	const T nq = AddMul(inW.i()[0], inX.i()[0], AddMul(inY.i()[0] * fGainY, inZ.i()[0], fGainZ));
+
+	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
+	FFTL_IF_CONSTEXPR (std::is_same<T, f32>::value)
+	{
+		const f32_8 vGainY = f32_8::Splat8(fGainY);
+		const f32_8 vGainZ = f32_8::Splat8(fGainZ);
+
+		for (uint n = 0; n < N; n += 8)
+		{
+			const f32_8 xR = f32_8::LoadA(inX.r() + n);
+			const f32_8 xI = f32_8::LoadA(inX.i() + n);
+			const f32_8 yR = f32_8::LoadA(inY.r() + n);
+			const f32_8 yI = f32_8::LoadA(inY.i() + n);
+			const f32_8 zR = f32_8::LoadA(inZ.r() + n);
+			const f32_8 zI = f32_8::LoadA(inZ.i() + n);
+			const f32_8 wR = f32_8::LoadA(inW.r() + n);
+			const f32_8 wI = f32_8::LoadA(inW.i() + n);
+
+			const f32_8 aR = AddMul(yR * vGainY, zR, vGainZ);
+			const f32_8 aI = AddMul(yI * vGainY, zI, vGainZ);
+
+			const f32_8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const f32_8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+
+			rR.StoreA(output.r() + n);
+			rI.StoreA(output.i() + n);
+		}
+
+		output.r()[0] = dc;
+		output.i()[0] = nq;
+	}
+	else
+	{
+		output.r()[0] = dc;
+		output.i()[0] = nq;
+
+		for (uint n = 1; n < N; n += 1)
+		{
+			const T& xR = inX.r()[n];
+			const T& xI = inX.i()[n];
+			const T& yR = inY.r()[n];
+			const T& yI = inY.i()[n];
+			const T& zR = inZ.r()[n];
+			const T& zI = inZ.i()[n];
+			const T& wR = inW.r()[n];
+			const T& wI = inW.i()[n];
+
+			const T aR = AddMul(yR * fGainY, zR, fGainZ);
+			const T aI = AddMul(yI * fGainY, zI, fGainZ);
+
+			const T rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const T rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+
 			output.r()[n] = rR;
 			output.i()[n] = rI;
 		}
@@ -2644,7 +2914,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::AddArrays(FixedArray_Aligned32<T
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength)
+uint Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength)
 {
 	//	Determine the number of kernels we need
 	const uint kernelCount = safestatic_cast<uint>(AlignForward<N>(kernelLength) / N);
@@ -2676,6 +2946,8 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput
 		//	Convert to frequency domain, and store
 		sm_fft.TransformForward_1stHalf(temp, kernel.r(), kernel.i());
 	}
+
+	return kernelCount;
 }
 
 
@@ -2684,7 +2956,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput
 
 
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>
-void Convolver_Slow<T,T_N,T_KERNEL_LENGTH>::Convolve(const FixedArray<T,T_N>& fInput, FixedArray<T,T_N>& fOutput)
+void Convolver_Slow<T, T_N, T_KERNEL_LENGTH>::Convolve(const FixedArray<T, T_N>& fInput, FixedArray<T, T_N>& fOutput)
 {
 	memmove(&m_AccumulationBuffer, &m_AccumulationBuffer[T_N], sizeof(T)*T_KERNEL_LENGTH);
 	MemZero(&m_AccumulationBuffer[T_KERNEL_LENGTH], T_N);
