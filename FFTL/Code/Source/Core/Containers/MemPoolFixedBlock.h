@@ -45,7 +45,7 @@ namespace FFTL
 //	A memory pool of fixed size known at compile time.
 //	All objects in the pool will be allocated a single fixed memory size,
 //	so _AllocSize must be greater than or equal to the largest inherited class.
-template <class _BaseType, uint _MaxCount, uint _AllocSize=sizeof(_BaseType)>
+template <class _BaseType, uint _MaxCount, uint _AllocSize = sizeof(_BaseType)>
 class FixedBlockMemPoolStatic
 {
 public:
@@ -61,7 +61,7 @@ public:
 #endif
 	{
 		static_assert(_MaxCount < (1 << (sizeof(m_NumUsedEntries) * 8)), "_MaxCount must be smaller than the integral size type can store");
-		static_assert(_AllocSize >= (uint)sizeof(_BaseType), "_AllocSize must be at least as large as the base type");
+		static_assert(_AllocSize >= static_cast<uint>(sizeof(_BaseType)), "_AllocSize must be at least as large as the base type");
 
 		//	Sequence the indices
 		for (uint i = 0; i < _MaxCount; ++i)
@@ -80,7 +80,7 @@ public:
 	template <class _InheritedType> 
 	FFTL_NODISCARD _InheritedType* AllocateObject()
 	{
-		static_assert(_AllocSize >= (uint)sizeof(_InheritedType), "_AllocSize must be at least as large as the inherited type");
+		static_assert(_AllocSize >= static_cast<uint>(sizeof(_InheritedType)), "_AllocSize must be at least as large as the inherited type");
 
 		size_type usedCount = m_NumUsedEntries;
 		if (usedCount != _MaxCount)
@@ -208,7 +208,7 @@ public:
 		MutexScopedLock lock(&m_Mutex);
 		return _Mybase::template AllocateObject<_InheritedType>();
 #else
-		static_assert(_AllocSize >= (uint)sizeof(_InheritedType), "_AllocSize must be at least as large as the inherited type");
+		static_assert(_AllocSize >= static_cast<uint>(sizeof(_InheritedType)), "_AllocSize must be at least as large as the inherited type");
 
 		const size_type usedCount = AtomicIncUnless(&this->m_NumUsedEntries, _MaxCount);
 		if (usedCount != _MaxCount)

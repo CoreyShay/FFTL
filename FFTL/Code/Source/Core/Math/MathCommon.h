@@ -741,7 +741,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 Floor(f32 val)
 	const __m128 v = _mm_set_ss(val);
 	return _mm_cvtss_f32( sse_fFloor_ss(v) );
 #else
-	int ival = (int)val;
+	const s64 ival = safestatic_cast<s64>(val);
 	return val < ival ? ival - 1 : ival;
 #endif
 }
@@ -751,7 +751,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 Ceil(f32 val)
 	const __m128 v = _mm_set_ss(val);
 	return _mm_cvtss_f32( sse_fCeil_ss(v) );
 #else
-	int ival = (int)val;
+	const s64 ival = safestatic_cast<s64>(val);
 	return (val - ival) > 0.0f ? ival + 1 : ival;
 #endif
 }
