@@ -48,6 +48,15 @@ protected:
 	u64 m_TotalTicks = 0;
 	u64 m_StartTicks = 0;
 	u32 m_nAccumCount = 0;
+
+	class StaticInfo
+	{
+	public:
+		enum class TimerType { CPU, CLOCK };
+		StaticInfo(TimerType type);
+
+		f64 m_TicksToUsScalar;
+	};
 };
 
 //	The CPU timer class offers the highest resolution timer possible on supported platforms
@@ -55,7 +64,6 @@ protected:
 class FFTL_NODISCARD CpuTimer : public TimerBase
 {
 public:
-	static void StaticInit();
 	static u64 GetCurrentTicks();
 
 	void Start();
@@ -67,14 +75,14 @@ public:
 	f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
 	f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
 
-	static inline f64 ToMicroseconds(u64 t)	{ return t * sm_TicksToUsScalar; }
-	static inline f64 ToMilliseconds(u64 t)	{ return t * sm_TicksToUsScalar / 1000.0; }
-	static inline f64 ToSeconds(u64 t)		{ return t * sm_TicksToUsScalar / 1000000.0; }
+	static inline f64 ToMicroseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar; }
+	static inline f64 ToMilliseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000.0; }
+	static inline f64 ToSeconds(u64 t)		{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000000.0; }
 
 	static const char* GetTickUnitsString();
 
 private:
-	static f64 sm_TicksToUsScalar;
+	static const inline StaticInfo sm_StaticInfo{ StaticInfo::TimerType::CPU };
 };
 
 //	The timer class offers the highest time resolution supported by the kernel, which is usually
@@ -87,7 +95,6 @@ private:
 class FFTL_NODISCARD Timer : public TimerBase
 {
 public:
-	static void StaticInit();
 	static u64 GetCurrentTicks();
 
 	void Start();
@@ -99,14 +106,14 @@ public:
 	FFTL_NODISCARD f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
 
-	FFTL_NODISCARD static inline f64 ToMicroseconds(u64 t)	{ return t * sm_TicksToUsScalar; }
-	FFTL_NODISCARD static inline f64 ToMilliseconds(u64 t)	{ return t * sm_TicksToUsScalar / 1000.0; }
-	FFTL_NODISCARD static inline f64 ToSeconds(u64 t)		{ return t * sm_TicksToUsScalar / 1000000.0; }
+	FFTL_NODISCARD static inline f64 ToMicroseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar; }
+	FFTL_NODISCARD static inline f64 ToMilliseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000.0; }
+	FFTL_NODISCARD static inline f64 ToSeconds(u64 t)		{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000000.0; }
 
 	FFTL_NODISCARD static const char* GetTickUnitsString();
 
 private:
-	static f64 sm_TicksToUsScalar;
+	static const inline StaticInfo sm_StaticInfo{ StaticInfo::TimerType::CLOCK };
 };
 #else
 typedef CpuTimer Timer;

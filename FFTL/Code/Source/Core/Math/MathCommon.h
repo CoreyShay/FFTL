@@ -217,6 +217,22 @@ template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Pow(T x, T y) { return std::pow(x, y); }
 
 template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE T Pow2(T b)
+{
+	return Pow(static_cast<T>(2), b);
+}
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T>::is_integer, T>::type Pow2(T b)
+{
+	return static_cast<T>(1) << b;
+}
+template <uint b>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr uint Pow2()
+{
+	return 1u << (b);
+}
+
+template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Cos(T y) { return std::cos(y); }
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Sin(T y) { return std::sin(y); }

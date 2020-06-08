@@ -42,10 +42,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #	define FFTL_CPP_VERSION 17
-#elif (__cplusplus >= 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
-#	define FFTL_CPP_VERSION 14
 #else
-#	error "C++14 compiler or greater required."
+#	error "C++17 compiler or greater required."
 #endif
 
 

@@ -45,12 +45,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.cpp">
       <Filter>Platform</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.cpp">
-      <Filter>Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.cpp">
-      <Filter>Math</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
@@ -105,9 +99,6 @@
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.h">
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.h">

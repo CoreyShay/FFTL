@@ -107,94 +107,78 @@ http://www.dspguide.com/ch12/3.htm
 
 
 
-template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE constexpr FFT_Base<M, T, T_Twiddle>::FFT_Base()
-#if FFTL_STAGE_TIMERS
-	: m_PreProcessTimer(0)
-	, m_PostProcessTimer(0)
-#endif
+template <FFT_TwiddleType TWIDDLE_TYPE, uint M, typename T>
+constexpr FFT_TwiddlesContainer<TWIDDLE_TYPE, M, T>::FFT_TwiddlesContainer()
 {
-#if FFTL_STAGE_TIMERS
-	for (auto& timer : m_StageTimers)
-		timer = 0;
-#endif
+	const auto nsize = m_Twiddles.size();
 
-	//	Precomputations
-
-	//	Pre-compute bit-reveral indices
-	for (T_BR i = 0; i < N; ++i)
+	switch (TWIDDLE_TYPE)
 	{
-		T_BR uReverseIndex = i;
+	case FFT_TwiddleType::COMPLEX_REAL:
+		for (uint n = 0; n < nsize; ++n)
+		{
+			const long double fAngle = -PI_<long double> * static_cast<long double>(n) / static_cast<long double>(N);
+			m_Twiddles[n] = static_cast<T>(math_constexpr::Cos(fAngle));
+		}
+		break;
+	case FFT_TwiddleType::COMPLEX_IMAG:
+		for (uint n = 0; n < nsize; ++n)
+		{
+			const long double fAngle = -PI_<long double> * static_cast<long double>(n) / static_cast<long double>(N);
+			m_Twiddles[n] = static_cast<T>(math_constexpr::Sin(fAngle));
+		}
+		break;
+	case FFT_TwiddleType::REAL_REAL:
+		for (uint n = 0; n < nsize; ++n)
+		{
+			const long double fAngle = PI_<long double> * static_cast<long double>(n) / static_cast<long double>(2 * N);
+			m_Twiddles[n] = static_cast<T>(-math_constexpr::Sin(fAngle));
+		}
+		break;
+	case FFT_TwiddleType::REAL_IMAG:
+		for (uint n = 0; n < nsize; ++n)
+		{
+			const long double fAngle = PI_<long double> * static_cast<long double>(n) / static_cast<long double>(2 * N);
+			m_Twiddles[n] = static_cast<T>(-math_constexpr::Cos(fAngle));
+		}
+		break;
+	}
+}
+
+template <uint M, typename T_BR>
+constexpr FFT_BitreverseContainer<M, T_BR>::FFT_BitreverseContainer()
+{
+	//	Pre-compute bit-reveral indices
+	for (uint i = 0; i < N; ++i)
+	{
+		const T_BR n = safestatic_cast<T_BR>(i);
+		T_BR uReverseIndex = n;
 		for (T_BR uRightIndex = 0, uLeftIndex = M - 1; uRightIndex < uLeftIndex; ++uRightIndex, --uLeftIndex)
 		{
 			const uint uShiftAmount = uLeftIndex - uRightIndex;
 			uReverseIndex &= ~((1 << uRightIndex) | (1 << uLeftIndex));
 
-			T_BR bitRight = (1 << uRightIndex) & i;
-			T_BR bitLeft = (1 << uLeftIndex) & i;
+			T_BR bitRight = (1 << uRightIndex) & n;
+			T_BR bitLeft = (1 << uLeftIndex) & n;
 			bitRight <<= uShiftAmount;
 			bitLeft >>= uShiftAmount;
 			uReverseIndex |= bitLeft | bitRight;
 		}
 
-		m_BitReverseIndices[i] = uReverseIndex;
+		m_[n] = uReverseIndex;
 	}
-
-	//	Pre-compute twiddle factors
-	{
-		static_assert(M >= 2 && M <= 16, "We only do FFT's of a reasonable size");
-
-		m_TwiddleFactorsR[N / 2] = 1;
-		m_TwiddleFactorsI[N / 2] = 0;
-		for (uint n = 1; n < N / 2; ++n)
-		{
-			//  Values for Sin(pi) and Cos(pi/2) come out to be not exactly zero, so we can preempt that here
-			if (n == N / 4)
-			{
-				m_TwiddleFactorsR[n + N / 2] = 0;
-				m_TwiddleFactorsI[n + N / 2] = -1;
-			}
-			else
-			{
-				const f64 fAngle = -2 * PI_64 * (f64)n / (f64)N;
-				m_TwiddleFactorsR[n + N / 2] = static_cast<T_Twiddle>( math_constexpr::Cos(fAngle) );
-				m_TwiddleFactorsI[n + N / 2] = static_cast<T_Twiddle>( math_constexpr::Sin(fAngle) );
-			}
-		}
-
-		//	The 0 index twiddles won't be used because we will actually start at 1, but why not fill them in with something?
-		m_TwiddleFactorsR[0] = 1;
-		m_TwiddleFactorsI[0] = 0;
-
-		uint uTwiddleToIndex = 1;
-		//	Loop for each stage
-		for (uint nStage = 0, nStageExp = 2, uTwiddleStep = N / 2; nStage < M - 1; ++nStage, nStageExp <<= 1, uTwiddleStep >>= 1)
-		{
-			const uint nStageExp_2 = nStageExp >> 1;
-
-			//	Loop for each sub DFT
-			for (uint nSubDFT = 0; nSubDFT < nStageExp_2; ++nSubDFT, ++uTwiddleToIndex)
-			{
-				const uint uTwiddleFromIndex = nSubDFT * uTwiddleStep + N / 2;
-				m_TwiddleFactorsR[uTwiddleToIndex] = m_TwiddleFactorsR[uTwiddleFromIndex];
-				m_TwiddleFactorsI[uTwiddleToIndex] = m_TwiddleFactorsI[uTwiddleFromIndex];
-			}
-		}
-	}
-
-	//	Debug
-//	this->PrintSetupInfo();
 }
 
+
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::ApplyWindow(FixedArray<T, N>& fInOut, const WindowCoefficients& coeff)
+void FFT_Base<M, T, T_Twiddle>::ApplyWindow(FixedArray<T, N>& fInOut, const WindowCoefficients& coeff)
 {
 	for (uint n = 0; n < N; ++n)
 		fInOut[n] *= coeff.m_C[n];
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::ApplyWindow(FixedArray<cxT, N>& cxInOut, const WindowCoefficients& coeff)
+void FFT_Base<M, T, T_Twiddle>::ApplyWindow(FixedArray<cxT, N>& cxInOut, const WindowCoefficients& coeff)
 {
 	for (uint n = 0; n < N; ++n)
 		cxInOut[n] *= coeff.m_C[n];
@@ -274,7 +258,7 @@ FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::CalculateButterfly_DIF(const T&
 }
 
 template <uint M, typename T, typename T_Twiddle>
-void FFT_Base<M, T, T_Twiddle>::PrintSetupInfo() const
+void FFT_Base<M, T, T_Twiddle>::PrintSetupInfo()
 {
 #if FFTL_PRINTSETUP
 	const T_Twiddle _2Pi = (T_Twiddle)2 * PI_<T_Twiddle>;
@@ -299,7 +283,7 @@ void FFT_Base<M, T, T_Twiddle>::PrintSetupInfo() const
 
 	FFTL_LOG_MSG("\nN twiddles:\n");
 	//	Loop for each stage
-	for (uint nStage=0, nStageExp=2; nStage < _M; ++nStage, nStageExp<<=1)
+	for (uint nStage = 0, nStageExp = 2; nStage < _M; ++nStage, nStageExp <<= 1)
 	{
 		const uint nStageExp_2 = nStageExp >> 1;
 
@@ -350,7 +334,7 @@ void FFT_Base<M, T, T_Twiddle>::PrintTimerInfo(uint iterationCount) const
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::WindowCoefficients::Compute(enFftWindowType windowType, uint uWidth)
+void FFT_Base<M, T, T_Twiddle>::WindowCoefficients::Compute(enFftWindowType windowType, uint uWidth)
 {
 	//	Zero out anything that might be lurking
 	MemZero(m_C);
@@ -450,70 +434,47 @@ FFTL_FORCEINLINE f32_8 ConvertTo<f32_8, f32>(const f32& a)
 
 
 
+
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<cxT, N>& cxOutput, bool bSkipStage0) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN, bool INVERSE>
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<cxT, N>& cxOutput) // forced inline to eliminate recursion
 {
-	uint uTwiddleIndex		=	bSkipStage0 ? 2 : 1;
-	uint nStage				=	bSkipStage0 ? 1 : 0;
-	uint nStageExp			=	bSkipStage0 ? 4 : 2;
-
-	//	Loop for each stage
-	for (; nStage < M; ++nStage, nStageExp <<= 1)
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT > STAGE_BEGIN)
 	{
-		const uint nStageExp_2 = nStageExp >> 1;
-
-		//	The first iteration of every stage will have a 1,0 twiddle factor, so we can save a few cycles
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
-		{
-			const uint uButterflyNext = uButterfly + nStageExp_2;
-			//cxT* pcxCurr = &cxOutput[uButterfly];
-			//cxT* pcxNext = &cxOutput[uButterflyNext];
-			//CalculateButterfly_DIT(pcxCurr, pcxNext);
-
-			T* pfCurR = &cxOutput[uButterfly].r;
-			T* pfCurI = &cxOutput[uButterfly].i;
-			T* pfNextR = &cxOutput[uButterflyNext].r;
-			T* pfNextI = &cxOutput[uButterflyNext].i;
-			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-
-		//	Loop for each sub DFT
-		++uTwiddleIndex;
-		for (uint nSubDFT = 1; nSubDFT < nStageExp_2; ++nSubDFT, ++uTwiddleIndex)
-		{
-			const T uR = LoadTo<T>(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const T uI = LoadTo<T>(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			//	Loop for each butterfly
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
-				//cxT* pcxCurr = &cxOutput[uButterfly];
-				//cxT* pcxNext = &cxOutput[uButterflyNext];
-				//CalculateButterfly_DIT(cxU, pcxCurr, pcxNext);
-
-				T* pfCurR = &cxOutput[uButterfly].r;
-				T* pfCurI = &cxOutput[uButterfly].i;
-				T* pfNextR = &cxOutput[uButterflyNext].r;
-				T* pfNextI = &cxOutput[uButterflyNext].i;
-				this->CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
-		}
+		Transform_Main_DIT<STAGE_CURRENT - 1, STAGE_BEGIN, INVERSE>(cxOutput);
 	}
-}
 
-template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(FixedArray<cxT, N>& cxOutput) const
-{
-	uint uTwiddleIndex = 1;
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
 
-	//	Loop for each stage
-	for (uint nStage = 0, nStageExp = 2; nStage < M; ++nStage, nStageExp <<= 1)
+	const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+	const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
+	//	The first iteration of every stage will have a 1,0 twiddle factor, so we can save a few cycles
+	for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
 	{
-		const uint nStageExp_2 = nStageExp >> 1;
+		const uint uButterflyNext = uButterfly + nStageExp_2;
 
-		//	The first iteration of every stage will have a 1,0 twiddle factor, so we can save a few cycles
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+		T* pfCurR = &cxOutput[uButterfly].r;
+		T* pfCurI = &cxOutput[uButterfly].i;
+		T* pfNextR = &cxOutput[uButterflyNext].r;
+		T* pfNextI = &cxOutput[uButterflyNext].i;
+
+		FFTL_IF_CONSTEXPR (INVERSE)
+			CalculateButterfly_Unity(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
+		else
+			CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
+	}
+
+	//	Loop for each sub DFT. Note that we skip twiddle index 0 because it's the unity twiddle taken care of previously.
+	for (uint nSubDFT = 1; nSubDFT < nStageExp_2; ++nSubDFT)
+	{
+		const T uR = LoadTo<T>(twiddlesReal + nSubDFT);
+		const T uI = LoadTo<T>(twiddlesImag + nSubDFT);
+
+		//	Loop for each butterfly
+		for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
@@ -521,68 +482,39 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(Fi
 			T* pfCurI = &cxOutput[uButterfly].i;
 			T* pfNextR = &cxOutput[uButterflyNext].r;
 			T* pfNextI = &cxOutput[uButterflyNext].i;
-			this->CalculateButterfly_Unity(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
-		}
 
-		//	Loop for each sub DFT
-		++uTwiddleIndex;
-		for (uint nSubDFT = 1; nSubDFT < nStageExp_2; ++nSubDFT, ++uTwiddleIndex)
-		{
-			const T uR = LoadTo<T>(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const T uI = LoadTo<T>(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			//	Loop for each butterfly
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
-
-				T* pfCurR = &cxOutput[uButterfly].r;
-				T* pfCurI = &cxOutput[uButterfly].i;
-				T* pfNextR = &cxOutput[uButterflyNext].r;
-				T* pfNextI = &cxOutput[uButterflyNext].i;
-				this->CalculateButterfly_DIT(uR, uI, pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
-			}
+			FFTL_IF_CONSTEXPR (INVERSE)
+				CalculateButterfly_DIT(uR, uI, pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
+			else
+				CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 	}
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN, bool INVERSE>
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<cxT, N>& cxOutput) // forced inline to eliminate recursion
 {
-	Transform_Main_DIT(fInOutI, fInOutR);
-}
-
-template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<cxT, N>& cxOutput) const
-{
-	uint uTwiddleIndex = N - 1;
-
-	//	Loop for each stage
-	for (int nStage = M - 1, nStageExp = N; nStage >= 0; --nStage, nStageExp >>= 1)
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT < STAGE_BEGIN)
 	{
-		const uint nStageExp_2 = nStageExp >> 1;
+		Transform_Main_DIF<STAGE_CURRENT + 1, STAGE_BEGIN, INVERSE>(cxOutput);
+	}
 
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 1; nSubDFT >= 1; --nSubDFT, --uTwiddleIndex)
-		{
-			const T uR = LoadTo<T>(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const T uI = LoadTo<T>(this->GetTwiddleImagPtr(uTwiddleIndex));
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
 
-			//	Loop for each butterfly
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
+	const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+	const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
-				T* pfCurR = &cxOutput[uButterfly].r;
-				T* pfCurI = &cxOutput[uButterfly].i;
-				T* pfNextR = &cxOutput[uButterflyNext].r;
-				T* pfNextI = &cxOutput[uButterflyNext].i;
-				this->CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
-		}
+	//	Loop for each sub DFT
+	for (int nSubDFT = nStageExp_2 - 1; nSubDFT >= 1; --nSubDFT)
+	{
+		const T uR = LoadTo<T>(twiddlesReal + nSubDFT);
+		const T uI = LoadTo<T>(twiddlesImag + nSubDFT);
 
-		//	The first iteration of every stage (or in this case, the last, going backwards) will have a 1,0 twiddle factor, so we can save a few cycles
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+		//	Loop for each butterfly
+		for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
@@ -590,88 +522,101 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<c
 			T* pfCurI = &cxOutput[uButterfly].i;
 			T* pfNextR = &cxOutput[uButterflyNext].r;
 			T* pfNextI = &cxOutput[uButterflyNext].i;
-			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
+			
+		FFTL_IF_CONSTEXPR (INVERSE)
+			CalculateButterfly_DIF(uR, uI, pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
+		else
+			CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
+	}
 
-		--uTwiddleIndex;
+	//	The first iteration of every stage (or in this case, the last, going backwards) will have a 1,0 twiddle factor, so we can save a few cycles
+	for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+	{
+		const uint uButterflyNext = uButterfly + nStageExp_2;
+
+		T* pfCurR = &cxOutput[uButterfly].r;
+		T* pfCurI = &cxOutput[uButterfly].i;
+		T* pfNextR = &cxOutput[uButterflyNext].r;
+		T* pfNextI = &cxOutput[uButterflyNext].i;
+
+		FFTL_IF_CONSTEXPR (INVERSE)
+			CalculateButterfly_Unity(pfCurI, pfCurR, pfNextI, pfNextR); // reverse real and imaginary inputs
+		else
+			CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI, bool bSkipStage0) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN>
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
 {
-	uint uTwiddleIndex		=	bSkipStage0 ? 2 : 1;
-	uint nStage				=	bSkipStage0 ? 1 : 0;
-	uint nStageExp			=	bSkipStage0 ? 4 : 2;
-
-	//	Loop for each stage
-	for (; nStage < M; ++nStage, nStageExp <<= 1)
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT > STAGE_BEGIN)
 	{
-		const uint nStageExp_2 = nStageExp >> 1;
+		Transform_Main_DIT<STAGE_CURRENT - 1, STAGE_BEGIN>(fOutR, fOutI);
+	}
 
-		//	The first iteration of every stage will have a 1,0 twiddle factor, so we can save a few cycles
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
+
+	const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+	const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
+	//	The first iteration of every stage will have a 1,0 twiddle factor, so we can save a few cycles
+	for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+	{
+		const uint uButterflyNext = uButterfly + nStageExp_2;
+		T* pfCurR = fOutR + uButterfly;
+		T* pfCurI = fOutI + uButterfly;
+		T* pfNextR = fOutR + uButterflyNext;
+		T* pfNextI = fOutI + uButterflyNext;
+		CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
+	}
+
+	//	Loop for each sub DFT. Note that we skip twiddle index 0 because it's the unity twiddle taken care of previously.
+	for (uint nSubDFT = 1; nSubDFT < nStageExp_2; ++nSubDFT)
+	{
+		const T uR = LoadTo<T>(twiddlesReal + nSubDFT);
+		const T uI = LoadTo<T>(twiddlesImag + nSubDFT);
+
+		//	Loop for each butterfly
+		for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 			T* pfCurR = fOutR + uButterfly;
 			T* pfCurI = fOutI + uButterfly;
 			T* pfNextR = fOutR + uButterflyNext;
 			T* pfNextI = fOutI + uButterflyNext;
-			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-
-		//	Loop for each sub DFT
-		++uTwiddleIndex;
-		for (uint nSubDFT = 1; nSubDFT < nStageExp_2; ++nSubDFT, ++uTwiddleIndex)
-		{
-			const T uR = LoadTo<T>(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const T uI = LoadTo<T>(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			//	Loop for each butterfly
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* pfCurR = fOutR + uButterfly;
-				T* pfCurI = fOutI + uButterfly;
-				T* pfNextR = fOutR + uButterflyNext;
-				T* pfNextI = fOutI + uButterflyNext;
-				this->CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
+			CalculateButterfly_DIT(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
 	}
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN>
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
 {
-	uint uTwiddleIndex = N - 1;
-
-	//	Loop for each stage
-	for (int nStage = M - 1, nStageExp = N; nStage >= 0; --nStage, nStageExp >>= 1)
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT < STAGE_BEGIN)
 	{
-		const uint nStageExp_2 = nStageExp >> 1;
+		Transform_Main_DIF<STAGE_CURRENT + 1, STAGE_BEGIN>(fOutR, fOutI);
+	}
 
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 1; nSubDFT >= 1; --nSubDFT, --uTwiddleIndex)
-		{
-			const T uR = LoadTo<T>(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const T uI = LoadTo<T>(this->GetTwiddleImagPtr(uTwiddleIndex));
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
 
-			//	Loop for each butterfly
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
+	const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+	const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
-				T* pfCurR = &fOutR[uButterfly];
-				T* pfCurI = &fOutI[uButterfly];
-				T* pfNextR = &fOutR[uButterflyNext];
-				T* pfNextI = &fOutI[uButterflyNext];
-				this->CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
-		}
+	//	Loop for each sub DFT
+	for (int nSubDFT = nStageExp_2 - 1; nSubDFT >= 1; --nSubDFT)
+	{
+		const T uR = LoadTo<T>(twiddlesReal + nSubDFT);
+		const T uI = LoadTo<T>(twiddlesImag + nSubDFT);
 
-		//	The first iteration of every stage (or in this case, the last, going backwards) will have a 1,0 twiddle factor, so we can save a few cycles
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+		//	Loop for each butterfly
+		for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 		{
 			const uint uButterflyNext = uButterfly + nStageExp_2;
 
@@ -679,15 +624,37 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::Transform_Main_DIF(FixedArray<T
 			T* pfCurI = &fOutI[uButterfly];
 			T* pfNextR = &fOutR[uButterflyNext];
 			T* pfNextI = &fOutI[uButterflyNext];
-			this->CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
+			CalculateButterfly_DIF(uR, uI, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
+	}
 
-		--uTwiddleIndex;
+	//	The first iteration of every stage (or in this case, the last, going backwards) will have a 1,0 twiddle factor, so we can save a few cycles
+	for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+	{
+		const uint uButterflyNext = uButterfly + nStageExp_2;
+
+		T* pfCurR = &fOutR[uButterfly];
+		T* pfCurI = &fOutI[uButterfly];
+		T* pfNextR = &fOutR[uButterflyNext];
+		T* pfNextI = &fOutI[uButterflyNext];
+		CalculateButterfly_Unity(pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput) const
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(FixedArray<cxT, N>& cxOutput)
+{
+	Transform_Main_DIT<M - 1, 0, true>(cxOutput);
+}
+
+template <uint M, typename T, typename T_Twiddle>
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse_InPlace_DIT(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI)
+{
+	Transform_Main_DIT<M - 1, 0>(fInOutI, fInOutR);
+}
+
+template <uint M, typename T, typename T_Twiddle>
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -697,43 +664,14 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 	//	Copy the input to the output with the bit reversal indices, simultaneously completing the first stage of _M stages.
 	for (uint n = 0; n < N; n += 2)
 	{
-		const uint nR0 = m_BitReverseIndices[n+0];
-		const uint nR1 = m_BitReverseIndices[n+1];
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
 
-		T* pfCurR = &cxOutput[n].r;
-		T* pfCurI = &cxOutput[n].i;
-		T* pfNextR = &cxOutput[n+1].r;
-		T* pfNextI = &cxOutput[n+1].i;
-		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
-	}
-
-#if FFTL_STAGE_TIMERS
-	timer.Stop();
-	m_PreProcessTimer += timer.GetTicks();
-#endif
-
-	Transform_Main_DIT(cxOutput, true);
-}
-
-template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
-{
-#if FFTL_STAGE_TIMERS
-	Timer timer;
-	timer.Start();
-#endif
-
-	//	Copy the input to the output with the bit reversal indices, simultaneously completing the first stage of _M stages.
-	for (uint n = 0; n < N; n += 2)
-	{
-		const uint nR0 = m_BitReverseIndices[n + 0];
-		const uint nR1 = m_BitReverseIndices[n + 1];
-
-		T* pfCurR = fOutR + n;
-		T* pfCurI = fOutI + n;
-		T* pfNextR = fOutR + n + 1;
-		T* pfNextI = fOutI + n + 1;
-		this->CalculateButterfly_Unity(fInR[nR0], fInI[nR0], fInR[nR1], fInI[nR1], pfCurR, pfCurI, pfNextR, pfNextI);
+		T* pfCurR = &cxOutput[n + 0].r;
+		T* pfCurI = &cxOutput[n + 0].i;
+		T* pfNextR = &cxOutput[n + 1].r;
+		T* pfNextI = &cxOutput[n + 1].i;
+		CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
 #if FFTL_STAGE_TIMERS
@@ -742,11 +680,11 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 #endif
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI);
+	Transform_Main_DIT<M - 1, 1, false>(cxOutput);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -756,14 +694,14 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 	//	Copy the input to the output with the bit reversal indices, simultaneously completing the first stage of _M stages.
 	for (uint n = 0; n < N; n += 2)
 	{
-		const uint nR0 = m_BitReverseIndices[n + 0];
-		const uint nR1 = m_BitReverseIndices[n + 1];
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
 
 		T* pfCurR = fOutR + n;
 		T* pfCurI = fOutI + n;
 		T* pfNextR = fOutR + n + 1;
 		T* pfNextI = fOutI + n + 1;
-		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
+		CalculateButterfly_Unity(fInR[nR0], fInI[nR0], fInR[nR1], fInI[nR1], pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
 #if FFTL_STAGE_TIMERS
@@ -772,11 +710,41 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArr
 #endif
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI, true);
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const // 2nd half of cxInput is assumed to be all zero
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
+{
+#if FFTL_STAGE_TIMERS
+	Timer timer;
+	timer.Start();
+#endif
+
+	//	Copy the input to the output with the bit reversal indices, simultaneously completing the first stage of _M stages.
+	for (uint n = 0; n < N; n += 2)
+	{
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
+
+		T* pfCurR = fOutR + n;
+		T* pfCurI = fOutI + n;
+		T* pfNextR = fOutR + n + 1;
+		T* pfNextI = fOutI + n + 1;
+		CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
+	}
+
+#if FFTL_STAGE_TIMERS
+	timer.Stop();
+	m_PreProcessTimer += timer.GetTicks();
+#endif
+
+	//	Invoke the main transform function
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
+}
+
+template <uint M, typename T, typename T_Twiddle>
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // 2nd half of cxInput is assumed to be all zero
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -788,15 +756,15 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const 
 	//	Copy the input to the output with the bit reversal indices, simultaneously completing the first stage of _M stages.
 	for (uint n = 0; n < N; n += 2)
 	{
-		const uint nR0 = m_BitReverseIndices[n + 0];
-//		const uint nR1 = m_BitReverseIndices[n + 1];
+		const uint nR0 = GetBitReverseIndex(n + 0);
+//		const uint nR1 = GetBitReverseIndex(n + 1);
 
 		T* pfCurR = fOutR + n + 0;
 		T* pfCurI = fOutI + n + 0;
 		T* pfNextR = fOutR + n + 1;
 		T* pfNextI = fOutI + n + 1;
-//		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
-		this->CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i,           zero,           zero, pfCurR, pfCurI, pfNextR, pfNextI);
+//		CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, cxInput[nR1].r, cxInput[nR1].i, pfCurR, pfCurI, pfNextR, pfNextI);
+		CalculateButterfly_Unity(cxInput[nR0].r, cxInput[nR0].i, zero, zero, pfCurR, pfCurI, pfNextR, pfNextI);
 	}
 
 #if FFTL_STAGE_TIMERS
@@ -805,81 +773,81 @@ FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const 
 #endif
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI, true);
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForwardApplyWindow(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput, const WindowCoefficients& coeff) const
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformForwardApplyWindow(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput, const WindowCoefficients& coeff)
 {
 	//	Copy the input to the output with the bit reversal indices, and apply the window function
 	for (uint n = 0; n < N; ++n)
 	{
-		const uint nR = m_BitReverseIndices[n];
+		const uint nR = GetBitReverseIndex(n);
 		cxOutput[n] = cxInput[nR] * coeff.m_C[nR];
 	}
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(cxOutput);
+	Transform_Main_DIT<M - 1, 0>(cxOutput);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput, bool bApplyBitReverse) const
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::TransformInverse(const FixedArray<cxT, N>& cxInput, FixedArray<cxT, N>& cxOutput, bool bApplyBitReverse)
 {
-	const T _1_div_N = ConvertTo<T>(1 / (T_Twiddle)N);
+//	const T _1_div_N = ConvertTo<T>(1 / (T_Twiddle)N);
 
 	if (bApplyBitReverse)
 	{
-		//	Copy the input to the output with the bit reversal indices, and flip the imaginary component sign
+		//	Copy the input to the output with the bit reversal indices.
 		for (uint n = 0; n < N; ++n)
 		{
-			const uint nR = this->m_BitReverseIndices[n];
+			const uint nR = GetBitReverseIndex(n);
 			const cxT& rInput = cxInput[nR];
-			cxOutput[n].Set(rInput.r, -rInput.i);
+			cxOutput[n] = rInput;
 		}
 	}
 	else
 	{
-		for (uint n = 0; n < N; ++n)
-		{
-			const cxT& rInput = cxInput[n];
-			cxOutput[n].Set(rInput.r, -rInput.i);
-		}
+		cxOutput = cxInput;
 	}
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(cxOutput);
+	Transform_Main_DIT<M - 1, 0, true>(cxOutput);
 
 	//	Divide everything by N and flip the sign of the imaginary output again
 	for (uint n = 0; n < N; ++n)
 	{
 		cxT& rOutput = cxOutput[n];
+#if 0 // Don't divide by N because this is typically used in convolution, and we can just do it there.
 		rOutput.r *= +_1_div_N;
 		rOutput.i *= -_1_div_N;
+#else
+		rOutput.i = -rOutput.i;
+#endif
 	}
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<cxT, N>& cxInOut) const
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<cxT, N>& cxInOut)
 {
-	Transform_Main_DIF(cxInOut);
+	Transform_Main_DIF<0, M - 1, false>(cxInOut);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI) const
+FFTL_FORCEINLINE void FFT_Base<M, T, T_Twiddle>::TransformForward_InPlace_DIF(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI)
 {
-	Transform_Main_DIF(fInOutR, fInOutI);
+	Transform_Main_DIF<0, M - 1>(fInOutR, fInOutI);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::ApplyBitReverseAndInterleave(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N * 2>& fOut) const
+FFTL_COND_INLINE void FFT_Base<M, T, T_Twiddle>::ApplyBitReverseAndInterleave(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N * 2>& fOut)
 {
 	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
 	for (uint n = 0; n < N; n += 4)
 	{
-		const uint nR0 = this->GetBitReverseIndex(n + 0);
-		const uint nR1 = this->GetBitReverseIndex(n + 1);
-		const uint nR2 = this->GetBitReverseIndex(n + 2);
-		const uint nR3 = this->GetBitReverseIndex(n + 3);
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
+		const uint nR2 = GetBitReverseIndex(n + 2);
+		const uint nR3 = GetBitReverseIndex(n + 3);
 
 		//	Interleave the output while bit reversing.
 		T* pSh = fOut + n * 2;
@@ -968,7 +936,8 @@ void FFT_Base<M, T, T_Twiddle>::TransformInverse_Slow(const FixedArray<cxT, N>& 
 			const T fAngle = _2Pi_div_N * fn * fm;
 			fTime += (cxInput[m].r * Cos(fAngle)) - (cxInput[m].i * Sin(fAngle));
 		}
-		fOutTime[N-n] = _1_div_N * fTime;
+
+		fOutTime[N - n] = _1_div_N * fTime;
 	}
 }
 
@@ -998,59 +967,44 @@ void FFT_Base<M, T, T_Twiddle>::TransformInverse_Slow(const FixedArray<cxT, N>& 
 			const T fAngle = _2Pi_div_N * fn * fm;
 			cxn += cxInput[m] * cxT(Cos(fAngle), Sin(fAngle));
 		}
-		cxOutput[N-n] = cxn * _1_div_N;
+
+		cxOutput[N - n] = cxn * _1_div_N;
 	}
 }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 #if FFTL_SIMD_F32x4
-template <uint M>
-constexpr FFT<M, f32, f32>::FFT()
-{
-	static_assert(N >= 8, "4 component SIMD FFT won't work unless we can process 8 elements or more at a time");
-}
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 	Transform_Stage0_BR(fInR, fInI, fOutR, fOutI);
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI);
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 	Transform_Stage0_BR(cxInput, fOutR, fOutI);
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI);
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const // 2nd half of cxInput is assumed to be all zero
+FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // 2nd half of cxInput is assumed to be all zero
 {
 	Transform_Stage0_BR_1stHalf(cxInput, fOutR, fOutI);
 
 	//	Invoke the main transform function
-	Transform_Main_DIT(fOutR, fOutI);
+	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_FORCEINLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 	//	Swap the real and imaginary parts.
 	TransformForward(fInI, fInR, fOutI, fOutR);
@@ -1060,7 +1014,7 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>&
 	const T _1_div_N = (T)1 / (T)N;
 	const f32_4 v1_div_N = { _1_div_N,_1_div_N,_1_div_N,_1_div_N };
 
-	for (uint n = 0; n < N; n+=4)
+	for (uint n = 0; n < N; n += 4)
 	{
 		T* pReal = &fOutR[n];
 		f32_4 vReal = f32_4::LoadA(pReal);
@@ -1076,218 +1030,21 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>&
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
-	uint uTwiddleIndex = N - FFTL_SIMD_F32_WIDTH;
-
-#if FFTL_STAGE_TIMERS
-	Timer timer;
-	timer.Start();
-#endif
-
-	//	We can make an exception in the case of the last stage because the inner loop only runs one time for each sub DFT,
-	// and our twiddle factors are all contiguous in memory.
-	{
-		const uint nStageExp = N;
-		const uint nStageExp_2 = nStageExp >> 1;
-
-#if FFTL_SIMD_F32x8
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8, uTwiddleIndex -= 8)
-		{
-			const f32_8 vUr = f32_8::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_8 vUi = f32_8::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			const uint uButterfly = nSubDFT;
-			const uint uButterflyNext = uButterfly+nStageExp_2;
-
-			T* pfCurR = &fOutR[uButterfly];
-			T* pfCurI = &fOutI[uButterfly];
-			T* pfNextR = &fOutR[uButterflyNext];
-			T* pfNextI = &fOutI[uButterflyNext];
-			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-#else
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4, uTwiddleIndex -= 4)
-		{
-			const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			const uint uButterfly = nSubDFT;
-			const uint uButterflyNext = uButterfly+nStageExp_2;
-
-			T* pfCurR = &fOutR[uButterfly];
-			T* pfCurI = &fOutI[uButterfly];
-			T* pfNextR = &fOutR[uButterflyNext];
-			T* pfNextI = &fOutI[uButterflyNext];
-			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-#endif //FFTL_SIMD_F32x8
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[M-1] += timer.GetTicks();
-#endif
-	}
-
-	//	Loop down for each subsequent stage, but leave stage 2, 1 and 0 for special loops.
-	for (int nStage = M - 2, nStageExp = N_2; nStage >= 3; --nStage, nStageExp >>= 1)
-	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
-		const uint nStageExp_2 = nStageExp >> 1;
-
-#if FFTL_SIMD_F32x8
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8, uTwiddleIndex -= 8)
-		{
-			const f32_8 vUr = f32_8::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_8 vUi = f32_8::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			//	Loop for each 4 butterflies
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly+=nStageExp)
-			{
-				const uint uButterflyNext = uButterfly+nStageExp_2;
-				T* pfCurR = &fOutR[uButterfly];
-				T* pfCurI = &fOutI[uButterfly];
-				T* pfNextR = &fOutR[uButterflyNext];
-				T* pfNextI = &fOutI[uButterflyNext];
-				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
-		}
-#else
-		//	Loop for each sub DFT
-		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4, uTwiddleIndex -= 4)
-		{
-			const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			//	Loop for each 4 butterflies
-			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly+=nStageExp)
-			{
-				const uint uButterflyNext = uButterfly+nStageExp_2;
-				T* pfCurR = &fOutR[uButterfly];
-				T* pfCurI = &fOutI[uButterfly];
-				T* pfNextR = &fOutR[uButterflyNext];
-				T* pfNextI = &fOutI[uButterflyNext];
-				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
-		}
-#endif //FFTL_SIMD_F32x8
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[nStage] += timer.GetTicks();
-#endif
-	}
-
-	//	Stage 2 easier to just use 4 wide.
-	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
-
-		const uint nStageExp = 8;
-		const uint nStageExp_2 = 4;
-
-		const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(4));
-		const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(4));
-
-		//	Loop for each 4 butterflies
-		for (uint uButterfly = 0; uButterfly < N; uButterfly+=nStageExp)
-		{
-			const uint uButterflyNext = uButterfly+nStageExp_2;
-			T* pfCurR = &fOutR[uButterfly];
-			T* pfCurI = &fOutI[uButterfly];
-			T* pfNextR = &fOutR[uButterflyNext];
-			T* pfNextI = &fOutI[uButterflyNext];
-			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[2] += timer.GetTicks();
-#endif
-	}
-
-	//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
-	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
-		//	Get the phase angles for the next 2 sub DFT's
-		const f32_4 vUr(1, 0, 1, 0);
-		const f32_4 vUi(0, -1, 0, -1);
-
-		//	Loop for each 4 butterflies
-		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
-		{
-			T* pfR = &fOutR[uButterfly];
-			T* pfI = &fOutI[uButterfly];
-
-			Calculate4Butterflies_DIF_Stage1(vUr, vUi, pfR, pfI);
-		}
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[1] += timer.GetTicks();
-#endif
-	}
-
-	//	Specialized SIMD case for stage 0.
-	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
-		//	Loop for each 4 butterflies
-		for (uint n = 0; n < N; n += 8)
-		{
-			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
-			// Also the input is already pre-shuffled.
-			Calculate4Butterflies_DIF_Stage0(&fOutR[n], &fOutI[n]);
-		}
-
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[0] += timer.GetTicks();
-#endif
-	}
+	Transform_Main_DIF<0, M - 1>(fOutR, fOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse_InPlace_DIT(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse_InPlace_DIT(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI)
 {
-	//	Swap the real and imaginary parts.
-	Transform_Stage0(fInOutI, fInOutR);
-
 	//	Invoke the main transform function
-	Transform_Main_DIT(fInOutI, fInOutR);
+	//	Swap the real and imaginary parts.
+	Transform_Main_DIT<M - 1, 0>(fInOutI, fInOutR);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0(FixedArray<T,N>& fOutR, FixedArray<T,N>& fOutI) const
-{
-	//	Assume the input has already been bit-reversed, or it doesn't need to be.
-#if FFTL_STAGE_TIMERS
-	Timer timer;
-	timer.Start();
-#endif
-
-	//	Loop for each 4 butterflies
-	for (uint n = 0; n < N; n += 8)
-	{
-		//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
-		// Also the input is already pre-shuffled.
-		Calculate4Butterflies_DIT_Stage0(&fOutR[n], &fOutI[n]);
-	}
-
-#if FFTL_STAGE_TIMERS
-	timer.Stop();
-	m_StageTimers[0] += timer.GetTicks();
-#endif
-}
-
-template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, N>& fInReal, const FixedArray<T, N>& fInImag, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, N>& fInReal, const FixedArray<T, N>& fInImag, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 	//	Specialized SIMD case for stage 0 that requires XXZZYYWW shuffling
 #if FFTL_STAGE_TIMERS
@@ -1304,11 +1061,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 		FFTL_IF_CONSTEXPR (sizeof(T_BR) == 2)
 		{
 			//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
-			const __m128i v16Indices = _mm_load_si128(reinterpret_cast<const __m128i*>(m_BitReverseIndices + n));
+			const __m128i v16Indices = _mm_load_si128(reinterpret_cast<const __m128i*>(sm_BitReverseIndices + n));
 			const __m128i v32Indices_0_3 = _mm_unpacklo_epi16(v16Indices, _mm_setzero_si128());
 			const __m128i v32Indices_4_7 = _mm_unpackhi_epi16(v16Indices, _mm_setzero_si128());
-			const __m128i v32Indices_Ev = _mm_castps_si128( _mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(0,2,0,2)) );
-			const __m128i v32Indices_Od = _mm_castps_si128( _mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(1,3,1,3)) );
+			const __m128i v32Indices_Ev = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(0, 2, 0, 2)));
+			const __m128i v32Indices_Od = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(1, 3, 1, 3)));
 
 			const f32_4 vCurR = _mm_i32gather_ps(fInReal.data(), v32Indices_Ev, 4);
 			const f32_4 vCurI = _mm_i32gather_ps(fInImag.data(), v32Indices_Ev, 4);
@@ -1323,14 +1080,14 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 		else
 #endif
 		{
-			const uint nR0 = m_BitReverseIndices[n + 0];
-			const uint nR1 = m_BitReverseIndices[n + 1];
-			const uint nR2 = m_BitReverseIndices[n + 2];
-			const uint nR3 = m_BitReverseIndices[n + 3];
-			const uint nR4 = m_BitReverseIndices[n + 4];
-			const uint nR5 = m_BitReverseIndices[n + 5];
-			const uint nR6 = m_BitReverseIndices[n + 6];
-			const uint nR7 = m_BitReverseIndices[n + 7];
+			const uint nR0 = GetBitReverseIndex(n + 0);
+			const uint nR1 = GetBitReverseIndex(n + 1);
+			const uint nR2 = GetBitReverseIndex(n + 2);
+			const uint nR3 = GetBitReverseIndex(n + 3);
+			const uint nR4 = GetBitReverseIndex(n + 4);
+			const uint nR5 = GetBitReverseIndex(n + 5);
+			const uint nR6 = GetBitReverseIndex(n + 6);
+			const uint nR7 = GetBitReverseIndex(n + 7);
 
 			//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
 			const f32_4 vCurR = V4fSet(fInReal[nR0], fInReal[nR2], fInReal[nR4], fInReal[nR6]);
@@ -1352,7 +1109,7 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<cxT, N>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
 	//	Specialized SIMD case for stage 0 that requires XXZZYYWW shuffling
 #if FFTL_STAGE_TIMERS
@@ -1365,14 +1122,14 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<cxT
 	{
 		//	Loop for each 4 butterflies
 
-		const uint nR0 = m_BitReverseIndices[n + 0];
-		const uint nR1 = m_BitReverseIndices[n + 1];
-		const uint nR2 = m_BitReverseIndices[n + 2];
-		const uint nR3 = m_BitReverseIndices[n + 3];
-		const uint nR4 = m_BitReverseIndices[n + 4];
-		const uint nR5 = m_BitReverseIndices[n + 5];
-		const uint nR6 = m_BitReverseIndices[n + 6];
-		const uint nR7 = m_BitReverseIndices[n + 7];
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
+		const uint nR2 = GetBitReverseIndex(n + 2);
+		const uint nR3 = GetBitReverseIndex(n + 3);
+		const uint nR4 = GetBitReverseIndex(n + 4);
+		const uint nR5 = GetBitReverseIndex(n + 5);
+		const uint nR6 = GetBitReverseIndex(n + 6);
+		const uint nR7 = GetBitReverseIndex(n + 7);
 
 		//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
 		const f32_4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
@@ -1393,7 +1150,7 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<cxT
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const // 2nd half of cxInput is assumed to be all zero
+FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedArray<cxT, N_2>& cxInput, FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // 2nd half of cxInput is assumed to be all zero
 {
 	//	Specialized SIMD case for stage 0 that requires XXZZYYWW shuffling
 #if FFTL_STAGE_TIMERS
@@ -1406,14 +1163,14 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedA
 	{
 		//	Loop for each 4 butterflies
 
-		const uint nR0 = m_BitReverseIndices[n + 0];
-//		const uint nR1 = m_BitReverseIndices[n + 1];
-		const uint nR2 = m_BitReverseIndices[n + 2];
-//		const uint nR3 = m_BitReverseIndices[n + 3];
-		const uint nR4 = m_BitReverseIndices[n + 4];
-//		const uint nR5 = m_BitReverseIndices[n + 5];
-		const uint nR6 = m_BitReverseIndices[n + 6];
-//		const uint nR7 = m_BitReverseIndices[n + 7];
+		const uint nR0 = GetBitReverseIndex(n + 0);
+//		const uint nR1 = GetBitReverseIndex(n + 1);
+		const uint nR2 = GetBitReverseIndex(n + 2);
+//		const uint nR3 = GetBitReverseIndex(n + 3);
+		const uint nR4 = GetBitReverseIndex(n + 4);
+//		const uint nR5 = GetBitReverseIndex(n + 5);
+		const uint nR6 = GetBitReverseIndex(n + 6);
+//		const uint nR7 = GetBitReverseIndex(n + 7);
 
 		//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
 		const f32_4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
@@ -1435,84 +1192,121 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedA
 #endif
 }
 
-
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN>
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
 {
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT > STAGE_BEGIN)
+	{
+		Transform_Main_DIT<STAGE_CURRENT - 1, STAGE_BEGIN>(fOutR, fOutI);
+	}
+
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
+
 #if FFTL_STAGE_TIMERS
 	Timer timer;
 	timer.Start();
 #endif
 
-	//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT == 0)
 	{
+		//	Loop for each 4 butterflies
+		for (uint n = 0; n < N; n += 8)
+		{
+			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
+			// Also the input is already pre-shuffled.
+			Calculate4Butterflies_DIT_Stage0(&fOutR[n], &fOutI[n]);
+		}
+	}
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == 1)
+	{
+		//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
 		//	Get the phase angles for the next 2 sub DFT's
-		const f32_4 vUr(1, 0, 1, 0);
+		const f32_4 vUr(1,  0, 1,  0);
 		const f32_4 vUi(0, -1, 0, -1);
-
+	
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
 		{
 			T* pfR = &fOutR[uButterfly];
 			T* pfI = &fOutI[uButterfly];
-
+	
 			Calculate4Butterflies_DIT_Stage1(vUr, vUi, pfR, pfI);
 		}
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[1] += timer.GetTicks();
-#endif
 	}
-
-
-	//	Only 4 wide SIMD for stage 2
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == 2)
 	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
+		//	Only 4 wide SIMD for stage 2
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
-		const uint nStageExp = 8;
-		const uint nStageExp_2 = 4;
+		const f32_4 vUr = f32_4::LoadA(twiddlesReal + 0);
+		const f32_4 vUi = f32_4::LoadA(twiddlesImag + 0);
 
-		//	Loop for each sub DFT
-//		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT+=4, uTwiddleIndex+=4)
+		//	Loop for each 4 butterflies
+		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
 		{
-			const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(4));
-			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(4));
-
-			//	Loop for each 4 butterflies
-			for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
-			{
-				const uint uButterflyNext = uButterfly + nStageExp_2;
-				T* pfCurR = &fOutR[uButterfly];
-				T* pfCurI = &fOutI[uButterfly];
-				T* pfNextR = &fOutR[uButterflyNext];
-				T* pfNextI = &fOutI[uButterflyNext];
-				CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-			}
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
 		}
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[2] += timer.GetTicks();
-#endif
 	}
-
-	uint uTwiddleIndex = 8;
-
-	//	Loop for each stage except for the last
-	for (uint nStage = 3, nStageExp = 16; nStage < M - 1; ++nStage, nStageExp <<= 1)
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == M - 1)
 	{
-#if FFTL_STAGE_TIMERS
-		timer.Start();
-#endif
-		const uint nStageExp_2 = nStageExp >> 1;
+		//	We can make an exception in the case of the last stage because the inner loop only runs one time for each sub DFT,
+		// and our twiddle factors are all contiguous in memory.
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
 #if FFTL_SIMD_F32x8
 		//	Loop for each sub DFT
-		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8, uTwiddleIndex += 8)
+		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8)
 		{
-			const f32_8 vUr = f32_8::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_8 vUi = f32_8::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
+			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
+			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+	
+			const uint uButterfly = nSubDFT;
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+		}
+#else
+		//	Loop for each sub DFT
+		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4)
+		{
+			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
+			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+	
+			const uint uButterfly = nSubDFT;
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+		}
+#endif //FFTL_SIMD_F32x8
+	}
+	else
+	{
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
+#if FFTL_SIMD_F32x8
+		//	Loop for each sub DFT
+		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8)
+		{
+			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
+			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
@@ -1526,11 +1320,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 		}
 #else
 		//	Loop for each sub DFT
-		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4, uTwiddleIndex += 4)
+		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4)
 		{
-			const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
+			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
+			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
 			{
@@ -1543,73 +1337,186 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 			}
 		}
 #endif // FFTL_SIMD_F32x8
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[nStage] += timer.GetTicks();
-#endif
 	}
 
-	//	We can make an exception in the case of the last stage because the inner loop only runs one time for each sub DFT,
-	// and our twiddle factors are all contiguous in memory.
-	{
 #if FFTL_STAGE_TIMERS
-		timer.Start();
+	timer.Stop();
+	m_StageTimers[STAGE_CURRENT] += timer.GetTicks();
 #endif
-	
-		const uint nStageExp = N;
-		const uint nStageExp_2 = nStageExp >> 1;
-
-#if FFTL_SIMD_F32x8
-		//	Loop for each sub DFT
-		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8, uTwiddleIndex += 8)
-		{
-			const f32_8 vUr = f32_8::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_8 vUi = f32_8::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			const uint uButterfly = nSubDFT;
-			const uint uButterflyNext = uButterfly + nStageExp_2;
-			T* pfCurR = &fOutR[uButterfly];
-			T* pfCurI = &fOutI[uButterfly];
-			T* pfNextR = &fOutR[uButterflyNext];
-			T* pfNextI = &fOutI[uButterflyNext];
-			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-#else
-		//	Loop for each sub DFT
-		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4, uTwiddleIndex += 4)
-		{
-			const f32_4 vUr = f32_4::LoadA(this->GetTwiddleRealPtr(uTwiddleIndex));
-			const f32_4 vUi = f32_4::LoadA(this->GetTwiddleImagPtr(uTwiddleIndex));
-
-			const uint uButterfly = nSubDFT;
-			const uint uButterflyNext = uButterfly + nStageExp_2;
-			T* pfCurR = &fOutR[uButterfly];
-			T* pfCurI = &fOutI[uButterfly];
-			T* pfNextR = &fOutR[uButterflyNext];
-			T* pfNextI = &fOutI[uButterflyNext];
-			CalculateVButterflies_DIT(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
-		}
-#endif //FFTL_SIMD_F32x8
-#if FFTL_STAGE_TIMERS
-		timer.Stop();
-		m_StageTimers[M-1] += timer.GetTicks();
-#endif
-	}
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N * 2>& fOut) const
+template <uint STAGE_CURRENT, uint STAGE_BEGIN>
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
+{
+	//	Complete all the first stages first. This is effectively a template for loop.
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT < STAGE_BEGIN)
+	{
+		Transform_Main_DIF<STAGE_CURRENT + 1, STAGE_BEGIN>(fOutR, fOutI);
+	}
+
+	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
+	constexpr uint nStageExp_2 = nStageExp >> 1;
+
+#if FFTL_STAGE_TIMERS
+	Timer timer;
+	timer.Start();
+#endif
+
+	FFTL_IF_CONSTEXPR (STAGE_CURRENT == 0)
+	{
+		//	Specialized SIMD case for stage 0.
+		//	Loop for each 4 butterflies
+		for (uint n = 0; n < N; n += 8)
+		{
+			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
+			// Also the input is already pre-shuffled.
+			Calculate4Butterflies_DIF_Stage0(&fOutR[n], &fOutI[n]);
+		}
+	}
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == 1)
+	{
+		//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
+		//	Get the phase angles for the next 2 sub DFT's
+		const f32_4 vUr(1, 0, 1, 0);
+		const f32_4 vUi(0, -1, 0, -1);
+
+		//	Loop for each 4 butterflies
+		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
+		{
+			T* pfR = &fOutR[uButterfly];
+			T* pfI = &fOutI[uButterfly];
+	
+			Calculate4Butterflies_DIF_Stage1(vUr, vUi, pfR, pfI);
+		}
+	}
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == 2)
+	{
+		//	Stage 2 easier to just use 4 wide.
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
+		const f32_4 vUr = f32_4::LoadA(twiddlesReal + 0);
+		const f32_4 vUi = f32_4::LoadA(twiddlesImag + 0);
+
+		//	Loop for each 4 butterflies
+		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
+		{
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+		}
+	}
+	else FFTL_IF_CONSTEXPR (STAGE_CURRENT == M - 1)
+	{
+		//	We can make an exception in the case of the last stage because the inner loop only runs one time for each sub DFT,
+		// and our twiddle factors are all contiguous in memory.
+
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
+#if FFTL_SIMD_F32x8
+		//	Loop for each sub DFT
+		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8)
+		{
+			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
+			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+	
+			const uint uButterfly = nSubDFT;
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+	
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+		}
+#else
+		//	Loop for each sub DFT
+		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4)
+		{
+			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
+			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+	
+			const uint uButterfly = nSubDFT;
+			const uint uButterflyNext = uButterfly + nStageExp_2;
+	
+			T* pfCurR = &fOutR[uButterfly];
+			T* pfCurI = &fOutI[uButterfly];
+			T* pfNextR = &fOutR[uButterflyNext];
+			T* pfNextI = &fOutI[uButterflyNext];
+			CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+		}
+#endif //FFTL_SIMD_F32x8
+	}
+
+	//	Loop down for each subsequent stage, but leave stage 2, 1 and 0 for special loops.
+	else
+	{
+		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
+		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
+
+#if FFTL_SIMD_F32x8
+		//	Loop for each sub DFT
+		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8)
+		{
+			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
+			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+	
+			//	Loop for each 4 butterflies
+			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
+			{
+				const uint uButterflyNext = uButterfly + nStageExp_2;
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
+				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+			}
+		}
+#else
+		//	Loop for each sub DFT
+		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4)
+		{
+			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
+			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+	
+			//	Loop for each 4 butterflies
+			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
+			{
+				const uint uButterflyNext = uButterfly + nStageExp_2;
+				T* pfCurR = &fOutR[uButterfly];
+				T* pfCurI = &fOutI[uButterfly];
+				T* pfNextR = &fOutR[uButterflyNext];
+				T* pfNextI = &fOutI[uButterflyNext];
+				CalculateVButterflies_DIF(vUr, vUi, pfCurR, pfCurI, pfNextR, pfNextI);
+			}
+		}
+#endif //FFTL_SIMD_F32x8
+	}
+
+#if FFTL_STAGE_TIMERS
+	timer.Stop();
+	m_StageTimers[STAGE_CURRENT] += timer.GetTicks();
+#endif
+}
+
+template <uint M>
+FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const FixedArray<T, N>& fInR, const FixedArray<T, N>& fInI, FixedArray<T, N * 2>& fOut)
 {
 	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
 	for (uint n = 0; n < N; n += 4)
 	{
-		const uint nR0 = this->GetBitReverseIndex(n + 0);
-		const uint nR1 = this->GetBitReverseIndex(n + 1);
-		const uint nR2 = this->GetBitReverseIndex(n + 2);
-		const uint nR3 = this->GetBitReverseIndex(n + 3);
+		const uint nR0 = GetBitReverseIndex(n + 0);
+		const uint nR1 = GetBitReverseIndex(n + 1);
+		const uint nR2 = GetBitReverseIndex(n + 2);
+		const uint nR3 = GetBitReverseIndex(n + 3);
 
 		//	Interleave the output while bit reversing.
-		T* pSh = fOut+n*2;
+		T* pSh = fOut + n * 2;
 
 		const T fSh0 = fInR[nR0];
 		const T fSh1 = fInI[nR0];
@@ -1624,8 +1531,8 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const Fixed
 		const f32_4 vSh0_3(fSh0, fSh1, fSh2, fSh3);
 		const f32_4 vSh4_7(fSh4, fSh5, fSh6, fSh7);
 
-		vSh0_3.StoreA(pSh+0);
-		vSh4_7.StoreA(pSh+4);
+		vSh0_3.StoreA(pSh + 0);
+		vSh4_7.StoreA(pSh + 4);
 #else
 		pSh[0] = fSh0;
 		pSh[1] = fSh1;
@@ -1658,14 +1565,14 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_I
 	const f32_4 vNewNextI = (vCurI - Wi);
 
 	//	Now shuffle them for the subsequent stages, and store
-	const f32_4 vCCNNr0 = Permute<0,1,4,5>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNr0 = Permute<0, 1, 4, 5>(vNewCurR, vNewNextR);
 	StoreA(pfR + 0, vCCNNr0);
-	const f32_4 vCCNNr1 = Permute<2,3,6,7>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNr1 = Permute<2, 3, 6, 7>(vNewCurR, vNewNextR);
 	StoreA(pfR + 4, vCCNNr1);
 
-	const f32_4 vCCNNi0 = Permute<0,1,4,5>(vNewCurI, vNewNextI);
+	const f32_4 vCCNNi0 = Permute<0, 1, 4, 5>(vNewCurI, vNewNextI);
 	StoreA(pfI + 0, vCCNNi0);
-	const f32_4 vCCNNi1 = Permute<2,3,6,7>(vNewCurI, vNewNextI);
+	const f32_4 vCCNNi1 = Permute<2, 3, 6, 7>(vNewCurI, vNewNextI);
 	StoreA(pfI + 4, vCCNNi1);
 }
 
@@ -1680,17 +1587,17 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_I
 	const f32_4 vCCNN0i = f32_4::LoadA(pfI + 0);
 	const f32_4 vCCNN1i = f32_4::LoadA(pfI + 4);
 
-	const f32_4 vCurR =  Permute<0,1,4,5>(vCCNN0r, vCCNN1r);
-	const f32_4 vNextR = Permute<2,3,6,7>(vCCNN0r, vCCNN1r);
+	const f32_4 vCurrR = Permute<0, 1, 4, 5>(vCCNN0r, vCCNN1r);
+	const f32_4 vNextR = Permute<2, 3, 6, 7>(vCCNN0r, vCCNN1r);
 
-	const f32_4 vCurI =  Permute<0,1,4,5>(vCCNN0i, vCCNN1i);
-	const f32_4 vNextI = Permute<2,3,6,7>(vCCNN0i, vCCNN1i);
+	const f32_4 vCurrI = Permute<0, 1, 4, 5>(vCCNN0i, vCCNN1i);
+	const f32_4 vNextI = Permute<2, 3, 6, 7>(vCCNN0i, vCCNN1i);
 
-	const f32_4 Wr = (vCurR - vNextR);
-	const f32_4 Wi = (vCurI - vNextI);
+	const f32_4 Wr = vCurrR - vNextR;
+	const f32_4 Wi = vCurrI - vNextI;
 
-	const f32_4 vNewCurR = (vCurR + vNextR);
-	const f32_4 vNewCurI = (vCurI + vNextI);
+	const f32_4 vNewCurR = vCurrR + vNextR;
+	const f32_4 vNewCurI = vCurrI + vNextI;
 	const f32_4 vNewNextR = SubMul(Wr * vUr, Wi, vUi);
 	const f32_4 vNewNextI = AddMul(Wr * vUi, Wi, vUr);
 
@@ -1712,23 +1619,23 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* pfR,
 	const f32_4 vCNCN0i = f32_4::LoadA(pfI + 0);
 	const f32_4 vCNCN1i = f32_4::LoadA(pfI + 4);
 
-	const f32_4 vCurR =  Permute<0,2,4,6>(vCNCN0r, vCNCN1r);
-	const f32_4 vNextR = Permute<1,3,5,7>(vCNCN0r, vCNCN1r);
+	const f32_4 vCurrR = Permute<0, 2, 4, 6>(vCNCN0r, vCNCN1r);
+	const f32_4 vNextR = Permute<1, 3, 5, 7>(vCNCN0r, vCNCN1r);
 
-	const f32_4 vCurI =  Permute<0,2,4,6>(vCNCN0i, vCNCN1i);
-	const f32_4 vNextI = Permute<1,3,5,7>(vCNCN0i, vCNCN1i);
+	const f32_4 vCurrI = Permute<0, 2, 4, 6>(vCNCN0i, vCNCN1i);
+	const f32_4 vNextI = Permute<1, 3, 5, 7>(vCNCN0i, vCNCN1i);
 
-	const f32_4 vNewCurR = (vCurR + vNextR);
-	const f32_4 vNewCurI = (vCurI + vNextI);
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
+	const f32_4 vNewCurR = vCurrR + vNextR;
+	const f32_4 vNewCurI = vCurrI + vNextI;
+	const f32_4 vNewNextR = vCurrR - vNextR;
+	const f32_4 vNewNextI = vCurrI - vNextI;
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
-	const f32_4 vCCNNr0 = Permute<0,4,2,6>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNr1 = Permute<1,5,3,7>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNi0 = Permute<0,4,2,6>(vNewCurI, vNewNextI);
-	const f32_4 vCCNNi1 = Permute<1,5,3,7>(vNewCurI, vNewNextI);
-	
+	const f32_4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
+	const f32_4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
+
 	StoreA(pfR + 0, vCCNNr0);
 	StoreA(pfR + 4, vCCNNr1);
 	StoreA(pfI + 0, vCCNNi0);
@@ -1746,22 +1653,22 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* pfR,
 	const f32_4 vs1_0i = f32_4::LoadA(pfI + 0);
 	const f32_4 vs1_1i = f32_4::LoadA(pfI + 4);
 
-	const f32_4 vCurR =  Permute<0,4,2,6>(vs1_0r, vs1_1r);
-	const f32_4 vNextR = Permute<1,5,3,7>(vs1_0r, vs1_1r);
+	const f32_4 vCurrR = Permute<0, 4, 2, 6>(vs1_0r, vs1_1r);
+	const f32_4 vNextR = Permute<1, 5, 3, 7>(vs1_0r, vs1_1r);
 
-	const f32_4 vCurI =  Permute<0,4,2,6>(vs1_0i, vs1_1i);
-	const f32_4 vNextI = Permute<1,5,3,7>(vs1_0i, vs1_1i);
+	const f32_4 vCurrI = Permute<0, 4, 2, 6>(vs1_0i, vs1_1i);
+	const f32_4 vNextI = Permute<1, 5, 3, 7>(vs1_0i, vs1_1i);
 
-	const f32_4 vNewCurR = (vCurR + vNextR);
-	const f32_4 vNewCurI = (vCurI + vNextI);
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
+	const f32_4 vNewCurR = vCurrR + vNextR;
+	const f32_4 vNewCurI = vCurrI + vNextI;
+	const f32_4 vNewNextR = vCurrR - vNextR;
+	const f32_4 vNewNextI = vCurrI - vNextI;
 
 	//	Now post shuffle them back to the normal (final) order.
-	const f32_4 vCNCNr0 = Permute<0,4,1,5>(vNewCurR, vNewNextR);
-	const f32_4 vCNCNr1 = Permute<2,6,3,7>(vNewCurR, vNewNextR);
-	const f32_4 vCNCNi0 = Permute<0,4,1,5>(vNewCurI, vNewNextI);
-	const f32_4 vCNCNi1 = Permute<2,6,3,7>(vNewCurI, vNewNextI);
+	const f32_4 vCNCNr0 = Permute<0, 4, 1, 5>(vNewCurR, vNewNextR);
+	const f32_4 vCNCNr1 = Permute<2, 6, 3, 7>(vNewCurR, vNewNextR);
+	const f32_4 vCNCNi0 = Permute<0, 4, 1, 5>(vNewCurI, vNewNextI);
+	const f32_4 vCNCNi1 = Permute<2, 6, 3, 7>(vNewCurI, vNewNextI);
 
 	StoreA(pfR + 0, vCNCNr0);
 	StoreA(pfR + 4, vCNCNr1);
@@ -1773,16 +1680,16 @@ template <uint M>
 FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* pfR, T* pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
-	const f32_4 vNewCurR = (vCurR + vNextR);
-	const f32_4 vNewCurI = (vCurI + vNextI);
-	const f32_4 vNewNextR = (vCurR - vNextR);
-	const f32_4 vNewNextI = (vCurI - vNextI);
+	const f32_4 vNewCurR = vCurR + vNextR;
+	const f32_4 vNewCurI = vCurI + vNextI;
+	const f32_4 vNewNextR = vCurR - vNextR;
+	const f32_4 vNewNextI = vCurI - vNextI;
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
-	const f32_4 vCCNNr0 = Permute<0,4,2,6>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNr1 = Permute<1,5,3,7>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNi0 = Permute<0,4,2,6>(vNewCurI, vNewNextI);
-	const f32_4 vCCNNi1 = Permute<1,5,3,7>(vNewCurI, vNewNextI);
+	const f32_4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
+	const f32_4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
+	const f32_4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
 
 	StoreA(pfR + 0, vCCNNr0);
 	StoreA(pfR + 4, vCCNNr1);
@@ -1804,18 +1711,18 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIT(const V& vUr, 
 	const V Wr = SubMul(vNextR, vNextI, vUi);
 	const V Wi = AddMul(vNextI, vNextR, vUi);
 
-	const V vNewCurR =	AddMul(vCurR, Wr, vUr);
-	const V vNewCurI =	AddMul(vCurI, Wi, vUr);
+	const V vNewCurR = AddMul(vCurR, Wr, vUr);
+	const V vNewCurI = AddMul(vCurI, Wi, vUr);
 	const V vNewNextR = SubMul(vCurR, Wr, vUr);
 	const V vNewNextI = SubMul(vCurI, Wi, vUr);
 #else
 	const V Wr = SubMul(vNextR * vUr, vNextI, vUi);
 	const V Wi = AddMul(vNextR * vUi, vNextI, vUr);
 
-	const V vNewCurR =	(vCurR + Wr);
-	const V vNewCurI =	(vCurI + Wi);
-	const V vNewNextR = (vCurR - Wr);
-	const V vNewNextI = (vCurI - Wi);
+	const V vNewCurR = vCurR + Wr;
+	const V vNewCurI = vCurI + Wi;
+	const V vNewNextR = vCurR - Wr;
+	const V vNewNextI = vCurI - Wi;
 #endif
 
 	StoreA(pfNextR, vNewNextR);
@@ -1833,14 +1740,14 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, 
 	const V vNextR = V::LoadA(pfNextR);
 	const V vNextI = V::LoadA(pfNextI);
 
-	const V Wr = ( vCurR - vNextR );
-	const V Wi = ( vCurI - vNextI );
+	const V Wr = vCurR - vNextR;
+	const V Wi = vCurI - vNextI;
 
-	const V vNewCurR = (vCurR + vNextR);
-	const V vNewCurI = (vCurI + vNextI);
+	const V vNewCurR = vCurR + vNextR;
+	const V vNewCurI = vCurI + vNextI;
 	const V vNewNextR = SubMul(Wr * vUr, Wi, vUi);
 	const V vNewNextI = AddMul(Wr * vUi, Wi, vUr);
-	
+
 	StoreA(pfNextR, vNewNextR);
 	StoreA(pfNextI, vNewNextI);
 	StoreA(pfCurR, vNewCurR);
@@ -1852,27 +1759,14 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::CalculateVButterflies_DIF(const V& vUr, 
 
 
 
-template <uint M, typename T, typename T_Twiddle>
-constexpr FFT<M-1, T, T_Twiddle> FFT_Real_Base<M, T, T_Twiddle>::sm_fft;
 
 template <uint M, typename T, typename T_Twiddle>
-constexpr FFT_Real_Base<M, T, T_Twiddle>::FFT_Real_Base()
+FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<T, N>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI)
 {
-	for (uint n = 0; n < N_4; ++n)
-	{
-		const f64 fAngle = PI_64 * (f64)n / (f64)N_2;
-		m_PostTwiddlesR[n] = static_cast<T_Twiddle>( -math_constexpr::Sin(fAngle) );
-		m_PostTwiddlesI[n] = static_cast<T_Twiddle>( -math_constexpr::Cos(fAngle) );
-	}
-}
-
-template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward(const FixedArray<T, N>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const
-{
-	const FixedArray<cxT,N_2>& cxInput = *reinterpret_cast<const FixedArray<cxT,N_2>*>(&fTimeIn);
+	const FixedArray<cxT, N_2>& cxInput = *reinterpret_cast<const FixedArray<cxT, N_2>*>(&fTimeIn);
 
 	//	Perform the half size complex FFT
-	this->sm_fft.TransformForward(cxInput, fFreqOutR, fFreqOutI);
+	sm_fft::TransformForward(cxInput, fFreqOutR, fFreqOutI);
 
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -1893,19 +1787,19 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward(const Fix
 	{
 		const uint Nmn = N_2 - n;
 
-		const cxNumber<T> twid( ConvertTo<T>(this->GetTwiddleReal(n)), ConvertTo<T>(this->GetTwiddleImag(n)) );
+		const cxNumber<T> twid(ConvertTo<T>(GetTwiddleReal(n)), ConvertTo<T>(GetTwiddleImag(n)));
 
-		const cxNumber<T> fpk( fFreqOutR[n], fFreqOutI[n] );
-		const cxNumber<T> fpnk( fFreqOutR[Nmn], -fFreqOutI[Nmn] );
+		const cxNumber<T> fpk(fFreqOutR[n], fFreqOutI[n]);
+		const cxNumber<T> fpnk(fFreqOutR[Nmn], -fFreqOutI[Nmn]);
 
 		const cxNumber<T> f1k = fpk + fpnk;
 		const cxNumber<T> f2k = fpk - fpnk;
 		const cxNumber<T> tw = f2k * twid;
 
-		fFreqOutR[n] = (vHalf * (f1k.r + tw.r));
-		fFreqOutI[n] = (vHalf * (f1k.i + tw.i));
-		fFreqOutR[Nmn] = (vHalf * (f1k.r - tw.r));
-		fFreqOutI[Nmn] = (vHalf * (tw.i - f1k.i));
+		fFreqOutR[n] = vHalf * (f1k.r + tw.r);
+		fFreqOutI[n] = vHalf * (f1k.i + tw.i);
+		fFreqOutR[Nmn] = vHalf * (f1k.r - tw.r);
+		fFreqOutI[Nmn] = vHalf * (tw.i - f1k.i);
 	}
 
 	//	The odd center bin just needs the imaginary part negated.
@@ -1913,17 +1807,17 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward(const Fix
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PostProcessTimer += timer.GetTicks();
+	sm_fft::m_PostProcessTimer += timer.GetTicks();
 #endif
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const FixedArray<T, N_2>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const // 2nd half of fTimeIn is assumed to be zero
+FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward_1stHalf(const FixedArray<T, N_2>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) // 2nd half of fTimeIn is assumed to be zero
 {
 	const FixedArray<cxT, N_4>& cxInput = *reinterpret_cast<const FixedArray<cxT, N_4>*>(&fTimeIn);
 
 	//	Perform the half size complex FFT
-	this->sm_fft.TransformForward(cxInput, fFreqOutR, fFreqOutI);
+	sm_fft::TransformForward(cxInput, fFreqOutR, fFreqOutI);
 
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -1944,19 +1838,19 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward_1stHalf(c
 	{
 		const uint Nmn = N_2 - n;
 
-		const cxNumber<T> twid( ConvertTo<T>(this->GetTwiddleReal(n)), ConvertTo<T>(this->GetTwiddleImag(n)) );
+		const cxNumber<T> twid(ConvertTo<T>(GetTwiddleReal(n)), ConvertTo<T>(GetTwiddleImag(n)));
 
-		const cxNumber<T> fpk( fFreqOutR[n], fFreqOutI[n] );
-		const cxNumber<T> fpnk( fFreqOutR[Nmn], -fFreqOutI[Nmn] );
+		const cxNumber<T> fpk(fFreqOutR[n], fFreqOutI[n]);
+		const cxNumber<T> fpnk(fFreqOutR[Nmn], -fFreqOutI[Nmn]);
 
 		const cxNumber<T> f1k = fpk + fpnk;
 		const cxNumber<T> f2k = fpk - fpnk;
 		const cxNumber<T> tw = f2k * twid;
 
-		fFreqOutR[n] = (vHalf * (f1k.r + tw.r));
-		fFreqOutI[n] = (vHalf * (f1k.i + tw.i));
-		fFreqOutR[Nmn] = (vHalf * (f1k.r - tw.r));
-		fFreqOutI[Nmn] = (vHalf * (tw.i - f1k.i));
+		fFreqOutR[n] = vHalf * (f1k.r + tw.r);
+		fFreqOutI[n] = vHalf * (f1k.i + tw.i);
+		fFreqOutR[Nmn] = vHalf * (f1k.r - tw.r);
+		fFreqOutI[Nmn] = vHalf * (tw.i - f1k.i);
 	}
 
 	//	The odd center bin just needs the imaginary part negated.
@@ -1964,12 +1858,12 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward_1stHalf(c
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PostProcessTimer += timer.GetTicks();
+	sm_fft::m_PostProcessTimer += timer.GetTicks();
 #endif
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const FixedArray<T, N_2>& fFreqInR, const FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut) const
+FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const FixedArray<T, N_2>& fFreqInR, const FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -1992,17 +1886,17 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const Fix
 	{
 		const uint Nmn = N_2 - n;
 
-		const cxNumber<T> twid( ConvertTo<T>(this->GetTwiddleReal(n)), -ConvertTo<T>(this->GetTwiddleImag(n)) );
+		const cxNumber<T> twid(ConvertTo<T>(GetTwiddleReal(n)), -ConvertTo<T>(GetTwiddleImag(n)));
 
-		const cxNumber<T> fk( fFreqInR[n], fFreqInI[n] );
-		const cxNumber<T> fnkc( fFreqInR[Nmn], -fFreqInI[Nmn] );
+		const cxNumber<T> fk(fFreqInR[n], fFreqInI[n]);
+		const cxNumber<T> fnkc(fFreqInR[Nmn], -fFreqInI[Nmn]);
 
 		const cxNumber<T> fek = fk + fnkc;
 		const cxNumber<T> tmp = fk - fnkc;
 		const cxNumber<T> fok = tmp * twid;
 
-		const uint nR =		this->sm_fft.GetBitReverseIndex(n);
-		const uint NmnR =	this->sm_fft.GetBitReverseIndex(Nmn);
+		const uint nR = sm_fft::GetBitReverseIndex(n);
+		const uint NmnR = sm_fft::GetBitReverseIndex(Nmn);
 
 		//	Flip real and imaginary for inverse FFT and apply bit reversal for DIF version.
 		cxTimeOut[nR].r = (fek.r + fok.r) * vInv_N;
@@ -2012,7 +1906,7 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const Fix
 	}
 
 	const T vTwo = ConvertTo<T>(2) * vInv_N;
-	const uint nR =	this->sm_fft.GetBitReverseIndex(N_4);
+	const uint nR = sm_fft::GetBitReverseIndex(N_4);
 
 	//	The odd center bin just needs to be doubled and the imaginary part negated.
 	cxTimeOut[nR].r = fFreqInR[N_4] * +vTwo;
@@ -2020,15 +1914,15 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const Fix
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PreProcessTimer += timer.GetTicks();
+	sm_fft::m_PreProcessTimer += timer.GetTicks();
 #endif
 
 	//	Perform the half size complex inverse FFT
-	this->sm_fft.TransformInverse_InPlace_DIT(cxTimeOut);
+	sm_fft::TransformInverse_InPlace_DIT(cxTimeOut, false);
 }
 
 template <uint M, typename T, typename T_Twiddle>
-FFTL_FORCEINLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse_ClobberInput(FixedArray<T, N_2>& fFreqInR, FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut) const
+FFTL_FORCEINLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse_ClobberInput(FixedArray<T, N_2>& fFreqInR, FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut)
 {
 	//	No input clobbering necessary here because there's no stack allocation.
 	TransformInverse(fFreqInR, fFreqInI, fTimeOut);
@@ -2043,23 +1937,23 @@ FFTL_FORCEINLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse_ClobberIn
 #if FFTL_SIMD_F32x4
 
 template <uint M>
-FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformForward(const FixedArray<T, N>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformForward(const FixedArray<T, N>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI)
 {
 	//	Perform the half size complex FFT
-	this->sm_fft.TransformForward(*reinterpret_cast<const FixedArray<cxT, N_2>*>(&fTimeIn), fFreqOutR, fFreqOutI);
-	this->PostProcess(fFreqOutR, fFreqOutI);
+	sm_fft::TransformForward(*reinterpret_cast<const FixedArray<cxT, N_2>*>(&fTimeIn), fFreqOutR, fFreqOutI);
+	PostProcessForward(fFreqOutR, fFreqOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformForward_1stHalf(const FixedArray<T, N_2>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const // 2nd half of fTimeIn is assumed to be all zeros
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformForward_1stHalf(const FixedArray<T, N_2>& fTimeIn, FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) // 2nd half of fTimeIn is assumed to be all zeros
 {
 	//	Perform the half size complex FFT
-	this->sm_fft.TransformForward_1stHalf(*reinterpret_cast<const FixedArray<cxT, N_4>*>(&fTimeIn), fFreqOutR, fFreqOutI);
-	this->PostProcess(fFreqOutR, fFreqOutI);
+	sm_fft::TransformForward_1stHalf(*reinterpret_cast<const FixedArray<cxT, N_4>*>(&fTimeIn), fFreqOutR, fFreqOutI);
+	PostProcessForward(fFreqOutR, fFreqOutI);
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI) const
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -2079,16 +1973,16 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFr
 	//	Special case for 3 element loads and stores we only need to do once.
 	{
 		const uint n = 1;
-		const uint Nmn = N_2-n-2;
+		const uint Nmn = N_2 - n - 2;
 
 		//	Starting at 1 forces an unaligned load.
-		const cxNumber<f32_4> twid( f32_4::LoadU(this->GetTwiddleRealPtr(n)), f32_4::LoadU(this->GetTwiddleImagPtr(n)) );
+		const cxNumber<f32_4> twid(f32_4::LoadU(GetTwiddleRealPtr(n)), f32_4::LoadU(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fpk( f32_4::LoadU(fFreqOutR+n), f32_4::LoadU(fFreqOutI+n) );
-		const cxNumber<f32_4> fpnk( ZYXX( f32_4::Load3(fFreqOutR+Nmn) ), -ZYXX( f32_4::Load3(fFreqOutI+Nmn) ) );
+		const cxNumber<f32_4> fpk(f32_4::LoadU(fFreqOutR + n), f32_4::LoadU(fFreqOutI + n));
+		const cxNumber<f32_4> fpnk(ZYXX(f32_4::Load3(fFreqOutR + Nmn)), ZYXX(f32_4::Load3(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = fpk + fpnk;
-		const cxNumber<f32_4> f2k = fpk - fpnk;
+		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
 		const cxNumber<f32_4> tw = f2k * twid;
 
 		//	Store only 3 so we don't pollute the next stage
@@ -2103,13 +1997,13 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFr
 		const uint n = 4;
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(this->GetTwiddleRealPtr(n)), f32_4::LoadA(this->GetTwiddleImagPtr(n)));
+		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
 
 		const cxNumber<f32_4> fpk(f32_4::LoadA(fFreqOutR + n), f32_4::LoadA(fFreqOutI + n));
-		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), -Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = fpk + fpnk;
-		const cxNumber<f32_4> f2k = fpk - fpnk;
+		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
 		const cxNumber<f32_4> tw = f2k * twid;
 
 		(vHalf * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
@@ -2125,13 +2019,13 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFr
 
 		const uint Nmn = N_2 - n - 7;
 
-		const cxNumber<f32_8> twid(f32_8::LoadA(this->GetTwiddleRealPtr(n)), f32_8::LoadA(this->GetTwiddleImagPtr(n)));
+		const cxNumber<f32_8> twid(f32_8::LoadA(GetTwiddleRealPtr(n)), f32_8::LoadA(GetTwiddleImagPtr(n)));
 
 		const cxNumber<f32_8> fpk(f32_8::LoadA(fFreqOutR + n), f32_8::LoadA(fFreqOutI + n));
-		const cxNumber<f32_8> fpnk(Reverse(f32_8::LoadU(fFreqOutR + Nmn)), -Reverse(f32_8::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32_8> fpnk(Reverse(f32_8::LoadU(fFreqOutR + Nmn)), Reverse(f32_8::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_8> f1k = fpk + fpnk;
-		const cxNumber<f32_8> f2k = fpk - fpnk;
+		const cxNumber<f32_8> f1k = cxNumber<f32_8>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32_8> f2k = cxNumber<f32_8>(fpk.r - fpnk.r, fpk.i + fpnk.i);
 		const cxNumber<f32_8> tw = f2k * twid;
 
 		(vHalf8 * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
@@ -2145,13 +2039,13 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFr
 	{
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(this->GetTwiddleRealPtr(n)), f32_4::LoadA(this->GetTwiddleImagPtr(n)));
+		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
 
 		const cxNumber<f32_4> fpk(f32_4::LoadA(fFreqOutR + n), f32_4::LoadA(fFreqOutI + n));
-		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), -Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = fpk + fpnk;
-		const cxNumber<f32_4> f2k = fpk - fpnk;
+		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
 		const cxNumber<f32_4> tw = f2k * twid;
 
 		(vHalf * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
@@ -2166,12 +2060,122 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcess(FixedArray<T, N_2>& fFr
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PostProcessTimer += timer.GetTicks();
+	sm_fft::m_PostProcessTimer += timer.GetTicks();
 #endif
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse(const FixedArray<T, N_2>& fFreqInR, const FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut) const
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PreProcessInverse(FixedArray<T, N_2>& fFreqOutR, FixedArray<T, N_2>& fFreqOutI, const FixedArray<T, N_2>& fFreqInR, const FixedArray<T, N_2>& fFreqInI)
+{
+#if FFTL_STAGE_TIMERS
+	Timer timer;
+	timer.Start();
+#endif
+
+	//	Special case for 0 index
+	{
+		const f32 fDC = fFreqInR[0];
+		const f32 fNy = fFreqInI[0];
+		fFreqOutR[0] = fDC + fNy;
+		fFreqOutI[0] = fDC - fNy;
+	}
+
+	//	Special case for 3 element loads and stores we only need to do once.
+	{
+		const uint n = 1;
+		const uint Nmn = N_2 - n - 2;
+
+		//	Starting at 1 forces an unaligned load.
+		const cxNumber<f32_4> twid(f32_4::LoadU(GetTwiddleRealPtr(n)), f32_4::LoadU(GetTwiddleImagPtr(n)));
+
+		const cxNumber<f32_4> fk(f32_4::LoadU(fFreqInR + n), f32_4::LoadU(fFreqInI + n));
+		const cxNumber<f32_4> fnkc(ZYXX(f32_4::Load3(fFreqInR + Nmn)), ZYXX(f32_4::Load3(fFreqInI + Nmn)));
+
+		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+
+		//	Store only 3 so we don't pollute the next stage
+		(fek.r + fok.r).Store3(fFreqOutR + n);
+		(fek.i + fok.i).Store3(fFreqOutI + n);
+		ZYXX(fek.r - fok.r).Store3(fFreqOutR + Nmn);
+		ZYXX(fok.i - fek.i).Store3(fFreqOutI + Nmn);
+	}
+
+	//	N-n loading will be unaligned.
+	{
+		const uint n = 4;
+		const uint Nmn = N_2 - n - 3;
+
+		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+
+		const cxNumber<f32_4> fk(f32_4::LoadA(fFreqInR + n), f32_4::LoadA(fFreqInI + n));
+		const cxNumber<f32_4> fnkc(Reverse(f32_4::LoadU(fFreqInR + Nmn)), Reverse(f32_4::LoadU(fFreqInI + Nmn)));
+
+		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+
+		(fek.r + fok.r).StoreA(fFreqOutR + n);
+		(fek.i + fok.i).StoreA(fFreqOutI + n);
+		Reverse(fek.r - fok.r).StoreU(fFreqOutR + Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFreqOutI + Nmn);
+	}
+
+#if FFTL_SIMD_F32x8
+	//	N-n loading will be unaligned.
+	for (uint n = 8; n < N_4; n += 8)
+	{
+		const uint Nmn = N_2 - n - 7;
+
+		const cxNumber<f32_8> twid(f32_8::LoadA(GetTwiddleRealPtr(n)), f32_8::LoadA(GetTwiddleImagPtr(n)));
+
+		const cxNumber<f32_8> fk(f32_8::LoadA(fFreqInR + n), f32_8::LoadA(fFreqInI + n));
+		const cxNumber<f32_8> fnkc(Reverse(f32_8::LoadU(fFreqInR + Nmn)), Reverse(f32_8::LoadU(fFreqInI + Nmn)));
+
+		const cxNumber<f32_8> fek = cxNumber<f32_8>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32_8> tmp = cxNumber<f32_8>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32_8> fok = NegMul(tmp, twid);
+
+		(fek.r + fok.r).StoreA(fFreqOutR + n);
+		(fek.i + fok.i).StoreA(fFreqOutI + n);
+		Reverse(fek.r - fok.r).StoreU(fFreqOutR + Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFreqOutI + Nmn);
+	}
+#else
+	//	N-n loading will be unaligned.
+	for (uint n = 8; n < N_4; n += 4)
+	{
+		const uint Nmn = N_2 - n - 3;
+
+		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+
+		const cxNumber<f32_4> fk(f32_4::LoadA(fFreqInR + n), f32_4::LoadA(fFreqInI + n));
+		const cxNumber<f32_4> fnkc(Reverse(f32_4::LoadU(fFreqInR + Nmn)), Reverse(f32_4::LoadU(fFreqInI + Nmn)));
+
+		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+
+		(fek.r + fok.r).StoreA(fFreqOutR + n);
+		(fek.i + fok.i).StoreA(fFreqOutI + n);
+		Reverse(fek.r - fok.r).StoreU(fFreqOutR + Nmn);
+		Reverse(fok.i - fek.i).StoreU(fFreqOutI + Nmn);
+	}
+#endif
+
+	//	The odd center bin just needs to be doubled and the imaginary part negated.
+	fFreqOutR[N_4] = fFreqInR[N_4] * +2.f;
+	fFreqOutI[N_4] = fFreqInI[N_4] * -2.f;
+
+#if FFTL_STAGE_TIMERS
+	timer.Stop();
+	sm_fft::m_PreProcessTimer += timer.GetTicks();
+#endif
+}
+
+template <uint M>
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse(const FixedArray<T, N_2>& fFreqInR, const FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -2181,111 +2185,12 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse(const FixedArray<T
 	FixedArray<T, N_2>& fFftInR = *reinterpret_cast<FixedArray<T, N_2>*>(fTimeOut + 0);
 	FixedArray<T, N_2>& fFftInI = *reinterpret_cast<FixedArray<T, N_2>*>(fTimeOut + N_2);
 
-	//	Special case for 0 index
-	{
-		const f32 fDC = fFreqInR[0];
-		const f32 fNy = fFreqInI[0];
-		fFftInR[0] = fDC + fNy;
-		fFftInI[0] = fDC - fNy;
-	}
-
-	//	Special case for 3 element loads and stores we only need to do once.
-	{
-		const uint n = 1;
-		const uint Nmn = N_2 - n-2;
-
-		//	Starting at 1 forces an unaligned load.
-		const cxNumber<f32_4> twid( f32_4::LoadU(this->GetTwiddleRealPtr(n)), -f32_4::LoadU(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadU(fFreqInR + n), f32_4::LoadU(fFreqInI+n) );
-		const cxNumber<f32_4> fnkc( ZYXX( f32_4::Load3(fFreqInR + Nmn) ), -ZYXX( f32_4::Load3(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		//	Store only 3 so we don't pollute the next stage
-		(fek.r + fok.r).Store3(fFftInR + n);
-		(fek.i + fok.i).Store3(fFftInI + n);
-		ZYXX(fek.r - fok.r).Store3(fFftInR + Nmn);
-		ZYXX(fok.i - fek.i).Store3(fFftInI + Nmn);
-	}
-
-	//	N-n loading will be unaligned.
-	{
-		const uint n = 4;
-		const uint Nmn = N_2 - n - 3;
-
-		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR+n), f32_4::LoadA(fFreqInI + n) );
-		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR + Nmn) ), -Reverse( f32_4::LoadU(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR + n);
-		(fek.i + fok.i).StoreA(fFftInI + n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR + Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI + Nmn);
-	}
-
-#if FFTL_SIMD_F32x8
-	//	N-n loading will be unaligned.
-	for (uint n = 8; n < N_4; n += 8)
-	{
-		const uint Nmn = N_2-n-7;
-
-		const cxNumber<f32_8> twid( f32_8::LoadA(this->GetTwiddleRealPtr(n)), -f32_8::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_8> fk( f32_8::LoadA(fFreqInR+n), f32_8::LoadA(fFreqInI+n) );
-		const cxNumber<f32_8> fnkc( Reverse( f32_8::LoadU(fFreqInR+Nmn) ), -Reverse( f32_8::LoadU(fFreqInI+Nmn) ) );
-
-		const cxNumber<f32_8> fek = fk + fnkc;
-		const cxNumber<f32_8> tmp = fk - fnkc;
-		const cxNumber<f32_8> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR+n);
-		(fek.i + fok.i).StoreA(fFftInI+n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR+Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI+Nmn);
-	}
-#else
-	//	N-n loading will be unaligned.
-	for (uint n = 8; n < N_4; n += 4)
-	{
-		const uint Nmn = N_2 - n - 3;
-
-		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR+n), f32_4::LoadA(fFreqInI+n) );
-		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR+Nmn) ), -Reverse( f32_4::LoadU(fFreqInI+Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR + n);
-		(fek.i + fok.i).StoreA(fFftInI + n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR + Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI + Nmn);
-	}
-#endif
-
-	//	The odd center bin just needs to be doubled and the imaginary part negated.
-	fFftInR[N_4] = fFreqInR[N_4] * +2.f;
-	fFftInI[N_4] = fFreqInI[N_4] * -2.f;
-
-#if FFTL_STAGE_TIMERS
-	timer.Stop();
-	this->sm_fft.m_PreProcessTimer += timer.GetTicks();
-#endif
+	PreProcessInverse(fFftInR, fFftInI, fFreqInR, fFreqInI);
 
 	//	Perform the half size complex inverse FFT
-	FixedArray_Aligned32<T,N_2> fTempR;
-	FixedArray_Aligned32<T,N_2> fTempI;
-	this->sm_fft.TransformInverse(fFftInR, fFftInI, fTempR, fTempI);
+	FixedArray_Aligned32<T, N_2> fTempR;
+	FixedArray_Aligned32<T, N_2> fTempI;
+	sm_fft::TransformInverse(fFftInR, fFftInI, fTempR, fTempI);
 
 #if FFTL_STAGE_TIMERS
 	timer.Start();
@@ -2306,12 +2211,12 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse(const FixedArray<T
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PostProcessTimer += timer.GetTicks();
+	sm_fft::m_PostProcessTimer += timer.GetTicks();
 #endif
 }
 
 template <uint M>
-FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(FixedArray<T, N_2>& fFreqInR, FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut) const
+FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(FixedArray<T, N_2>& fFreqInR, FixedArray<T, N_2>& fFreqInI, FixedArray<T, N>& fTimeOut)
 {
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -2321,123 +2226,24 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 	FixedArray<T, N_2>& fFftInR = fFreqInR;
 	FixedArray<T, N_2>& fFftInI = fFreqInI;
 
-	//	Special case for 0 index
-	{
-		const f32 fDC = fFreqInR[0];
-		const f32 fNy = fFreqInI[0];
-		fFftInR[0] = fDC + fNy;
-		fFftInI[0] = fDC - fNy;
-	}
-
-	//	Special case for 3 element loads and stores we only need to do once.
-	{
-		const uint n = 1;
-		const uint Nmn = N_2 - n - 2;
-
-		//	Starting at 1 forces an unaligned load.
-		const cxNumber<f32_4> twid( f32_4::LoadU(this->GetTwiddleRealPtr(n)), -f32_4::LoadU(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadU(fFreqInR + n), f32_4::LoadU(fFreqInI + n) );
-		const cxNumber<f32_4> fnkc( ZYXX( f32_4::Load3(fFreqInR + Nmn) ), -ZYXX( f32_4::Load3(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		//	Store only 3 so we don't pollute the next stage
-		(fek.r + fok.r).Store3(fFftInR + n);
-		(fek.i + fok.i).Store3(fFftInI + n);
-		ZYXX(fek.r - fok.r).Store3(fFftInR + Nmn);
-		ZYXX(fok.i - fek.i).Store3(fFftInI + Nmn);
-	}
-
-	//	N-n loading will be unaligned.
-	{
-		const uint n = 4;
-		const uint Nmn = N_2 - n - 3;
-
-		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR+n), f32_4::LoadA(fFreqInI + n) );
-		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR + Nmn) ), -Reverse( f32_4::LoadU(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR + n);
-		(fek.i + fok.i).StoreA(fFftInI + n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR + Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI + Nmn);
-	}
-
-#if FFTL_SIMD_F32x8
-	//	N-n loading will be unaligned.
-	for (uint n = 8; n < N_4; n += 8)
-	{
-		const uint Nmn = N_2 - n - 7;
-
-		const cxNumber<f32_8> twid( f32_8::LoadA(this->GetTwiddleRealPtr(n)), -f32_8::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_8> fk( f32_8::LoadA(fFreqInR + n), f32_8::LoadA(fFreqInI + n) );
-		const cxNumber<f32_8> fnkc( Reverse( f32_8::LoadU(fFreqInR + Nmn) ), -Reverse( f32_8::LoadU(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_8> fek = fk + fnkc;
-		const cxNumber<f32_8> tmp = fk - fnkc;
-		const cxNumber<f32_8> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR + n);
-		(fek.i + fok.i).StoreA(fFftInI + n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR + Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI + Nmn);
-	}
-#else
-	//	N-n loading will be unaligned.
-	for (uint n = 8; n < N_4; n += 4)
-	{
-		const uint Nmn = N_2 - n - 3;
-
-		const cxNumber<f32_4> twid( f32_4::LoadA(this->GetTwiddleRealPtr(n)), -f32_4::LoadA(this->GetTwiddleImagPtr(n)) );
-
-		const cxNumber<f32_4> fk( f32_4::LoadA(fFreqInR + n), f32_4::LoadA(fFreqInI + n) );
-		const cxNumber<f32_4> fnkc( Reverse( f32_4::LoadU(fFreqInR + Nmn) ), -Reverse( f32_4::LoadU(fFreqInI + Nmn) ) );
-
-		const cxNumber<f32_4> fek = fk + fnkc;
-		const cxNumber<f32_4> tmp = fk - fnkc;
-		const cxNumber<f32_4> fok = tmp * twid;
-
-		(fek.r + fok.r).StoreA(fFftInR + n);
-		(fek.i + fok.i).StoreA(fFftInI + n);
-		Reverse(fek.r - fok.r).StoreU(fFftInR + Nmn);
-		Reverse(fok.i - fek.i).StoreU(fFftInI + Nmn);
-	}
-#endif
-
-	//	The odd center bin just needs to be doubled and the imaginary part negated.
-	fFftInR[N_4] = fFreqInR[N_4] * +2.f;
-	fFftInI[N_4] = fFreqInI[N_4] * -2.f;
-
-#if FFTL_STAGE_TIMERS
-	timer.Stop();
-	this->sm_fft.m_PreProcessTimer += timer.GetTicks();
-#endif
+	PreProcessInverse(fFftInR, fFftInI, fFreqInR, fFreqInI);
 
 	//	Perform the half size complex inverse FFT
-	this->sm_fft.TransformForward_InPlace_DIF(fFftInI, fFftInR); // Reverse real and imaginary for inverse FFT
+	sm_fft::TransformForward_InPlace_DIF(fFftInI, fFftInR); // Reverse real and imaginary for inverse FFT
 
 #if FFTL_STAGE_TIMERS
 	timer.Start();
 #endif
 
-	const f32_4 vInv_N = ConvertTo<f32_4>(1.f/N);
+	const f32_4 vInv_N = ConvertTo<f32_4>(1.f / N);
 
 	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
 	for (uint n = 0; n < N_2; n += 4)
 	{
-		const uint nR0 = this->sm_fft.GetBitReverseIndex(n + 0);
-		const uint nR1 = this->sm_fft.GetBitReverseIndex(n + 1);
-		const uint nR2 = this->sm_fft.GetBitReverseIndex(n + 2);
-		const uint nR3 = this->sm_fft.GetBitReverseIndex(n + 3);
+		const uint nR0 = sm_fft::GetBitReverseIndex(n + 0);
+		const uint nR1 = sm_fft::GetBitReverseIndex(n + 1);
+		const uint nR2 = sm_fft::GetBitReverseIndex(n + 2);
+		const uint nR3 = sm_fft::GetBitReverseIndex(n + 3);
 
 		//	Interleave the output while bit reversing.
 		const f32_4 vShA(fFftInR[nR0], fFftInI[nR0], fFftInR[nR1], fFftInI[nR1]);
@@ -2449,7 +2255,7 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 
 #if FFTL_STAGE_TIMERS
 	timer.Stop();
-	this->sm_fft.m_PostProcessTimer += timer.GetTicks();
+	sm_fft::m_PostProcessTimer += timer.GetTicks();
 #endif
 }
 #endif // FFTL_SIMD_F32x4
@@ -2478,10 +2284,6 @@ void FFT_RealV<M>::TransformInverse_ClobberInput(f32* fFreqInR, f32* fFreqInI, f
 
 
 
-
-template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-constexpr FFT_Real<M + 1, T, T_Twiddle> Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::sm_fft;
-
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
 Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolver()
 {
@@ -2503,7 +2305,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		FFTL_ASSERT(pKernelArray_FD != nullptr);
 
 		//	Convert the time domain input to freq domain
-		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+		sm_fft::TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
 
 		//	Convolve the first segment, perform IFFT, and write to the output
 		const Kernel& kernel = pKernelArray_FD[0];
@@ -2513,7 +2315,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		ConvolveFD(m_tempBufferA, m_tempBufferX, kernel, curBuffer);
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2528,7 +2330,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		m_tempBufferA = m_AccumulationBuffer[0];
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2576,7 +2378,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		FFTL_ASSERT(pKernelArrayB_FD != nullptr);
 
 		//	Convert the time domain input to freq domain
-		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+		sm_fft::TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
 
 		//	Convolve the first segment, perform IFFT, and write to the output
 		const Kernel& kernelA = pKernelArrayA_FD[0];
@@ -2587,7 +2389,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelA, kernelB, curBuffer, fGainA, fGainB);
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2600,7 +2402,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		FFTL_ASSERT(pKernelArrayA_FD != nullptr);
 
 		//	Convert the time domain input to freq domain
-		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+		sm_fft::TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
 
 		//	Convolve the first segment, perform IFFT, and write to the output
 		const Kernel& kernelA = pKernelArrayA_FD[0];
@@ -2610,7 +2412,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelA, curBuffer, fGainA);
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2623,7 +2425,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		FFTL_ASSERT(pKernelArrayB_FD != nullptr);
 
 		//	Convert the time domain input to freq domain
-		sm_fft.TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
+		sm_fft::TransformForward_1stHalf(fInOutput, m_tempBufferX.r(), m_tempBufferX.i());
 
 		//	Convolve the first segment, perform IFFT, and write to the output
 		const Kernel& kernelB = pKernelArrayB_FD[0];
@@ -2633,7 +2435,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		ConvolveFD(m_tempBufferA, m_tempBufferX, kernelB, curBuffer, fGainB);
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2648,7 +2450,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 		m_tempBufferA = m_AccumulationBuffer[0];
 
 		//	Convert the new frequency domain signal back to the time domain
-		sm_fft.TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
+		sm_fft::TransformInverse_ClobberInput(m_tempBufferA.r(), m_tempBufferA.i(), m_tempBufferB.t);
 
 		//	Write to the output and accumulation buffer, while adding the overlap segment and fill it back in
 		AddArrays(fInOutput, m_PrevTail, m_tempBufferB.r());
@@ -2811,10 +2613,10 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 			const T& yI = inY.i()[n];
 			const T& wR = inW.r()[n];
 			const T& wI = inW.i()[n];
-	
+
 			const T aR = yR * fGainY;
 			const T aI = yI * fGainY;
-	
+
 			const T rR = AddMul(SubMul(wR, xI, aI), xR, aR);
 			const T rI = AddMul(AddMul(wI, xI, aR), xR, aI);
 
@@ -2931,7 +2733,7 @@ uint Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput
 		Kernel& kernel = pKernelOutput_FD[i];
 
 		//	Convert to frequency domain, and store
-		sm_fft.TransformForward_1stHalf(*reinterpret_cast<const FixedArray<T, N>*>(pKernelInput_TD + i * N), kernel.r(), kernel.i());
+		sm_fft::TransformForward_1stHalf(*reinterpret_cast<const FixedArray<T, N>*>(pKernelInput_TD + i * N), kernel.r(), kernel.i());
 
 		samplesRemaining -= N;
 	}
@@ -2944,7 +2746,7 @@ uint Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput
 		Kernel& kernel = pKernelOutput_FD[kernelCount - 1];
 
 		//	Convert to frequency domain, and store
-		sm_fft.TransformForward_1stHalf(temp, kernel.r(), kernel.i());
+		sm_fft::TransformForward_1stHalf(temp, kernel.r(), kernel.i());
 	}
 
 	return kernelCount;
@@ -2966,7 +2768,7 @@ void Convolver_Slow<T, T_N, T_KERNEL_LENGTH>::Convolve(const FixedArray<T, T_N>&
 		const T fInThis = fInput[n];
 		for (uint m = 0; m < T_KERNEL_LENGTH; ++m)
 		{
-			m_AccumulationBuffer[n+m] += fInThis * m_Kernel[m];
+			m_AccumulationBuffer[n + m] += fInThis * m_Kernel[m];
 		}
 	}
 

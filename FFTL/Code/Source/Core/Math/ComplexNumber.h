@@ -69,6 +69,7 @@ public:
 	FFTL_FORCEINLINE cxNumber& operator-=(const cxNumber& c)					{ r -= c.r; i -= c.i; return *this; }
 
 	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const cxNumber& c) const	{ return cxNumber(r * c.r - i * c.i, r * c.i + i * c.r); }
+	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber NegMul(const cxNumber& c) const	{ return cxNumber(r * c.r + i * c.i, i * c.r - r * c.i); } // Negates the imaginary component of c
 	FFTL_NODISCARD FFTL_FORCEINLINE cxNumber operator*(const T& n) const		{ return cxNumber(r * n, i * n); }
 	FFTL_FORCEINLINE cxNumber& operator*=(const cxNumber& c)					{ return *this = *this * c; }
 	FFTL_FORCEINLINE cxNumber& operator*=(const T& n)							{ return *this = *this * n; }
@@ -87,6 +88,9 @@ public:
 	FFTL_NODISCARD FFTL_FORCEINLINE T Mag2() const								{ return r * r + i * i; }
 	FFTL_NODISCARD FFTL_FORCEINLINE T Mag() const								{ return sqrt(Mag2()); }
 };
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE cxNumber<T> NegMul(const cxNumber<T>& a, const cxNumber<T>& b) { return a.NegMul(b); }
 
 typedef cxNumber<f32> cx64;
 typedef cxNumber<f64> cx128;

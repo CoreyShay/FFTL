@@ -52,6 +52,7 @@ unsigned int sceLibcHeapExtendedAlloc = 1;
 #endif
 
 #include <stdio.h>
+#include <memory>
 
 #if defined(_MSC_VER)
 #	include <conio.h>
@@ -149,7 +150,7 @@ void fft(u32 n, u32 m, float x[], float y[])
 
 
 constexpr u32 _M = 8;
-constexpr u32 _N = 1<<_M;
+constexpr u32 _N = 1 << _M;
 
 typedef float fltType;
 
@@ -174,12 +175,13 @@ static void revbin_permute(cxNumber<float>* a, uint n)
 	}
 }
 
-FixedArray_Aligned32<cxNumber<float>, _N > twid4;
+FixedArray_Aligned32<cxNumber<float>, _N> twid4;
 
 //static constexpr uint RX = 4; // == r
 static constexpr uint LX = 2; // == log(r)/log(p) == log_2(r)
-static void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
+void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
 	// decimation in time radix 4 fft
+	// ldn == log_2(n)
 	// ldn == log_2(n)
 {
 	uint twiddleIndex = 0;
@@ -260,11 +262,12 @@ FixedArray_Aligned32<cxNumber<f32_4>, _N> cxInterleaved4;
 FixedArray_Aligned64<cxNumber<f32_8>, _N> cxInterleaved8;
 
 FFTL::Convolver<_M, 4, float, float> m_Convolver;
-FFTL::FixedArray< FFTL::Convolver<_M, 4, float, float>::Kernel, 4 > m_KernelFD;
+FFTL::FixedArray<FFTL::Convolver<_M, 4, float, float>::Kernel, 4> m_KernelFD;
 FFTL::Convolver_Slow<float, _N, _N*4> m_Convolver_Slow;
 
 void convolutionTest()
 {
+#if 0
 	MemZero(fInput1);
 	MemZero(fInput2);
 	MemZero(cxOut);
@@ -277,7 +280,7 @@ void convolutionTest()
 	MemZero(cxInterleaved4);
 	MemZero(cxInterleaved8);
 
-	FFT<_M, float> fftScalar;
+	using fftScalar = FFT<_M, float>;
 
 	FixedArray_Aligned32<fltType, _N*2> input111;
 	MemZero(input111);
@@ -302,7 +305,7 @@ void convolutionTest()
 //	fInput1[1] = 2;
 //	fInput2[1] = 3;
 
-	fftScalar.TransformForward(fInput1, fInput2, fOutput1, fOutput2);
+	fftScalar::TransformForward(fInput1, fInput2, fOutput1, fOutput2);
 	FixedArray_Aligned32<cxNumber<fltType>, _N> G;
 	for (uint i = 0; i < _N; ++i)
 	{
@@ -318,8 +321,8 @@ void convolutionTest()
 	FixedArray_Aligned32<fltType, _N*2> H_re;
 	FixedArray_Aligned32<fltType, _N*2> H_im;
 
-	FFT<_M+1, float> fftScalar2N;
-	fftScalar2N.TransformForward(h, H_re, H_im);
+	using fftScalar2N = FFT<_M + 1, float>;
+	fftScalar2N::TransformForward(h, H_re, H_im);
 	for (uint i = 0; i < 2*_N; ++i)
 	{
 		H[i].r = H_re[i];
@@ -357,12 +360,12 @@ void convolutionTest()
 		Ghi[n] = Gh[n].i;
 	}
 
-	fftScalar.TransformForward(Ghr, Ghi, fTimeOutput1, fTimeOutput2);
+	fftScalar::TransformForward(Ghr, Ghi, fTimeOutput1, fTimeOutput2);
 	FixedArray_Aligned32<fltType, _N*2> outFinal;
 	for (uint n = 0; n < _N; ++n)
 	{
-		outFinal[n*2+0] = fTimeOutput1[n];
-		outFinal[n*2+1] = fTimeOutput2[n];
+		outFinal[n * 2 + 0] = fTimeOutput1[n];
+		outFinal[n * 2 + 1] = fTimeOutput2[n];
 	}
 
 
@@ -375,7 +378,7 @@ void convolutionTest()
 	//}
 
 	//fftScalar.TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
-
+#endif
 }
 
 void verifyFFT()
@@ -422,13 +425,23 @@ void verifyFFT()
 		cxIn[n].Set(fInput1[n], 0);
 	}
 
-	constexpr FFT<_M, float> fftScalar;
-	constexpr FFT<_M, float, float> fftSimd;
+	using fftScalar = FFT_Base<_M, float>;
+	using fftSimd = FFT<_M, float, float>;
 
-	dit4l_fft(cxIn.data(), _M, 1);
+//	dit4l_fft(cxIn.data(), _M, 1);
 
-	fftScalar.TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
-	fftScalar.TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
+	fftScalar::TransformForward(cxIn, cxOut);
+	fftScalar::TransformInverse(cxOut, cxIn);
+
+	for (uint n = 0; n < _N; ++n)
+	{
+		const float fScaled = cxIn[n].r / _N;
+		const float fDiff = fInput1[n] - fScaled;
+		FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.000001f);
+	}
+
+	fftScalar::TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
+	fftScalar::TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
 
 	//	fftScalar.TransformForward(fInput1, fInput2, fOutput1, fOutput2);
 
@@ -441,8 +454,8 @@ void verifyFFT()
 	MemCopy(fTimeOutput1, fInput1);
 	MemZero(fTimeOutput2);
 
-	fftSimd.TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
-	fftSimd.TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
+	fftSimd::TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
+	fftSimd::TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
 
 	for (uint n = 0; n < _N; ++n)
 	{
@@ -450,23 +463,29 @@ void verifyFFT()
 		FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.000001f);
 	}
 
-	fftSimd.TransformForward(fInput1, fInput2, fOutput1, fOutput2);
-//	fftSimd.TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
+	fftSimd::TransformForward(fInput1, fInput2, fOutput1, fOutput2);
+//	fftSimd::TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
 
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fDiff = fInput1[n] - (fTimeOutput1[n] / _N);
 		FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.000001f);
 	}
+
+	FFTL_LOG_MSG("verifyFFT: PASS\n");
 }
 
 void verifyRealFFT()
 {
-	kiss_fft_cpx kissOut[_N/2+1];
+	auto fFullOut = std::make_unique< FixedArray_Aligned32<fltType, _N> >();
+	auto& fHalfOutR = *reinterpret_cast<FixedArray_Aligned32<fltType, _N / 2>*>(fFullOut.get());
+	auto& fHalfOutI = *reinterpret_cast<FixedArray_Aligned32<fltType, _N / 2>*>(fFullOut->data() + _N / 2);
+	auto pKissOut = std::make_unique< FixedArray_Aligned32<kiss_fft_cpx, _N / 2 + 8> >();
+	auto& kissOut = *pKissOut;
 
 	MemZero(fInput1);
 	MemZero(fInput2);
-#if 1
+#if 0
 	for (uint n = 0; n < _N; ++n)
 	{
 		const float fn = (float)n;
@@ -480,10 +499,6 @@ void verifyRealFFT()
 	}
 #endif
 
-	FixedArray_Aligned32<fltType, _N> fFullOut;
-	FixedArray_Aligned32<fltType, _N/2>& fHalfOutR = (FixedArray_Aligned32<fltType, _N/2>&)fFullOut;
-	FixedArray_Aligned32<fltType, _N/2>& fHalfOutI = *(FixedArray_Aligned32<fltType, _N/2>*)(fFullOut.data()+_N/2);
-
 #if COMPARE_WITH_FFTW
 	{
 		fftwf_plan planForward = fftwf_plan_r2r_1d(_N, fInput1.data(), fFullOut.data(), FFTW_R2HC, FFTW_ESTIMATE | FFTW_PATIENT);
@@ -493,43 +508,43 @@ void verifyRealFFT()
 #endif
 
 	{
-		constexpr FFT_Real<_M, float> fftSimdReal{ };
-		kiss_fftr_cfg cfgF = kiss_fftr_alloc( _N, false, 0, 0 );
-		//	kiss_fftr_cfg cfgI = kiss_fftr_alloc( _N, true, 0, 0 );
+		typedef FFT_Real<_M, float> fftSimdReal;
+		kiss_fftr_cfg cfgF = kiss_fftr_alloc(_N, false, 0, 0);
+//		kiss_fftr_cfg cfgI = kiss_fftr_alloc(_N, true, 0, 0);
 
-		fftSimdReal.TransformForward(fInput1, fHalfOutR, fHalfOutI);
-		kiss_fftr(cfgF, fInput1.data(), kissOut);
+		fftSimdReal::TransformForward(fInput1, fHalfOutR, fHalfOutI);
+		kiss_fftr(cfgF, fInput1.data(), kissOut.data());
 
 		{
 			const float fDiffR = fHalfOutR[0] - kissOut[0].r;
-			const float fDiffI = fHalfOutI[0] - kissOut[_N/2].r;
+			const float fDiffI = fHalfOutI[0] - kissOut[_N / 2].r;
 			FFTL_ASSERT_ALWAYS(fDiffR == 0 && fDiffI == 0);
 		}
-		for (uint n = 1; n < _N/2; ++n)
+		for (uint n = 1; n < _N / 2; ++n)
 		{
 			const float fDiffR = fHalfOutR[n] - kissOut[n].r;
 			const float fDiffI = fHalfOutI[n] - kissOut[n].i;
-			FFTL_ASSERT_ALWAYS(fDiffR <= 0.00001f && fDiffI <= 0.00001f);
+			FFTL_ASSERT_ALWAYS(Abs(fDiffR) <= 1 / 16384.f && Abs(fDiffI) <= 1 / 16384.f);
 		}
 
-		fftSimdReal.TransformInverse(fHalfOutR, fHalfOutI, fOutput1);
+		fftSimdReal::TransformInverse(fHalfOutR, fHalfOutI, fOutput1);
 //		kiss_fftri(cfgI, kissOut, fOutput2.data());
 
 		for (uint n = 0; n < _N; ++n)
 		{
 			const float fDiff = fOutput1[n] - fInput1[n];
-			FFTL_ASSERT_ALWAYS(fDiff <= 0.00001f);
+			FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 1 / 16384.f);
 		}
 	}
 
 	{
-		FixedArray_Aligned32<f32_8, _N> vInput;
-		FixedArray_Aligned32<f32_8, _N/2> vHalfOutR;
-		FixedArray_Aligned32<f32_8, _N/2> vHalfOutI;
+		auto vInput = std::make_unique< FixedArray_Aligned32<f32_8, _N> >();
+		auto vHalfOutR = std::make_unique< FixedArray_Aligned32<f32_8, _N / 2> >();
+		auto vHalfOutI = std::make_unique< FixedArray_Aligned32<f32_8, _N / 2> >();
 
 		for (uint n = 0; n < _N; ++n)
 		{
-			vInput[n] = ConvertTo<f32_8>(fInput1[n]);
+			(*vInput)[n] = ConvertTo<f32_8>(fInput1[n]);
 		}
 
 		//MemZero(vInput);
@@ -537,15 +552,17 @@ void verifyRealFFT()
 
 		constexpr FFT_Real<_M, f32_8, float> fftSingleReal{ };
 
-		fftSingleReal.TransformForward(vInput, vHalfOutR, vHalfOutI);
+		fftSingleReal.TransformForward(*vInput, *vHalfOutR, *vHalfOutI);
 
-		for (uint n = 0; n < _N/2; ++n)
+		for (uint n = 0; n < _N / 2; ++n)
 		{
 //			FFTL_ASSERT_ALWAYS(vHalfOutR[n].GetNative().m256_f32[0] == fHalfOutR[n]);
 //			FFTL_ASSERT_ALWAYS(vHalfOutI[n].GetNative().m256_f32[0] == fHalfOutI[n]);
 			//FFTL_ASSERT_ALWAYS(vHalfOutR[n] == fHalfOutR[n]);
 		}
 	}
+
+	FFTL_LOG_MSG("verifyRealFFT: PASS\n");
 }
 #if 1
 void verifyConvolution()
@@ -629,6 +646,8 @@ void verifyConvolution()
 			FFTL_ASSERT_ALWAYS(Abs( fDiff ) <= 0.005f);
 		}
 	}
+
+	FFTL_LOG_MSG("verifyConvolution: PASS\n");
 }
 #endif
 
@@ -659,111 +678,103 @@ void perfTest()
 
 
 	{
-		constexpr FFT<_M, f32_8, float> fft;
+		typedef FFT<_M, f32_8, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformForward_InPlace_DIF(cxInterleaved8);
+			fft::TransformForward_InPlace_DIF(cxInterleaved8);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Forward FFT 8 ch AVX size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 	{
-		constexpr FFT<_M, f32_4, float> fft;
+		typedef FFT<_M, f32_4, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformForward_InPlace_DIF(cxInterleaved4);
+			fft::TransformForward_InPlace_DIF(cxInterleaved4);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Forward FFT 4 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 
 	{
-		constexpr FFT<_M, float, float> fft;
+		typedef FFT<_M, float, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformForward(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
+			fft::TransformForward(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Forward FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 	{
-		constexpr FFT<_M, float, float> fft;
+		typedef FFT<_M, float, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformInverse(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
+			fft::TransformInverse(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Inverse FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 	{
-		constexpr FFT<_M, float, float> fft;
+		typedef FFT<_M, float, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformForward_InPlace_DIF(fInput1, fInput2);
+			fft::TransformForward_InPlace_DIF(fInput1, fInput2);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Forward in-place FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 	{
-		constexpr FFT<_M, float, float> fft;
+		typedef FFT<_M, float, float> fft;
 		timer.Reset();
 		timer.Start();
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformInverse_InPlace_DIT(fInput1, fInput2);
+			fft::TransformInverse_InPlace_DIT(fInput1, fInput2);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Complex Inverse in-place FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 	}
 
 
 	{
-		constexpr FFT_Real<_M, float> fft;
-		FixedArray_Aligned32<fltType, _N/2> fHalfOut1;
-		FixedArray_Aligned32<fltType, _N/2> fHalfOut2;
+		typedef FFT_Real<_M, float> fft;
+		FixedArray_Aligned32<fltType, _N / 2> fHalfOut1;
+		FixedArray_Aligned32<fltType, _N / 2> fHalfOut2;
 	
 		timer.Reset();
 		timer.Start();
 
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformForward(fInput1, fHalfOut1, fHalfOut2);
+			fft::TransformForward(fInput1, fHalfOut1, fHalfOut2);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Real Forward FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 
 		timer.Reset();
 		timer.Start();
 
 		for (int i = 0; i < loopCount; ++i)
 		{
-			fft.TransformInverse(fHalfOut1, fHalfOut2, fTimeOutput1);
+			fft::TransformInverse(fHalfOut1, fHalfOut2, fTimeOutput1);
 		}
 		timer.StopAccum();
 		FFTL_LOG_MSG("Real Inverse FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
-		fft.PrintTimerInfo(loopCount);
 
 #if COMPARE_WITH_FFTW
 		FixedArray_Aligned32<fltType, _N+1> fHalfOutFull;
@@ -785,6 +796,7 @@ void perfTest()
 	}
 
 #if defined(_MSC_VER)
+	FFTL_LOG_MSG("Done. Press any key to exit.\n");
 	_getch();
 #endif
 }
@@ -794,7 +806,7 @@ void RunTests()
 	FFTL::verifyFFT();
 	FFTL::verifyRealFFT();
 	FFTL::verifyConvolution();
-	FFTL::convolutionTest();
+//	FFTL::convolutionTest();
 	FFTL::perfTest();
 }
 
@@ -803,9 +815,6 @@ using namespace FFTL;
 
 int main()
 {
-	FFTL::Timer::StaticInit();
-	FFTL::CpuTimer::StaticInit();
-
 	FFTL::RunTests();
 
 	return 0;

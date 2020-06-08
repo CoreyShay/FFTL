@@ -26,7 +26,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Matrix44.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Quaternion.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\SSE\Utils_SSE.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector2.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector3.h" />
@@ -49,9 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\RandomNumber.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.cpp" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_default.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_vec8_default.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Default.inl" />

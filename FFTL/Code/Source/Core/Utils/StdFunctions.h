@@ -9,6 +9,7 @@
 #include "../Containers/Array.h"
 #include <string.h>
 #include <limits>
+#include <ctype.h> // tolower
 
 #if defined(FFTL_SSE)
 #	include <xmmintrin.h>
