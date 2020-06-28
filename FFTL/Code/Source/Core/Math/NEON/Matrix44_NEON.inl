@@ -18,12 +18,12 @@ inline void mat44::Identity()
 	Row<3>() = V4fPermute<1, 1, 1, 0>(v);
 }
 
-inline bool mat44::operator==(const mat44& in_b) const
+inline bool mat44::operator==(const mat44& rhs) const
 {
-	const uint32x4_t a = vceqq_f32(Row<0>(), in_b.Row<0>());
-	const uint32x4_t b = vceqq_f32(Row<1>(), in_b.Row<1>());
-	const uint32x4_t c = vceqq_f32(Row<2>(), in_b.Row<2>());
-	const uint32x4_t d = vceqq_f32(Row<3>(), in_b.Row<3>());
+	const uint32x4_t a = vceqq_f32(Row<0>(), rhs.Row<0>());
+	const uint32x4_t b = vceqq_f32(Row<1>(), rhs.Row<1>());
+	const uint32x4_t c = vceqq_f32(Row<2>(), rhs.Row<2>());
+	const uint32x4_t d = vceqq_f32(Row<3>(), rhs.Row<3>());
 	const uint32x4_t r0 = vandq_u32(a, b);
 	const uint32x4_t r1 = vandq_u32(c, d);
 	const uint32x4_t r = vandq_u32(r0, r1);
@@ -31,12 +31,12 @@ inline bool mat44::operator==(const mat44& in_b) const
 	const uint64_t c1 = vgetq_lane_u64(vreinterpretq_u64_u32(r), 1);
 	return (c0 & c1) == 0xffffffffffffffff;
 }
-inline bool mat44::operator!=(const mat44& in_b) const
+inline bool mat44::operator!=(const mat44& rhs) const
 {
-	const uint32x4_t a = vceqq_f32(Row<0>(), in_b.Row<0>());
-	const uint32x4_t b = vceqq_f32(Row<1>(), in_b.Row<1>());
-	const uint32x4_t c = vceqq_f32(Row<2>(), in_b.Row<2>());
-	const uint32x4_t d = vceqq_f32(Row<3>(), in_b.Row<3>());
+	const uint32x4_t a = vceqq_f32(Row<0>(), rhs.Row<0>());
+	const uint32x4_t b = vceqq_f32(Row<1>(), rhs.Row<1>());
+	const uint32x4_t c = vceqq_f32(Row<2>(), rhs.Row<2>());
+	const uint32x4_t d = vceqq_f32(Row<3>(), rhs.Row<3>());
 	const uint32x4_t r0 = vandq_u32(a, b);
 	const uint32x4_t r1 = vandq_u32(c, d);
 	const uint32x4_t r = vandq_u32(r0, r1);
@@ -45,14 +45,14 @@ inline bool mat44::operator!=(const mat44& in_b) const
 	return (c0 & c1) != 0xffffffffffffffff;
 }
 
-inline bool mat44::IsNearEqual(const mat44& in_b, f32 tol) const
+inline bool mat44::IsNearEqual(const mat44& rhs, f32 tol) const
 {
 	const float32x4_t vTol = vdupq_n_f32(tol);
 
-	const uint32x4_t a = vcltq_f32(vabdq_f32(Row<0>(), in_b.Row<0>()), vTol);
-	const uint32x4_t b = vcltq_f32(vabdq_f32(Row<1>(), in_b.Row<1>()), vTol);
-	const uint32x4_t c = vcltq_f32(vabdq_f32(Row<2>(), in_b.Row<2>()), vTol);
-	const uint32x4_t d = vcltq_f32(vabdq_f32(Row<3>(), in_b.Row<3>()), vTol);
+	const uint32x4_t a = vcltq_f32(vabdq_f32(Row<0>(), rhs.Row<0>()), vTol);
+	const uint32x4_t b = vcltq_f32(vabdq_f32(Row<1>(), rhs.Row<1>()), vTol);
+	const uint32x4_t c = vcltq_f32(vabdq_f32(Row<2>(), rhs.Row<2>()), vTol);
+	const uint32x4_t d = vcltq_f32(vabdq_f32(Row<3>(), rhs.Row<3>()), vTol);
 	const uint32x4_t r0 = vandq_u32(a, b);
 	const uint32x4_t r1 = vandq_u32(c, d);
 	const uint32x4_t r = vandq_u32(r0, r1);

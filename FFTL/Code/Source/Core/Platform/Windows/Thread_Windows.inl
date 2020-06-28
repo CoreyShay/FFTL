@@ -113,10 +113,10 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 	FFTL_VERIFY_NEQ((DWORD)-1, ::ResumeThread(handle));
 
 	//	Must be set after the thread has been resumed.
-	if (pszName)
+	if (pszName != nullptr)
 		SetThreadName(handle, pszName);
 
-	if (outThreadHandle)
+	if (outThreadHandle != nullptr)
 		*outThreadHandle = handle;
 	else
 		::CloseHandle(handle); // Since we won't need the handle anymore...

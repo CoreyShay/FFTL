@@ -38,7 +38,7 @@ public:
 	//
 
 	/// WARNING: The default constructor does not initialize. In debug it initializes with sNaNs.
-	mat43();
+	mat43() = default;
 	mat43(enIndentityType);
 	mat43(const mat43& mat);
 	mat43(const vec3& row0, const vec3& row1, const vec3& row2, const vec3& row3);
@@ -299,14 +299,15 @@ public:
 	FFTL_FORCEINLINE void Load(mat43& out) const;
 	FFTL_FORCEINLINE void Load3x3(mat33& out) const;
 	FFTL_FORCEINLINE void operator=(const mat43& in)	{ Store(in); }
-	FFTL_FORCEINLINE const f32* Ptr() const				{ return reinterpret_cast<const f32*>(this); }
-	FFTL_FORCEINLINE f32* Ptr()							{ return reinterpret_cast<f32*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const f32* Ptr() const				{ return reinterpret_cast<const f32*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32* Ptr()							{ return reinterpret_cast<f32*>(this); }
 
-	template<uint ROW> vec3 LoadRow() const;
-	FFTL_FORCEINLINE vec3 LoadRight() const				{ return LoadRow<0>(); }
-	FFTL_FORCEINLINE vec3 LoadForward() const			{ return LoadRow<1>(); }
-	FFTL_FORCEINLINE vec3 LoadUp() const				{ return LoadRow<2>(); }
-	FFTL_FORCEINLINE vec3 LoadPosition() const			{ return LoadRow<3>(); }
+	template<uint ROW>
+	FFTL_NODISCARD vec3 LoadRow() const;
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadRight() const				{ return LoadRow<0>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadForward() const			{ return LoadRow<1>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadUp() const					{ return LoadRow<2>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadPosition() const			{ return LoadRow<3>(); }
 };
 
 template<bool ALIGNED=false, bool TRANSPOSED=false>

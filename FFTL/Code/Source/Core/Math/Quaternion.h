@@ -115,7 +115,7 @@ public:
 	// In-place operations (do not return *this - this is inefficient and error-prone)
 	//
 
-	void			Rotate(const quat& rot);
+	void			Rotate(const quat& in);
 	void			Conjugate();
 	void			NegateW();
 
@@ -137,7 +137,7 @@ public:
 	void 			BuildFromAxisAngle(const vec3& axis, f32 angleRad);
 	void 			BuildFromEuler(f32 anglex, f32 angley, f32 anglez);
 	void 			BuildFromEuler(const vec3& angles);
-	void 			BuildSlerp(const quat& q0, const quat& q1, f32 t);
+	void 			BuildSlerp(const quat& qFrom, const quat& qTo, f32 t);
 	void 			BuildSlerpFast(const quat& qFrom, const quat& qTo, f32 t, f32 fromDotTo);
 	void 			BuildSlerpFast(const quat& qFrom, const quat& qTo, f32 t);
 

@@ -433,12 +433,12 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::ZeroNonFinite() const
 	m_v = _mm_and_ps(m_v, vMask);
 }
 template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::ReplaceNonFinite(const vecT& b) const
+FFTL_FORCEINLINE vecT<N> vecT<N>::ReplaceNonFinite(const vecT& a) const
 {
 	const __m128 vZero = _mm_setzero_ps();
 	const __m128 vShouldBeZero = _mm_sub_ps(m_v, m_v);
 	const __m128 vMask = _mm_cmpeq_ps(vShouldBeZero, vZero);
-	m_v = sse_blend(b.m_v, m_v, vMask);
+	m_v = sse_blend(a.m_v, m_v, vMask);
 }
 
 
@@ -1058,15 +1058,11 @@ FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b, const vecmask
 
 
 inline constexpr vecmask::vecmask(const vecmask& v)
-	: m_v(v.m_v)
-{
-}
+	 
+= default;
 
 FFTL_FORCEINLINE vecmask& vecmask::operator=(const vecmask& v)
-{
-	m_v = v.m_v;
-	return *this;
-}
+= default;
 
 inline constexpr vecmask::vecmask(const __m128& v)
 	: m_v(v)

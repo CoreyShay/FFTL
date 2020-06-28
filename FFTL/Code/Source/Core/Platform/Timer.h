@@ -44,7 +44,7 @@ class FFTL_NODISCARD TimerBase
 public:
 	TimerBase() = default;
 	void Reset();
-	u64 GetTicks() const	{ return m_TotalTicks; }
+	FFTL_NODISCARD u64 GetTicks() const	{ return m_TotalTicks; }
 
 protected:
 	u64 m_TotalTicks = 0;
@@ -74,10 +74,10 @@ public:
 	void PauseAccum();	// Adds the time from the last start to the current stamped value, and increments the accumulation counter
 	void Accum();		// Increments the accumulation counter
 
-	f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
-	f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
-	f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
-	f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
+	FFTL_NODISCARD f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
+	FFTL_NODISCARD f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
 
 	static inline f64 ToMicroseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar; }
 	static inline f64 ToMilliseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000.0; }

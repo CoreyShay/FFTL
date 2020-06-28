@@ -121,14 +121,14 @@ public:
 	FFTL_NODISCARD f32	GetW() const;
 
 	///	Extracts and reinterprets the binary representation of the f32 to an int
-	int					GetAsIntX() const;
-	int					GetAsIntY() const;
-	int					GetAsIntZ() const;
-	int					GetAsIntW() const;
-	int					GetAsIntR() const { return GetAsIntX(); }
-	int					GetAsIntG() const { return GetAsIntY(); }
-	int					GetAsIntB() const { return GetAsIntZ(); }
-	int					GetAsIntA() const { return GetAsIntW(); }
+	FFTL_NODISCARD int					GetAsIntX() const;
+	FFTL_NODISCARD int					GetAsIntY() const;
+	FFTL_NODISCARD int					GetAsIntZ() const;
+	FFTL_NODISCARD int					GetAsIntW() const;
+	FFTL_NODISCARD int					GetAsIntR() const { return GetAsIntX(); }
+	FFTL_NODISCARD int					GetAsIntG() const { return GetAsIntY(); }
+	FFTL_NODISCARD int					GetAsIntB() const { return GetAsIntZ(); }
+	FFTL_NODISCARD int					GetAsIntA() const { return GetAsIntW(); }
 
 	//
 	// Element insertion (preserves the remaining elements in this)

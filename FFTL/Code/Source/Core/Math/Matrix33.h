@@ -59,7 +59,7 @@ public:
 	void			Set(const vec3& right, const vec3& fwd, const vec3& up);
 	/// Overrides the 3x3 part only.
 	/// Assumes that rot is normalized.
-	void			SetRotation(const quat& rot);
+	void			SetRotation(const quat& q);
 	/// Set matrix to identity
 	void			Identity();
 	/// Set matrix to zero

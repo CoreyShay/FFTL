@@ -36,7 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if defined(__ANDROID__)
 #	include <android/log.h>
 #else
-#	include <stdio.h>
+#	include <cstdio>
 #endif
 
 namespace FFTL

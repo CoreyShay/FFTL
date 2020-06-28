@@ -1,15 +1,12 @@
 #pragma once
 
 #include "../Utils/Casts.h"
-#include <errno.h>
+#include <cerrno>
 
 namespace FFTL
 {
 
 
-inline File::File()
-{
-}
 
 inline File::File(const char* pszFileName, OpenMode mode)
 	: File()
@@ -32,7 +29,7 @@ inline File::~File()
 
 inline bool File::Open(const char* pszFileName, OpenMode mode)
 {
-	if (m_pFile)
+	if (m_pFile != nullptr)
 		return false;
 
 #if defined(_MSC_VER)
@@ -69,7 +66,7 @@ inline bool File::Open(const char* pszFileName, OpenMode mode)
 #if defined(FFTL_WCHAR)
 inline bool File::Open(const wchar_t* pszFileName, OpenMode mode)
 {
-	if (m_pFile)
+	if (m_pFile != nullptr)
 		return false;
 
 	if (pszFileName == nullptr)
@@ -110,7 +107,7 @@ inline bool File::Open(const wchar_t* pszFileName, OpenMode mode)
 
 inline void File::Close()
 {
-	if (m_pFile)
+	if (m_pFile != nullptr)
 	{
 		fclose(m_pFile);
 		m_pFile = nullptr;

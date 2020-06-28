@@ -104,9 +104,9 @@ public:
 	const ListNode<T, Tag>* GetPrevNode() const { return m_pPrevNode; }
 	ListNode<T, Tag>* GetPrevNode() { return m_pPrevNode; }
 
-	bool IsBackEnd() const { return m_pNextNode == nullptr; }
-	bool IsFrontEnd() const { return m_pPrevNode == nullptr; }
-	bool IsLinked() const { return m_pNextNode != nullptr || m_pPrevNode != nullptr; }
+	[[nodiscard]] bool IsBackEnd() const { return m_pNextNode == nullptr; }
+	[[nodiscard]] bool IsFrontEnd() const { return m_pPrevNode == nullptr; }
+	[[nodiscard]] bool IsLinked() const { return m_pNextNode != nullptr || m_pPrevNode != nullptr; }
 
 	void AddBefore(ListNode<T, Tag>* in_pNode)
 	{
@@ -229,12 +229,12 @@ public:
 		return *Get();
 	}
 
-	FFTL_FORCEINLINE bool IsBackEnd() const
+	[[nodiscard]] FFTL_FORCEINLINE bool IsBackEnd() const
 	{
 		return this->m_pCurrentLink->IsBackEnd();
 	}
 
-	FFTL_FORCEINLINE bool IsFrontEnd() const
+	[[nodiscard]] FFTL_FORCEINLINE bool IsFrontEnd() const
 	{
 		return this->m_pCurrentLink->IsFrontEnd();
 	}
@@ -347,7 +347,7 @@ public:
 	ListNode<T, Tag>* GetHead() { return this->m_HeadSentinel.GetNextNode(); }
 	const ListNode<T, Tag>* GetTail() const { return this->m_TailSentinel.GetPrevNode(); }
 	ListNode<T, Tag>* GetTail() { return this->m_TailSentinel.GetPrevNode(); }
-	bool IsEmpty() const { return this->m_HeadSentinel.GetNextNode() == &this->m_TailSentinel; }
+	[[nodiscard]] bool IsEmpty() const { return this->m_HeadSentinel.GetNextNode() == &this->m_TailSentinel; }
 
 	TContainedLinkedListIterator<T, Tag, PtrToMember> begin() { return CreateIteratorHead(); }
 	TContainedLinkedListIterator<T, Tag, PtrToMember> end() { return CreateIteratorEnd(); }

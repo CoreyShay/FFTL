@@ -63,23 +63,23 @@ public:
 	constexpr FFTL_FORCEINLINE FixedArray() : m_data() {}
 	constexpr FFTL_FORCEINLINE FixedArray(const T(&r)[T_N]);
 //	constexpr FFTL_FORCEINLINE FixedArray(std::initializer_list<T> l);
-	constexpr FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_N); return data()[n]; }
-	constexpr FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_N); return data()[n]; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_N); return data()[n]; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_N); return data()[n]; }
 #if !defined(FFTL_64BIT)//	Strange compiler error about ambiguity in 32 bit builds
-	constexpr FFTL_FORCEINLINE T& operator[](int n) { return data()[static_cast<size_t>(n)]; }
-	constexpr FFTL_FORCEINLINE const T& operator[](int n) const { return data()[static_cast<size_t>(n)]; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T& operator[](int n) { return data()[static_cast<size_t>(n)]; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T& operator[](int n) const { return data()[static_cast<size_t>(n)]; }
 #endif
-	constexpr FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_N); return data() + n; }
-	constexpr FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_N); return data() + n; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_N); return data() + n; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_N); return data() + n; }
 
-	constexpr FFTL_FORCEINLINE static size_t size() { return T_N; }
-	constexpr FFTL_FORCEINLINE const T* begin() const { return data(); }
-	constexpr FFTL_FORCEINLINE const T* end() const { return data() + size(); }
-	constexpr FFTL_FORCEINLINE T* begin() { return data(); }
-	constexpr FFTL_FORCEINLINE T* end() { return data() + size(); }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE static size_t size() { return T_N; }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T* begin() const { return data(); }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T* end() const { return data() + size(); }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T* begin() { return data(); }
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T* end() { return data() + size(); }
 
-	constexpr FFTL_FORCEINLINE const T* data() const;
-	constexpr FFTL_FORCEINLINE T* data();
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE const T* data() const;
+	FFTL_NODISCARD constexpr FFTL_FORCEINLINE T* data();
 };
 
 template <typename T, size_t T_N>
@@ -128,16 +128,16 @@ class Array
 public:
 	FFTL_FORCEINLINE Array() : m_Data(), m_size(0) {}
 	FFTL_FORCEINLINE Array(size_t nSize) : m_Data(), m_size(nSize) { for (size_t i = 0; i < nSize; ++i) { T* pData = reinterpret_cast<T*>(m_Data + i); ::new(pData) T(); } }
-	FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data[n].m_Bytes); }
-	FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_MAX_SIZE); *reinterpret_cast<const T*>(m_Data[n].m_Bytes); }
-	FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data + n); }
-	FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<const T*>(m_Data + n); }
+	FFTL_NODISCARD FFTL_FORCEINLINE T& operator[](size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data[n].m_Bytes); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T& operator[](size_t n) const { FFTL_ASSERT(n < T_MAX_SIZE); *reinterpret_cast<const T*>(m_Data[n].m_Bytes); }
+	FFTL_NODISCARD FFTL_FORCEINLINE T* operator+(size_t n) { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<T*>(m_Data + n); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T* operator+(size_t n) const { FFTL_ASSERT(n < T_MAX_SIZE); return *reinterpret_cast<const T*>(m_Data + n); }
 
-	FFTL_FORCEINLINE size_t size() const { return m_size; }
-	FFTL_FORCEINLINE const T* begin() const { return reinterpret_cast<const T*>(m_Data); }
-	FFTL_FORCEINLINE const T* end() const { return reinterpret_cast<const T*>(m_Data + size()); }
-	FFTL_FORCEINLINE T* begin() { return reinterpret_cast<T*>(m_Data); }
-	FFTL_FORCEINLINE T* end() { return reinterpret_cast<T*>(m_Data + size()); }
+	FFTL_NODISCARD FFTL_FORCEINLINE size_t size() const { return m_size; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T* begin() const { return reinterpret_cast<const T*>(m_Data); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const T* end() const { return reinterpret_cast<const T*>(m_Data + size()); }
+	FFTL_NODISCARD FFTL_FORCEINLINE T* begin() { return reinterpret_cast<T*>(m_Data); }
+	FFTL_NODISCARD FFTL_FORCEINLINE T* end() { return reinterpret_cast<T*>(m_Data + size()); }
 
 	FFTL_FORCEINLINE void push_back(const T& r)
 	{

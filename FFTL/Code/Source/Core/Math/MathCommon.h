@@ -29,11 +29,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#ifndef _FFTL_MATH_H
-#define _FFTL_MATH_H
+#pragma once
 
 #include "../defs.h"
 #include "../Containers/Array.h"
+#include "../Utils/Casts.h"
 
 #include <cmath>
 #include <limits>
@@ -153,13 +153,13 @@ class f32_8;
 #define FFTL_PERMUTEMASK(x) (x & 3)
 
 template <typename T>
-constexpr T PI_ = 3.14159265358979323846264338327L; // Trailing underscore to prevent conflicts with #define PI_
+inline constexpr T PI_ = 3.14159265358979323846264338327L; // Trailing underscore to prevent conflicts with #define PI_
 
 template <>
-constexpr f64 PI_<f64> = 3.14159265358979323846264338327;
+inline constexpr f64 PI_<f64> = 3.14159265358979323846264338327;
 
 template <>
-constexpr f32 PI_<f32> = 3.14159265358979323846264338327f;
+inline constexpr f32 PI_<f32> = 3.14159265358979323846264338327f;
 
 constexpr f32 PI_32 = PI_<f32>;
 constexpr f64 PI_64 = PI_<f64>;
@@ -186,12 +186,12 @@ namespace FFTL
 template <typename T_TO, typename T_FROM>
 FFTL_FORCEINLINE T_TO ReinterpretAs(const T_FROM& v) { return *reinterpret_cast<const T_TO*>(&v); }
 
-/// Returns the bit index position of the first set bit found starting from the MSB. Returns 32 or 64 if val is 0.
+/// Returns the bit index position of the first set bit found starting from the MSB. Returns 0 if val is 0.
 FFTL_NODISCARD inline u32			MS1Bit(u32 val);
 FFTL_NODISCARD inline u32			MS1Bit(s32 val) { return MS1Bit(static_cast<u32>(val)); }
 FFTL_NODISCARD inline u32			MS1Bit(u64 val);
 FFTL_NODISCARD inline u32			MS1Bit(s64 val) { return MS1Bit(static_cast<u64>(val)); }
-/// Returns the bit index position of the first set bit found starting from the LSB. Returns 32 or 64 if val is 0.
+/// Returns the bit index position of the first set bit found starting from the LSB. Returns 0 if val is 0.
 FFTL_NODISCARD inline u32			LS1Bit(u32 val);
 FFTL_NODISCARD inline u32			LS1Bit(s32 val) { return LS1Bit(static_cast<u32>(val)); }
 FFTL_NODISCARD inline u32			LS1Bit(u64 val);
@@ -267,10 +267,10 @@ template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Cube(T y) { return y*y*y; }
 
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Sqrt(T y) { return std::sqrt(y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Sqrt(T f) { return std::sqrt(f); }
 
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T RSqrt(T y) { static_assert(std::is_same<decltype(y), f32>::value || std::is_same<decltype(y), f64>::value, "Must be a float"); }
+FFTL_NODISCARD FFTL_FORCEINLINE T RSqrt(T f) { static_assert(std::is_same<decltype(f), f32>::value || std::is_same<decltype(f), f64>::value, "Must be a float"); }
 
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Min(T a, T b)
@@ -503,7 +503,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE u32 MS1Bit(u32 val)
 {
 	unsigned long r;
 	const int b0 = _BitScanReverse(&r, val); // Emits the bsr x86 instruction
-	return b0 ? r : 32; // b0 will be 0 if val is zero, else, 1.
+	return b0 != 0 ? r : 32; // b0 will be 0 if val is zero, else, 1.
 }
 
 FFTL_NODISCARD FFTL_FORCEINLINE u32 MS1Bit(u64 val)
@@ -511,19 +511,19 @@ FFTL_NODISCARD FFTL_FORCEINLINE u32 MS1Bit(u64 val)
 #if defined(_M_X64)
 	unsigned long r;
 	const int b0 = _BitScanReverse64(&r, static_cast<unsigned __int64>(val)); // Emits the bsr x86 instruction
-	return b0 ? r : 64; // b0 will be 0 if val is zero, else, 1.
+	return b0 != 0 ? r : 64; // b0 will be 0 if val is zero, else, 1.
 #else
 	unsigned long r0, r1;
 	const int b0 = _BitScanReverse(&r0, static_cast<u32>(val)); // Emits the bsr x86 instruction
 	const int b1 = _BitScanReverse(&r1, static_cast<u32>(val>>32)); // Emits the bsr x86 instruction
-	return b1 ? r1 + 32 : b0 ? r0 : 64; // b0 will be 0 if val is zero, else, 1.
+	return b1 != 0 ? r1 + 32 : b0 != 0 ? r0 : 64; // b0 will be 0 if val is zero, else, 1.
 #endif
 }
 FFTL_NODISCARD FFTL_FORCEINLINE u32 LS1Bit(u32 val)
 {
 	unsigned long r;
 	const int b0 = _BitScanForward(&r, val); // Emits the bsf x86 instruction
-	return b0 ? r : 32; // b0 will be 0 if val is zero, else, 1.
+	return b0 != 0 ? r : 32; // b0 will be 0 if val is zero, else, 1.
 }
 
 FFTL_NODISCARD FFTL_FORCEINLINE u32 LS1Bit(u64 val)
@@ -531,36 +531,36 @@ FFTL_NODISCARD FFTL_FORCEINLINE u32 LS1Bit(u64 val)
 #if defined(_M_X64)
 	unsigned long r;
 	const int b0 = _BitScanForward64(&r, static_cast<unsigned __int64>(val)); // Emits the bsf x86 instruction
-	return b0 ? r : 64;
+	return b0 != 0 ? r : 64;
 #else
 	unsigned long r0, r1 = 0;
 	const int b0 = _BitScanForward(&r0, static_cast<u32>(val)); // Emits the bsf x86 instruction
 	const int b1 = _BitScanForward(&r1, static_cast<u32>(val >> 32)); // Emits the bsf x86 instruction
-	return b1 ? r1 + 32 : b0 ? r0 : 64; // b1 will be 0 if val is zero, else, 1.
+	return b1 != 0 ? r1 + 32 : b0 != 0 ? r0 : 64; // b1 will be 0 if val is zero, else, 1.
 #endif
 }
 #elif defined(__GNUC__)
 FFTL_NODISCARD FFTL_FORCEINLINE u32 MS1Bit(u32 val)
 {
 	const auto r = 31 - __builtin_clz(val); // Emits the bsf x86 instruction
-	return val ? r : 32;
+	return val != 0 ? r : 32;
 }
 
 FFTL_NODISCARD FFTL_FORCEINLINE u32 MS1Bit(u64 val)
 {
 	const auto r = 63 - __builtin_clzll(val); // Emits the bsf x86 instruction
-	return val ? r : 64;
+	return val != 0 ? r : 64;
 }
 FFTL_NODISCARD FFTL_FORCEINLINE u32 LS1Bit(u32 val)
 {
 	const auto r = __builtin_ctz(val); // Emits the bsr x86 instruction
-	return val ? r : 32;
+	return val != 0 ? r : 32;
 }
 
 FFTL_NODISCARD FFTL_FORCEINLINE u32 LS1Bit(u64 val)
 {
 	const auto r = __builtin_ctzll(val); // Emits the bsr x86 instruction
-	return val ? r : 64;
+	return val != 0 ? r : 64;
 }
 #else
 FFTL_NODISCARD inline u32 MS1Bit(u32 val)
@@ -619,13 +619,13 @@ FFTL_NODISCARD inline u32 MS1Bit(u64 val)
 	temp = val >> 32;
 	if (temp)
 	{
-		return MS1Bit((u32)temp) + 32;
+		return MS1Bit(safestatic_cast<u32>(temp)) + 32;
 	}
 	// else less than 2^32
 	else
 	{
 		temp = val & 0xffffffffULL;
-		return MS1Bit((u32)temp);
+		return MS1Bit(safestatic_cast<u32>(u32>(temp));
 	}
 }
 FFTL_NODISCARD inline u32 LS1Bit(u32 val)
@@ -660,6 +660,7 @@ FFTL_NODISCARD inline u32 LS1Bit(u64 val)
 
 
 #if defined(FFTL_SSE)
+template <>
 FFTL_NODISCARD FFTL_FORCEINLINE f32 RSqrt(f32 f)
 {
 	return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(f)));
@@ -686,6 +687,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f64 RSqrt(f64 f)
 
 }
 #elif defined(FFTL_ARM_NEON)
+template <>
 FFTL_NODISCARD FFTL_FORCEINLINE f32 RSqrt(f32 f)
 {
 	return vget_lane_f32(vrsqrte_f32(vdup_n_f32(f)), 0);
@@ -973,8 +975,9 @@ FFTL_NODISCARD constexpr inline long double inverse(long double value)
 }
 FFTL_NODISCARD constexpr inline long double factorial(intmax_t n)
 {
-	if (n == 0) { return 1; }
-	long double result = static_cast<long double>(n);
+	if (n == 0)
+		return 1;
+	auto result = static_cast<long double>(n);
 	for (intmax_t i = n - 1; i > 0; --i)
 	{
 		result *= i;
@@ -1006,8 +1009,6 @@ class FFTL_NODISCARD trig_coeffs
 public:
 	constexpr static array_type coeffs = _coeffs(gen_seq<N>{});
 };
-template<class base, std::size_t N>
-constexpr typename trig_coeffs<base, N>::array_type trig_coeffs<base, N>::coeffs;
 
 
 template<class base, std::size_t N, class dcy = std::decay_t<typename base::value_type>>
@@ -1023,7 +1024,7 @@ _sincos(typename base::value_type x) noexcept
 	else if (x - x != 0.0L && std::numeric_limits<dcy>::has_infinity)
 	{
 		return static_cast<dcy>(std::numeric_limits<dcy>::infinity());
-}
+	}
 	else
 	{
 		dcy result = 0.0;//result accumulator
@@ -1050,7 +1051,7 @@ struct FFTL_NODISCARD _sin
 	using value_type = long double;
 	constexpr static inline long double coeff(std::size_t n) noexcept
 	{
-		return (n % 2 ? 1 : -1) * inverse(factorial((2 * n) - 1));
+		return (n % 2 != 0 ? 1 : -1) * inverse(factorial((2 * n) - 1));
 	}
 	constexpr static inline long double range_reduce(long double x) noexcept
 	{
@@ -1255,9 +1256,9 @@ class FFTL_NODISCARD f32_4
 public:
 	FFTL_FORCEINLINE static constexpr size_t GetSize() { return 4; }
 
-	FFTL_FORCEINLINE f32_4() {}
+	FFTL_FORCEINLINE f32_4() = default;
 	constexpr inline f32_4(Vec4f_In v) : m_v(v) {}
-	constexpr inline f32_4(f32_4_In v) : m_v(v.m_v) {}
+	constexpr inline f32_4(f32_4_In v) = default;
 	constexpr inline f32_4(f32 x, f32 y, f32 z, f32 w) : m_v{ x, y, z, w } {}
 	FFTL_FORCEINLINE f32_4& operator=(f32_4_In v)		{ m_v = v.m_v; return *this; }
 
@@ -1289,10 +1290,10 @@ public:
 
 	FFTL_FORCEINLINE void Set(f32 x, f32 y, f32 z, f32 w)	{ m_v = V4fSet(x, y, z, w); }
 
-	FFTL_FORCEINLINE f32 GetX() const					{ return V4fGetX(m_v); }
-	FFTL_FORCEINLINE f32 GetY() const					{ return V4fGetY(m_v); }
-	FFTL_FORCEINLINE f32 GetZ() const					{ return V4fGetZ(m_v); }
-	FFTL_FORCEINLINE f32 GetW() const					{ return V4fGetW(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetX() const					{ return V4fGetX(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetY() const					{ return V4fGetY(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetZ() const					{ return V4fGetZ(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetW() const					{ return V4fGetW(m_v); }
 
 	FFTL_FORCEINLINE f32_4 operator+(f32_4_In b) const	{ return f32_4(V4fAdd(m_v, b.m_v)); }
 	FFTL_FORCEINLINE f32_4 operator-(f32_4_In b) const	{ return f32_4(V4fSub(m_v, b.m_v)); }
@@ -1323,7 +1324,7 @@ public:
 	FFTL_FORCEINLINE bool operator==(f32_4_In b) const		{ return V4fIsEqual(m_v, b.m_v); }
 	FFTL_NODISCARD FFTL_FORCEINLINE bool IsAllZero() const	{ return V4fIsAllZero(m_v); }
 
-	FFTL_FORCEINLINE const Vec4f& GetNative() const		{ return m_v; }
+	FFTL_NODISCARD FFTL_FORCEINLINE const Vec4f& GetNative() const		{ return m_v; }
 
 protected:
 	Vec4f m_v;
@@ -1367,9 +1368,9 @@ class f32_8
 public:
 	FFTL_NODISCARD FFTL_FORCEINLINE static constexpr size_t GetSize() { return 8; }
 
-	FFTL_FORCEINLINE f32_8() {}
+	FFTL_FORCEINLINE f32_8() = default;
+	constexpr inline f32_8(f32_8_In v) = default;
 	constexpr inline f32_8(Vec8f_In v) : m_v(v) {}
-	constexpr inline f32_8(f32_8_In v) : m_v(v.m_v) {}
 	FFTL_FORCEINLINE f32_8(f32_4_In a, f32_4_In b) : m_v(V8fSet(a.GetNative(), b.GetNative())) {}
 	constexpr inline f32_8(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d) : m_v{ x, y, z, w, a, b, c, d } {}
 	FFTL_FORCEINLINE f32_8& operator=(f32_8_In v)		{ m_v = v.m_v; return *this; }
@@ -1520,7 +1521,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE Vec4f Vec4DitherFloat(Vec4u& inout_nSeeds)
 
 	const auto r = V4uAdd(r0, r1);
 	const auto nDither = V4iSub(*reinterpret_cast<const Vec4i*>(&r), n65536);
-	const Vec4f nDitherf = { (f32)nDither.x, (f32)nDither.y, (f32)nDither.z, (f32)nDither.w };
+	const Vec4f nDitherf = { static_cast<f32>(nDither.x), static_cast<f32>(nDither.y), static_cast<f32>(nDither.z), static_cast<f32>(nDither.w) };
 	const auto fDither = V4fMul(nDitherf, vRandToFloat);
 #endif
 
@@ -1535,7 +1536,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE Vec4i Vec4AddDitherInt32(const Vec4i& in_n32Sign
 #elif defined(FFTL_ARM_NEON)
 	const auto vDithered = V4fAddMul(vDitherf, vcvtq_f32_s32(in_n32Signal), fScale);
 #else
-	const Vec4f in_f32Signal = { (f32)in_n32Signal.x, (f32)in_n32Signal.y, (f32)in_n32Signal.z, (f32)in_n32Signal.w };
+	const Vec4f in_f32Signal = { static_cast<f32>(in_n32Signal.x), static_cast<f32>(in_n32Signal.y), static_cast<f32>(in_n32Signal.z), static_cast<f32>(in_n32Signal.w) };
 	const auto vDithered = V4fAddMul(vDitherf, in_f32Signal, fScale);
 #endif
 	return V4fRoundToVfi(vDithered);
@@ -1608,4 +1609,3 @@ private:
 #endif
 
 
-#endif // _FFTL_MATH_H

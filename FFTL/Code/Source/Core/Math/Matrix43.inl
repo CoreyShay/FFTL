@@ -27,10 +27,6 @@ namespace FFTL
 {
 
 
-inline mat43::mat43()
-{
-}
-
 inline mat43::mat43(enIndentityType)
 {
 	Identity();
@@ -41,12 +37,12 @@ inline mat43::mat43(const mat43& mat)
 	CopyFrom(mat);
 }
 
-inline mat43::mat43(const vec3& a, const vec3& b, const vec3& c, const vec3& d)
+inline mat43::mat43(const vec3& row0, const vec3& row1, const vec3& row2, const vec3& row3)
 {
-	Row<0>() = a;
-	Row<1>() = b;
-	Row<2>() = c;
-	Row<3>() = d;
+	Row<0>() = row0;
+	Row<1>() = row1;
+	Row<2>() = row2;
+	Row<3>() = row3;
 }
 
 inline mat43::mat43(const mat33& axis, const vec3& pos)
@@ -365,13 +361,13 @@ inline void mat43::Lookat(const vec3& target)
 {
 	AsMat33().Lookat(target, Position());
 }
-inline void mat43::Orient(const vec3& vFw, const vec3& _up)
+inline void mat43::Orient(const vec3& fwd, const vec3& up)
 {
-	AsMat33().Orient(vFw, _up);
+	AsMat33().Orient(fwd, up);
 }
-inline void mat43::Orient(const vec3& vFw)
+inline void mat43::Orient(const vec3& fwd)
 {
-	AsMat33().Orient(vFw);
+	AsMat33().Orient(fwd);
 }
 
 inline void mat43::TranslatePre(f32 x, f32 y, f32 z)
@@ -389,9 +385,9 @@ inline void mat43::TranslatePost(const vec3& v)
 	Row<3>() += v;
 }
 
-inline void mat43::ScalePre(const vec3& v)
+inline void mat43::ScalePre(const vec3& s)
 {
-	AsMat33().ScalePre(v);
+	AsMat33().ScalePre(s);
 }
 
 inline void mat43::ScalePre(f32 sx, f32 sy, f32 sz)
@@ -404,17 +400,12 @@ inline void mat43::ScalePre(f32 s)
 	AsMat33().ScalePre(s);
 }
 
-inline void mat43::ScalePost(const vec3& v)
+inline void mat43::ScalePost(const vec3& s)
 {
-	Row<0>() *= v;
-	Row<1>() *= v;
-	Row<2>() *= v;
-	Row<3>() *= v;
-
-	//	m[0][0] *= sx; m[0][1] *= sy; m[0][2] *= sz;
-	//	m[1][0] *= sx; m[1][1] *= sy; m[1][2] *= sz;
-	//	m[2][0] *= sx; m[2][1] *= sy; m[2][2] *= sz;
-	//	m[3][0] *= sx; m[3][1] *= sy; m[3][2] *= sz;
+	Row<0>() *= s;
+	Row<1>() *= s;
+	Row<2>() *= s;
+	Row<3>() *= s;
 }
 
 inline void mat43::ScalePost(f32 s)

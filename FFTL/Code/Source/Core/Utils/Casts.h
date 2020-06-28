@@ -2,7 +2,7 @@
 
 
 #include "../defs.h"
-#include "../Math/MathCommon.h"
+#include <cmath>
 #include <limits>
 #include <type_traits>
 
@@ -28,7 +28,7 @@ template <typename T_TO, typename T_FROM>
 FFTL_NODISCARD constexpr typename std::enable_if<std::numeric_limits<T_TO>::is_integer && std::is_floating_point<T_FROM>::value, T_TO>::type safestatic_cast(T_FROM a)
 {
 	const T_TO ret = static_cast<T_TO>(a);
-	FFTL_ASSERT_MSG(Abs(a - static_cast<T_FROM>(ret)) < static_cast<T_FROM>(1), "Casting has lost precision or overflowed / underflowed");
+	FFTL_ASSERT_MSG(std::abs(a - static_cast<T_FROM>(ret)) < static_cast<T_FROM>(1), "Casting has lost precision or overflowed / underflowed");
 	return ret;
 }
 
@@ -36,7 +36,7 @@ template <typename T_TO, typename T_FROM>
 FFTL_NODISCARD constexpr typename std::enable_if<std::is_floating_point<T_TO>::value && std::numeric_limits<T_FROM>::is_integer, T_TO>::type safestatic_cast(T_FROM a)
 {
 	const T_TO ret = static_cast<T_TO>(a);
-	FFTL_ASSERT_MSG(Abs(ret - static_cast<long double>(a)) < static_cast<long double>(1), "Casting has lost precision or overflowed / underflowed");
+	FFTL_ASSERT_MSG(std::abs(ret - static_cast<long double>(a)) < static_cast<long double>(1), "Casting has lost precision or overflowed / underflowed");
 	return ret;
 }
 

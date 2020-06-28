@@ -149,7 +149,7 @@ inline u64 CpuTimer::GetCurrentTicks()
 {
 	struct timespec now;
 	clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
-	return now.tv_sec * 1000000000ULL + (u64)now.tv_nsec;
+	return now.tv_sec * 1000000000ULL + safestatic_cast<u64>(now.tv_nsec);
 }
 inline const char* CpuTimer::GetTickUnitsString()
 {
@@ -229,7 +229,7 @@ inline void Timer::Accum()
 
 inline const char* Timer::GetTickUnitsString()
 {
-	return "Clock ticks";
+	return "Microseconds";
 }
 
 #elif defined(__ANDROID__)
@@ -238,7 +238,7 @@ inline u64 Timer::GetCurrentTicks()
 {
 	struct timespec now;
 	clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
-	return now.tv_sec * 1000000000ULL + (u64)now.tv_nsec;
+	return now.tv_sec * 1000000000ULL + safestatic_cast<u64>(now.tv_nsec);
 }
 
 inline void Timer::Start()

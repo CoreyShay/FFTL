@@ -193,7 +193,7 @@ private:
 
 public:
 
-	bool GetIsLockedByThisThread() const
+	FFTL_NODISCARD bool GetIsLockedByThisThread() const
 	{
 		return GetOwningThread() == GetThreadIdCurrent();
 	}

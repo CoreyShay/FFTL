@@ -9,17 +9,15 @@ namespace FFTL
 //
 
 FFTL_FORCEINLINE quat::quat()
-{
-}
+= default;
 
 FFTL_FORCEINLINE quat::quat(f32 x, f32 y, f32 z, f32 w)
 : m_v(x, y, z, w)
 {
 }
 FFTL_FORCEINLINE quat::quat(const quat& copy)
-: m_v(copy.m_v)
-{
-}
+ 
+= default;
 FFTL_FORCEINLINE quat::quat(const vec3& axis, f32 angleRad)
 {
 	BuildFromAxisAngle(axis, angleRad);
@@ -329,7 +327,7 @@ inline void quat::BuildFromMatOrtho(const mat33& m)
 	f32 s, t;
 	int i, j, k;
 
-	const f32(*mf)[4] = reinterpret_cast<const f32(*)[4]>(&m);
+	const auto mf = reinterpret_cast<const f32(*)[4]>(&m);
 
 	trace = mf[0][0] + mf[1][1] + mf[2][2];
 
@@ -422,12 +420,12 @@ FFTL_FORCEINLINE void quat::BuildFromEuler(const vec3& angles)
 
 // This function hasn't been tested yet and was adapted from http://www.inxbus.net/hldoc/d8/d45/quaternion_8cpp-source.html
 // in case it isn't working
-inline void quat::BuildSlerp(const quat& q0, const quat& _q1, f32 t)
+inline void quat::BuildSlerp(const quat& qFrom, const quat& qTo, f32 t)
 {
 	constexpr f32 SLERP_MIN_COS_ANGLE = 0.990f; // cos( 8 * (M_PI/180.0) ) == 0.990
 
-	vec4 q1 = _q1.m_v;
-	vec4 vCosTheta = DotV(q0.m_v, q1);
+	vec4 q1 = qTo.m_v;
+	vec4 vCosTheta = DotV(qFrom.m_v, q1);
 
 #if 1
 	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
@@ -451,20 +449,20 @@ inline void quat::BuildSlerp(const quat& q0, const quat& _q1, f32 t)
 		f32 t0 = sinf( theta - t_theta ) * i_sin_theta;
 		f32 t1 = sinf(         t_theta ) * i_sin_theta;
 
-		m_v = q0.m_v * t0 + q1 * t1;
+		m_v = qFrom.m_v * t0 + q1 * t1;
 	}
 	else
 	{
-		m_v = q0.m_v + ( q1 - q0.m_v ) * t;
+		m_v = qFrom.m_v + ( q1 - qFrom.m_v ) * t;
 	}
 
 	m_v = Normalize(m_v);
 }
 
-inline void quat::BuildSlerpFast(const quat& _q0, const quat& q1, f32 t)
+inline void quat::BuildSlerpFast(const quat& qFrom, const quat& qTo, f32 t)
 {
-	quat q0 = _q0;
-	vec4 vCosTheta = DotV(q0.m_v, q1.m_v);
+	quat q0 = qFrom;
+	vec4 vCosTheta = DotV(q0.m_v, qTo.m_v);
 
 #if 1
 	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
@@ -481,7 +479,7 @@ inline void quat::BuildSlerpFast(const quat& _q0, const quat& q1, f32 t)
 	const f32 cos_theta = vCosTheta.GetX();
 
 	FFTL_MATH_ASSERT(cos_theta >= 0);
-	BuildSlerpFast(q0, q1, t, cos_theta);
+	BuildSlerpFast(q0, qTo, t, cos_theta);
 }
 
 // NOTE: adapted from NaturalMotion's NMP::Quat::fastSlerp
@@ -578,20 +576,20 @@ FFTL_FORCEINLINE f32 Dot(const quat& a, const quat& b)
 	return Dot(a.m_v, b.m_v);
 }
 
-FFTL_FORCEINLINE quat Lerp(const quat& lhs, const quat& _rhs, f32 factor)
+FFTL_FORCEINLINE quat Lerp(const quat& lhs, const quat& b, f32 amount)
 {
-	quat b = _rhs;
+	quat _b = b;
 
 	vec4 vCosTheta = DotV(lhs.m_v, b.m_v);
 #if 1
 	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
-	b.m_v = Blend(b.m_v, -b.m_v, cmlLT);
+	_b.m_v = Blend(_b.m_v, -_b.m_v, cmlLT);
 #else
 	if (cos_theta.GetX() < 0.0f)
-		b = -b;
+		_b = -_b;
 #endif
 
-	return quat(Lerp(lhs.AsVec4(), b.AsVec4(), factor));
+	return quat(Lerp(lhs.AsVec4(), _b.AsVec4(), amount));
 }
 
 

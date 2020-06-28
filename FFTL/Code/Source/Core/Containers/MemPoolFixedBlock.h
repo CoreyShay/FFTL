@@ -414,17 +414,17 @@ protected:
 	FFTL_NODISCARD void*			GetEntry(size_t i)			{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i*_AllocSize]; }
 	FFTL_NODISCARD const void*		GetEntry(size_t i) const	{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i*_AllocSize]; }
 
-	byte*			m_Pool;
-	size_type*		m_FreeIndexStack;
-	size_type		m_NumUsedEntries;
-	size_type		_MaxCount;
-	u32				_AllocSize;
+	byte*			m_Pool{nullptr};
+	size_type*		m_FreeIndexStack{nullptr};
+	size_type		m_NumUsedEntries{0};
+	size_type		_MaxCount{0};
+	u32				_AllocSize{0};
 #if defined(FFTL_ENABLE_PROFILING)
-	size_type		m_HighwaterMarkEntries;
+	size_type		m_HighwaterMarkEntries{0};
 	u32				m_TotalAllocs;
 	u32				m_TotalFrees;
 #endif
-	bool			m_bPoolOwned;
+	bool			m_bPoolOwned{false};
 };
 
 
@@ -437,7 +437,7 @@ class FFTL_NODISCARD FixedBlockMemPool_ThreadSafe : public FixedBlockMemPool
 public:
 
 	//	Default constructor
-	FixedBlockMemPool_ThreadSafe() : FixedBlockMemPool() {}
+	FixedBlockMemPool_ThreadSafe()  = default;
 
 	// Detailed constructor
 	// pPool:		Pointer to a user preallocated block of memory.	NOTE: pPool must be large enough to hold maxCount*allocSize

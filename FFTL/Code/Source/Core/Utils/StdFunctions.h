@@ -7,9 +7,9 @@
 #include "Casts.h"
 #include "../Math/MathCommon.h"
 #include "../Containers/Array.h"
-#include <string.h>
+#include <cstring>
 #include <limits>
-#include <ctype.h> // tolower
+#include <cctype> // tolower
 
 #if defined(FFTL_SSE)
 #	include <xmmintrin.h>
@@ -170,8 +170,8 @@ FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void
 template<>
 FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
 {
-	const __m128i vA = _mm_loadu_si128((const __m128i*)a);
-	const __m128i vB = _mm_loadu_si128((const __m128i*)b);
+	const __m128i vA = _mm_loadu_si128(reinterpret_cast<const __m128i*>(a));
+	const __m128i vB = _mm_loadu_si128(reinterpret_cast<const __m128i*>(b));
 	return _mm_movemask_epi8(_mm_cmpeq_epi8(vA, vB)) == 0xffff;
 }
 

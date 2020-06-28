@@ -181,7 +181,7 @@ FFTL_FORCEINLINE __m128 sse_truncate_ss(const __m128& v)
 	return _mm_round_ss(v, v, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
 #else
 	const __m128i vi = _mm_cvttps_epi32(v);						// Convert to integer with truncation
-	const __m128 fi = _mm_cvtepi32_ps(vi);						// Convert back to f32
+	const __m128 fi = _mm_cvtepi32_ps(vi);						// Convert back to float
 	return fi;
 #endif
 }
@@ -202,12 +202,12 @@ FFTL_FORCEINLINE __m128d sse_truncate_sd(const __m128d& v)
 	const s64 vi = _mm_cvttsd_si64(v);							// Convert to integer with truncation
 	return _mm_cvtsi64_sd(v, vi);								// Convert back to f32
 #elif 1
-	FFTL_MATH_ASSERT(fabs(_mm_cvtsd_f64(v)) <= (double)0x7fffffff);	// We're limited to 32 bit integer precision for this to work.
+	FFTL_MATH_ASSERT(fabs(_mm_cvtsd_f64(v)) <= static_cast<double>(0x7fffffff));	// We're limited to 32 bit integer precision for this to work.
 	const __m128i vi = _mm_cvttpd_epi32(v);						// Convert to integer with truncation
-	return _mm_cvtepi32_pd(vi);									// Convert back to f32
+	return _mm_cvtepi32_pd(vi);									// Convert back to float
 #else
-	const s64 vi = (s64)_mm_cvtsd_f64(v);						// Convert to integer with truncation
-	return _mm_set_sd((f64)vi);									// Convert back to f32
+	const s64 vi = _mm_cvtsd_f64(v);							// Extract float from XMM
+	return _mm_set_sd(vi);										// Convert back to f32
 #endif
 }
 

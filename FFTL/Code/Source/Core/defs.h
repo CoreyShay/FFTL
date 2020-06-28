@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #if defined(__GNUC__)
 #	include <unistd.h> // _POSIX_VERSION
 #endif

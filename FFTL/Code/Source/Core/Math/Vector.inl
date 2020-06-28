@@ -451,8 +451,7 @@ FFTL_FORCEINLINE vecT<N> ClosestPointOnLineSegment(const vecT<N>& a, const vecT<
 
 
 FFTL_FORCEINLINE vecmask::vecmask()
-{
-}
+= default;
 
 FFTL_FORCEINLINE vecmask& vecmask::operator|=(const vecmask& b)
 {

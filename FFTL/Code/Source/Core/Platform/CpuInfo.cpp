@@ -102,7 +102,7 @@ CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 			//	Now hold on. AMD 15h family CPU's handle AVX horribly, so make an exception for them.
 			__cpuid(cpuInfo, 0);
 			const int cpuName[4] = { cpuInfo[1], cpuInfo[3], cpuInfo[2], 0 };
-			if (!strstr((const char*)cpuName, "AMD") || cpuFamily != 0x15)
+			if ((strstr((const char*)cpuName, "AMD") == nullptr) || cpuFamily != 0x15)
 			{
 				retFlags |= ArchFlags::AVX;
 

@@ -42,15 +42,7 @@ namespace FFTL
 
 // Default constructor
 FixedBlockMemPool::FixedBlockMemPool()
-: m_Pool(nullptr)
-, m_FreeIndexStack(nullptr)
-, m_NumUsedEntries(0)
-, _MaxCount(0)
-, _AllocSize(0)
-#if defined(FFTL_ENABLE_PROFILING)
-, m_HighwaterMarkEntries(0)
-#endif
-, m_bPoolOwned(false)
+ 
 {
 }
 
@@ -110,7 +102,7 @@ void FixedBlockMemPool::Init(uint maxCount, size_t allocSize, size_t alignment)
 
 void FixedBlockMemPool::Shutdown()
 {
-	if (m_Pool && m_bPoolOwned)
+	if ((m_Pool != nullptr) && m_bPoolOwned)
 		Free(m_Pool);
 	m_Pool = nullptr;
 	m_NumUsedEntries = 0;

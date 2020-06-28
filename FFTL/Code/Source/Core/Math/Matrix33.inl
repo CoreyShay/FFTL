@@ -26,8 +26,7 @@ namespace FFTL
 
 
 FFTL_FORCEINLINE mat33::mat33()
-{
-}
+= default;
 
 FFTL_FORCEINLINE mat33::mat33(enIndentityType)
 {
@@ -39,17 +38,17 @@ FFTL_FORCEINLINE mat33::mat33(const mat33& mat)
 	CopyFrom(mat);
 }
 
-FFTL_FORCEINLINE mat33::mat33(const vec3& a, const vec3& b, const vec3& c)
+FFTL_FORCEINLINE mat33::mat33(const vec3& row0, const vec3& row1, const vec3& row2)
 {
-	Row<0>() = a;
-	Row<1>() = b;
-	Row<2>() = c;
+	Row<0>() = row0;
+	Row<1>() = row1;
+	Row<2>() = row2;
 }
 
-FFTL_FORCEINLINE void mat33::Set(const vec3& rt, const vec3& fw, const vec3& up)
+FFTL_FORCEINLINE void mat33::Set(const vec3& right, const vec3& fwd, const vec3& up)
 {
-	Row<0>() = rt;
-	Row<1>() = fw;
+	Row<0>() = right;
+	Row<1>() = fwd;
 	Row<2>() = up;
 }
 
@@ -284,7 +283,7 @@ FFTL_FORCEINLINE vec3& mat33::Row()
 inline vec3 mat33::GetAngles() const
 {
 	//	TODO: Vectorize trig functions!
-	const f32(*m)[4] = reinterpret_cast<const f32(*)[4]>(this);
+	const auto m = reinterpret_cast<const f32(*)[4]>(this);
 	f32 angX, angY, angZ;
 
 	// make sure m[0][2] is valid for arc sin [-1, 1]
@@ -327,16 +326,16 @@ FFTL_FORCEINLINE vec3 mat33::GetScale_sq() const
 	return vec3(x, y, z);
 }
 
-FFTL_FORCEINLINE vec3 mat33::Transform(const vec3& p) const
+FFTL_FORCEINLINE vec3 mat33::Transform(const vec3& v) const
 {
 	vec3 a = Row<0>();
 	vec3 b = Row<1>();
 	vec3 c = Row<2>();
 
 	vec3 r;
-	r = XXXX(p) * a;
-	r = V4fAddMul(r, YYYY(p), b);
-	r = V4fAddMul(r, ZZZZ(p), c);
+	r = XXXX(v) * a;
+	r = V4fAddMul(r, YYYY(v), b);
+	r = V4fAddMul(r, ZZZZ(v), c);
 
 	return r;
 }
@@ -365,38 +364,38 @@ FFTL_FORCEINLINE void mat33::Lookat(const vec3& target, const vec3& position)
 		Orient(dir);
 }
 
-inline void mat33::Orient(const vec3& vFw, const vec3& _up)
+inline void mat33::Orient(const vec3& fwd, const vec3& up)
 {
-	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(vFw), 1.0f, 0.001f));
-	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(_up), 1.0f, 0.001f));
+	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(fwd), 1.0f, 0.001f));
+	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(up), 1.0f, 0.001f));
 
-	const vec3 vRt = Normalize(Cross(vFw, _up));
-	const vec3 vUp = Normalize(Cross(vRt, vFw));
+	const vec3 vRt = Normalize(Cross(fwd, up));
+	const vec3 vUp = Normalize(Cross(vRt, fwd));
 	
-	Forward() = vFw;
+	Forward() = fwd;
 	Right() = vRt;
 	Up() = vUp;
 }
 
-inline void mat33::Orient(const vec3& vFw)
+inline void mat33::Orient(const vec3& fwd)
 {
-	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(vFw), 1.0f, 0.001f));
+	FFTL_MATH_ASSERT(IsNearEqual(Length_sq(fwd), 1.0f, 0.001f));
 
-	const vec3 _up = fabs(vFw.GetZ()) > 0.99f ? vec3_yaxis : vec3_zaxis;
+	const vec3 _up = fabs(fwd.GetZ()) > 0.99f ? vec3_yaxis : vec3_zaxis;
 
-	const vec3 vRt = Normalize(Cross(vFw, _up));
-	const vec3 vUp = Cross(vRt, vFw);
+	const vec3 vRt = Normalize(Cross(fwd, _up));
+	const vec3 vUp = Cross(vRt, fwd);
 
-	Forward() = vFw;
+	Forward() = fwd;
 	Right() = vRt;
 	Up() = vUp;
 }
 
-FFTL_FORCEINLINE void mat33::ScalePre(const vec3& v)
+FFTL_FORCEINLINE void mat33::ScalePre(const vec3& s)
 {
-	Row<0>() *= XXXX(v);
-	Row<1>() *= YYYY(v);
-	Row<2>() *= ZZZZ(v);
+	Row<0>() *= XXXX(s);
+	Row<1>() *= YYYY(s);
+	Row<2>() *= ZZZZ(s);
 }
 
 FFTL_FORCEINLINE void mat33::ScalePre(f32 sx, f32 sy, f32 sz)
@@ -414,11 +413,11 @@ FFTL_FORCEINLINE void mat33::ScalePre(f32 s)
 	Row<2>() *= vS;
 }
 
-FFTL_FORCEINLINE void mat33::ScalePost(const vec3& v)
+FFTL_FORCEINLINE void mat33::ScalePost(const vec3& s)
 {
-	Row<0>() *= v;
-	Row<1>() *= v;
-	Row<2>() *= v;
+	Row<0>() *= s;
+	Row<1>() *= s;
+	Row<2>() *= s;
 }
 
 FFTL_FORCEINLINE void mat33::ScalePost(f32 s)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../defs.h"
-#include <stdio.h>
+#include <cstdio>
 
 namespace FFTL
 {
@@ -18,7 +18,7 @@ public:
 //		OpenReadWrite = OpenRead | OpenWrite,
 	};
 
-	File();
+	File() = default;
 	~File();
 
 	File(const char* pszFileName, OpenMode mode);

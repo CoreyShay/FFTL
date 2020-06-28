@@ -154,7 +154,7 @@ void UnpauseThread(ThreadHandle handle);
 class FFTL_DLLEXPORT FFTL_NODISCARD ThreadOwner
 {
 public:
-	virtual ~ThreadOwner() {}
+	virtual ~ThreadOwner() = default;
 	typedef ThreadResult(ThreadOwner::*RunFunction)();
 	template <typename T>
 	FFTL_NODISCARD static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }

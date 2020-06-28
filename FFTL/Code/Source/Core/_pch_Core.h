@@ -24,7 +24,7 @@ struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error
 #include <limits>
 #include <memory>
 #include <new>
-#include <string.h>
+#include <cstring>
 #include <type_traits>
 #include <utility>
 

@@ -157,7 +157,7 @@ inline void Thread::Run()
 
 inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV Thread::InternalStartFunc(void* pThis)
 {
-	Thread* pThread = reinterpret_cast<Thread*>(pThis);
+	auto* pThread = reinterpret_cast<Thread*>(pThis);
 	pThread->Run();
 	return FFTL_THREAD_RETURNVALUE;
 }

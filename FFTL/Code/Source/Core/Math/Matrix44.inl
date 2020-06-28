@@ -27,21 +27,18 @@ namespace FFTL
 {
 
 
-FFTL_FORCEINLINE mat44::mat44()
-{
-}
 
 FFTL_FORCEINLINE mat44::mat44(const mat44& mat)
 {
 	CopyFrom(mat);
 }
 
-FFTL_FORCEINLINE mat44::mat44(const vec4& a, const vec4& b, const vec4& c, const vec4& d)
+FFTL_FORCEINLINE mat44::mat44(const vec4& row0, const vec4& row1, const vec4& row2, const vec4& row3)
 {
-	Row<0>() = a;
-	Row<1>() = b;
-	Row<2>() = c;
-	Row<3>() = d;
+	Row<0>() = row0;
+	Row<1>() = row1;
+	Row<2>() = row2;
+	Row<3>() = row3;
 }
 
 FFTL_FORCEINLINE mat44::mat44(const f32 vals[16])

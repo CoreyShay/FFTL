@@ -31,7 +31,7 @@ public:
 	//
 
 	/// WARNING: The default constructor does not initialize. In debug it initializes with sNaNs.
-	mat44();
+	mat44() = default;
 	mat44(const mat44& mat);
 //	mat44(f32 m00, f32 m01, f32 m02, f32 m03,
 //		  f32 m10, f32 m11, f32 m12, f32 m13,
@@ -89,7 +89,7 @@ public:
 	friend void					StoreA(f32* p, const mat44& m);
 	FFTL_NODISCARD const f32*	Ptr() const;
 	FFTL_NODISCARD f32*			Ptr();
-	const mat33&	AsMat33() const;
+	FFTL_NODISCARD const mat33&	AsMat33() const;
 	FFTL_NODISCARD mat33&		AsMat33();
 	FFTL_NODISCARD const mat43&	AsMat43f() const;
 	FFTL_NODISCARD mat43&		AsMat43f();

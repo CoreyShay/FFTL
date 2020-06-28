@@ -56,7 +56,7 @@ public:
 	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
 	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #else
-	FFTL_NODISCARD HandleType const GetHandle() const { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
 	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #endif
 
@@ -70,7 +70,7 @@ private:
 // Event is all we really need in this case because otherwise we'd just use a semaphore with a single token.
 
 inline ThreadEvent::ThreadEvent(const char* pszName)
-	: m_Handle( ::CreateEvent(nullptr, FALSE, FALSE, pszName ? pszName : "ThreadEvent") )
+	: m_Handle( ::CreateEvent(nullptr, FALSE, FALSE, pszName != nullptr ? pszName : "ThreadEvent") )
 {
 	FFTL_ASSERT_MSG(m_Handle, "ThreadEvent() : CreateEvent failed!");
 }

@@ -5,7 +5,7 @@
 #include "../defs.h"
 
 #include "../Containers/Array.h"
-#include <string.h>
+#include <cstring>
 
 
 namespace FFTL
@@ -116,7 +116,7 @@ FFTL_NODISCARD constexpr u32 StringHash(const char* text, u32 uHash)
 
 	uHash = StringHash(static_cast<uint>(*text++), uHash);
 
-	while (*text)
+	while (*text != 0)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
@@ -136,7 +136,7 @@ FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 
 	uHash = StringHash(static_cast<uint>(*text++), uHash);
 
-	while (*text)
+	while (*text != 0)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }

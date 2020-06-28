@@ -155,7 +155,7 @@ public:
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags GetExtFlags();
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsArchitectureEnabled(Architecture arch);
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR bool GetIsExtensionEnabled(Extension ext);
-	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetArchitectureEnabled(Architecture arch, bool bEnable);
+	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetArchitectureEnabled(Architecture platform, bool bEnable);
 	static FFTL_CPU_INFO_COND_CONSTEXPR ReturnCode SetExtensionEnabled(Extension ext, bool bEnable);
 	static void ClearArchFlags();
 	FFTL_NODISCARD static constexpr const char* GetArchitectureName(Architecture arch);
