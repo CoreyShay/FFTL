@@ -33,6 +33,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "../defs.h"
 
+#include <type_traits>
+
 namespace FFTL
 {
 
@@ -68,7 +70,9 @@ public:
 
 	void Start();
 	void Stop();		// Stamps the time from the last start
-	void StopAccum();	// Adds the time from the last start to the current stamped value
+	void Pause();		// Adds the time from the last start to the current stamped value, but does not increment the accumulation counter
+	void PauseAccum();	// Adds the time from the last start to the current stamped value, and increments the accumulation counter
+	void Accum();		// Increments the accumulation counter
 
 	f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
 	f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
@@ -91,7 +95,7 @@ private:
 // exactly the same as the CPU timer class (notice the typedef), because QueryPerformanceCounter
 // simply calls the CPU time stamp counter, and QueryPerformanceFrequency simply returns the
 // constant value of 1745620598 Hz. FYI, PS4 runs at 1593726008 Hz.
-#if !defined(_DURANGO)
+#if !defined(_DURANGO) && !defined(__ORBIS__) && !defined(__PROSPERO___)
 class FFTL_NODISCARD Timer : public TimerBase
 {
 public:
@@ -99,7 +103,9 @@ public:
 
 	void Start();
 	void Stop();		// Stamps the time from the last start
-	void StopAccum();	// Adds the time from the last start to the current stamped value
+	void Pause();		// Adds the time from the last start to the current stamped value, but does not increment the accumulation counter
+	void PauseAccum();	// Adds the time from the last start to the current stamped value, and increments the accumulation counter
+	void Accum();		// Increments the accumulation counter
 
 	FFTL_NODISCARD f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
@@ -139,10 +145,32 @@ protected:
 	T* m_pTimer;
 };
 
+template <typename T>
+class TimerPauseScope
+{
+public:
+	TimerPauseScope(T* pTimer);
+	~TimerPauseScope();
+protected:
+	T* m_pTimer;
+};
+
+template <typename T = Timer>
+class TimerPauseCondScope
+{
+public:
+	TimerPauseCondScope(T* pTimer);
+	~TimerPauseCondScope();
+protected:
+	T* m_pTimer;
+};
+
 #if defined(FFTL_ENABLE_PROFILING)
-#	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__) TimerScope<std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__) TimerScope<typename std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE_PAUSE(__name__, __pTimer__) TimerPauseScope<typename std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
 #else
 #	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE_Pause(__name__, __pTimer__)
 #endif
 
 

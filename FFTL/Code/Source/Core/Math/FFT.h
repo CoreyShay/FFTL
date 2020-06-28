@@ -40,8 +40,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define FFTL_STAGE_TIMERS 0
 
 
-#if FFTL_STAGE_TIMERS
-#	include "Platform/Timer.h"
+#if defined(FFTL_ENABLE_PROFILING)
+#	include "../Platform/Timer.h"
 #endif
 
 #ifdef _MSC_VER
@@ -472,10 +472,19 @@ public:
 	Convolver();
 	~Convolver() = default;
 
-	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t newKernelCount);
-	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArrayA_FD, size_t newKernelCountA, T fGainA, const Kernel* pKernelArrayB_FD, size_t newKernelCountB, T fGainB);
+	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t kernelArraySize);
+	void Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB);
 
-	FFTL_NODISCARD size_t GetLeftoverKernels() const { return m_KernelCountPrev; }
+	//	Only performs FFT, convolution, and IFFT necessary to fill the fInOutout buffer with the data needed right now.
+	void ConvolveInitial_FirstStage(const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArray_FD, size_t kernelArraySize);
+	void ConvolveInitial_FirstStage(const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB);
+	void ConvolveInitial_LastStage(FixedArray_Aligned32<T, N>& fOutput);
+
+	//	Resumes convolution started via ConvolveInitial.
+	void ConvolveResumePartial(const Kernel* pKernelArray_FD, size_t kernelArraySize, size_t startKernelIndex, size_t endKernelIndex);
+	void ConvolveResumePartial(const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB, size_t startKernelIndex, size_t endKernelIndex);
+
+	FFTL_NODISCARD size_t GetLeftoverKernels() const { return m_LeftoverKernelCount; }
 
 	static uint InitKernel(Kernel* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength);
 
@@ -483,16 +492,25 @@ public:
 	typedef FFT_Real<M + 1, T, T_Twiddle> sm_fft;
 
 protected:
+	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY); //	output = inX * inY
 	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW); //	output = inX * inY + inW
 	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inW, T fGainY); //	output = inX * (inY * fGainY) + inW
 	static void ConvolveFD(Kernel& output, const Kernel& inX, const Kernel& inY, const Kernel& inZ, const Kernel& inW, T fGainY, T fGainZ); //	output = inX * (inY * fGainY + inZ * fGainZ) + inW
 	static void AddArrays(FixedArray_Aligned32<T, N>& output, const FixedArray_Aligned32<T, N>& inA, const FixedArray_Aligned32<T, N>& inB);
 
-	size_t m_KernelCountPrev = 0;
 	FixedArray_Aligned32<Kernel, T_MAX_KERNELS> m_AccumulationBuffer;
 	FixedArray_Aligned32<T, N> m_PrevTail;
 	Kernel m_tempBufferA, m_tempBufferB;
-	Kernel m_tempBufferX; // Normally used for the FFT output of the input
+	Kernel m_inputSignal_FD; // Frequency domain (Fourier transform) of the last input signal
+	size_t m_LeftoverKernelCount = 0;
+	bool m_bInputSignalHasData = false;
+	bool m_bConvolutionFrameComplete = false;
+
+#if defined(FFTL_ENABLE_PROFILING)
+	Timer m_timerFftForward;
+	Timer m_timerFftInverse;
+	Timer m_timerConvolution;
+#endif
 };
 
 

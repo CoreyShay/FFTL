@@ -169,10 +169,20 @@ inline void CpuTimer::Stop()
 	m_nAccumCount = 0;
 }
 
-inline void CpuTimer::StopAccum()
+inline void CpuTimer::Pause()
 {
 	const u64 end = GetCurrentTicks();
 	m_TotalTicks += end - m_StartTicks;
+}
+
+inline void CpuTimer::PauseAccum()
+{
+	Pause();
+	Accum();
+}
+
+inline void CpuTimer::Accum()
+{
 	m_nAccumCount += 1;
 }
 
@@ -199,48 +209,27 @@ inline void Timer::Stop()
 	m_nAccumCount = 0;
 }
 
-inline void Timer::StopAccum()
+inline void Timer::Pause()
 {
 	LARGE_INTEGER end;
 	QueryPerformanceCounter(&end);
 	m_TotalTicks += end.QuadPart - m_StartTicks;
+}
+
+inline void Timer::PauseAccum()
+{
+	Pause();
+	Accum();
+}
+
+inline void Timer::Accum()
+{
 	m_nAccumCount += 1;
 }
 
 inline const char* Timer::GetTickUnitsString()
 {
 	return "Clock ticks";
-}
-
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
-
-inline u64 Timer::GetCurrentTicks()
-{
-	return sceKernelGetProcessTime();
-}
-
-inline void Timer::Start()
-{
-	m_StartTicks = sceKernelGetProcessTime();
-}
-
-inline void Timer::Stop()
-{
-	const u64 end = sceKernelGetProcessTime();
-	m_TotalTicks += end - m_StartTicks;
-	m_nAccumCount = 0;
-}
-
-inline void Timer::StopAccum()
-{
-	const u64 end = sceKernelGetProcessTime();
-	m_TotalTicks += end - m_StartTicks;
-	m_nAccumCount += 1;
-}
-
-inline const char* Timer::GetTickUnitsString()
-{
-	return "Microseconds";
 }
 
 #elif defined(__ANDROID__)
@@ -264,10 +253,20 @@ inline void Timer::Stop()
 	m_nAccumCount = 0;
 }
 
-inline void Timer::StopAccum()
+inline void Timer::Pause()
 {
 	u64 end = GetCurrentTicks();
 	m_TotalTicks += end - m_StartTicks;
+}
+
+inline void Timer::PauseAccum()
+{
+	Pause();
+	Accum();
+}
+
+inline void Timer::Accum()
+{
 	m_nAccumCount += 1;
 }
 
@@ -288,7 +287,7 @@ inline TimerScope<T>::TimerScope(T* pTimer)
 template <typename T>
 inline TimerScope<T>::~TimerScope()
 {
-	m_pTimer->StopAccum();
+	m_pTimer->PauseAccum();
 }
 
 template <typename T>
@@ -303,7 +302,35 @@ template <typename T>
 inline TimerCondScope<T>::~TimerCondScope()
 {
 	if (m_pTimer)
-		m_pTimer->StopAccum();
+		m_pTimer->PauseAccum();
+}
+
+template <typename T>
+inline TimerPauseScope<T>::TimerPauseScope(T* pTimer)
+	: m_pTimer(pTimer)
+{
+	pTimer->Start();
+}
+
+template <typename T>
+inline TimerPauseScope<T>::~TimerPauseScope()
+{
+	m_pTimer->Pause();
+}
+
+template <typename T>
+inline TimerPauseCondScope<T>::TimerPauseCondScope(T* pTimer)
+	: m_pTimer(pTimer)
+{
+	if (pTimer)
+		pTimer->Start();
+}
+
+template <typename T>
+inline TimerPauseCondScope<T>::~TimerPauseCondScope()
+{
+	if (m_pTimer)
+		m_pTimer->Pause();
 }
 
 

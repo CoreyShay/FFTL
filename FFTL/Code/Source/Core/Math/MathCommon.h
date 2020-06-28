@@ -186,12 +186,12 @@ namespace FFTL
 template <typename T_TO, typename T_FROM>
 FFTL_FORCEINLINE T_TO ReinterpretAs(const T_FROM& v) { return *reinterpret_cast<const T_TO*>(&v); }
 
-/// Returns the bit index position of the first set bit found starting from the MSB. Returns 0 if val is 0.
+/// Returns the bit index position of the first set bit found starting from the MSB. Returns 32 or 64 if val is 0.
 FFTL_NODISCARD inline u32			MS1Bit(u32 val);
 FFTL_NODISCARD inline u32			MS1Bit(s32 val) { return MS1Bit(static_cast<u32>(val)); }
 FFTL_NODISCARD inline u32			MS1Bit(u64 val);
 FFTL_NODISCARD inline u32			MS1Bit(s64 val) { return MS1Bit(static_cast<u64>(val)); }
-/// Returns the bit index position of the first set bit found starting from the LSB. Returns 0 if val is 0.
+/// Returns the bit index position of the first set bit found starting from the LSB. Returns 32 or 64 if val is 0.
 FFTL_NODISCARD inline u32			LS1Bit(u32 val);
 FFTL_NODISCARD inline u32			LS1Bit(s32 val) { return LS1Bit(static_cast<u32>(val)); }
 FFTL_NODISCARD inline u32			LS1Bit(u64 val);

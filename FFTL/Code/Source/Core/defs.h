@@ -233,9 +233,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #if defined(FFTL_BUILD_DEBUG)
 #	define FFTL_ENABLE_ASSERT 1
-#	define FFTL_ENABLE_PROFILING 1
+#	if !defined(FFTL_ENABLE_PROFILING)
+#		define FFTL_ENABLE_PROFILING 1
+#	endif
 #elif defined(FFTL_BUILD_RELEASE)
-#	define FFTL_ENABLE_PROFILING 1 // To be removed
+#	if !defined(FFTL_ENABLE_PROFILING)
+#		define FFTL_ENABLE_PROFILING 1 // To be removed
+#	endif
 #endif
 
 
