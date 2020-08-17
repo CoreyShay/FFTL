@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "Alloc.h"
 
-#if defined(__ANDROID__) && !defined(FFTL_64BIT) // This fixes an odd error. Might resolve itself next compiler.
+#if defined(__ANDROID__) // This fixes an odd error. Might resolve itself next compiler.
 namespace std
 {
 	enum class align_val_t : size_t {};

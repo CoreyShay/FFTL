@@ -69,6 +69,12 @@ FFTL_NODISCARD __m128i sse_iCeil_ps(const __m128& v);
 FFTL_NODISCARD __m128 sse_fCeil_ss(const __m128& v);
 FFTL_NODISCARD __m128 sse_fCeil_ps(const __m128& v);
 
+FFTL_NODISCARD __m128 sse_MulAdd_ps(const __m128& a, const __m128& b, const __m128& c);
+FFTL_NODISCARD __m128 sse_MulAdd_ss(const __m128& a, const __m128& b, const __m128& c);
+FFTL_NODISCARD __m128 sse_NMulAdd_ps(const __m128& a, const __m128& b, const __m128& c);
+FFTL_NODISCARD __m128 sse_NMulAdd_ss(const __m128& a, const __m128& b, const __m128& c);
+FFTL_NODISCARD __m128 sse_MulSub_ps(const __m128& a, const __m128& b, const __m128& c);
+FFTL_NODISCARD __m128 sse_MulSub_ss(const __m128& a, const __m128& b, const __m128& c);
 FFTL_NODISCARD __m128 sse_AddMul_ps(const __m128& a, const __m128& b, const __m128& c);
 FFTL_NODISCARD __m128 sse_AddMul_ss(const __m128& a, const __m128& b, const __m128& c);
 FFTL_NODISCARD __m128 sse_SubMul_ps(const __m128& a, const __m128& b, const __m128& c);

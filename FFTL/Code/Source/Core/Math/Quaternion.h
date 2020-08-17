@@ -164,7 +164,7 @@ public:
 	FFTL_NODISCARD static quat	genIdentity();
 
 	friend f32	Dot(const quat& a, const quat& b);
-	friend quat	Lerp(const quat& lhs, const quat& b, f32 amount);
+	friend quat	Lerp(f32 mu, const quat& from, const quat& to);
 
 private:
 

@@ -48,3 +48,6 @@ inline void Free(void* pMem)
 } // namespce FFTL
 
 
+#define FFTL_STACK_ALLOC(__type__, __count__) static_cast<__type__*>(alloca(__count__ * sizeof(__type__)))
+
+

@@ -41,35 +41,51 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace FFTL
 {
-
 #if defined(__ANDROID__)
-#	define FFTL_LOG_MSG(...)					((void)__android_log_print(ANDROID_LOG_INFO,			"FFTL", __VA_ARGS__))
-#	define FFTL_LOGV_MSG(_msg_, _argList_)		((void)__android_log_vprint(ANDROID_LOG_INFO,			"FFTL", _msg_, _argList_))
-#	define FFTL_LOG_ERR(...)					((void)__android_log_print(ANDROID_LOG_ERROR,			"FFTL", __VA_ARGS__))
-#	define FFTL_LOGV_ERR(_msg_, _argList_)		((void)__android_log_vprint(ANDROID_LOG_ERROR,			"FFTL", _msg_, _argList_))
-#	define FFTL_LOG_WRN(...)					((void)__android_log_print(ANDROID_LOG_WARN,			"FFTL", __VA_ARGS__))
-#	define FFTL_LOGV_WRN(_msg_, _argList_)		((void)__android_log_vprint(ANDROID_LOG_WARN,			"FFTL", _msg_, _argList_))
-#	if defined(FFTL_ENABLE_ASSERT)
-#		define FFTL_LOG_VRB(...)				((void)__android_log_print(ANDROID_LOG_VERBOSE,			"FFTL", __VA_ARGS__))
-#		define FFTL_LOGV_VRB(_msg_, _argList_)	((void)__android_log_vprint(ANDROID_LOG_VERBOSE,		"FFTL", _msg_, _argList_))
-#	endif
+	inline int LogMsgV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_INFO,		"FFTL", _Format, _ArgList); }
+	inline int LogErrV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_ERROR,		"FFTL", _Format, _ArgList); }
+	inline int LogWrnV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_WARN,		"FFTL", _Format, _ArgList); }
+	inline int LogVrbV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_VERBOSE,	"FFTL", _Format, _ArgList); }
 #else
-#	define FFTL_LOG_MSG(...)					((void)printf(__VA_ARGS__))
-#	define FFTL_LOGV_MSG(_msg_, _argList_)		((void)vprintf(_msg_, _argList_))
-#	define FFTL_LOG_ERR(...)					((void)printf(__VA_ARGS__))
-#	define FFTL_LOGV_ERR(_msg_, _argList_)		((void)vprintf(_msg_, _argList_))
-#	define FFTL_LOG_WRN(...)					((void)printf(__VA_ARGS__))
-#	define FFTL_LOGV_WRN(_msg_, _argList_)		((void)vprintf(_msg_, _argList_))
-#	if defined(FFTL_ENABLE_ASSERT)
-#		define FFTL_LOG_VRB(...)				((void)printf(__VA_ARGS__))
-#		define FFTL_LOGV_VRB(_msg_, _argList_)	((void)vprintf(_msg_, _argList_))
+	inline int LogMsgV(const char* _Format, va_list _ArgList) { return vprintf(_Format, _ArgList); }
+	inline int LogErrV(const char* _Format, va_list _ArgList) { return vprintf(_Format, _ArgList); }
+	inline int LogWrnV(const char* _Format, va_list _ArgList) { return vprintf(_Format, _ArgList); }
+	inline int LogVrbV(const char* _Format, va_list _ArgList) { return vprintf(_Format, _ArgList); }
+
+#	if defined(FFTL_WCHAR)
+	inline int LogMsgV(const tchar* _Format, va_list _ArgList) { return vwprintf(_Format, _ArgList); }
+	inline int LogErrV(const tchar* _Format, va_list _ArgList) { return vwprintf(_Format, _ArgList); }
+	inline int LogWrnV(const tchar* _Format, va_list _ArgList) { return vwprintf(_Format, _ArgList); }
+	inline int LogVrbV(const tchar* _Format, va_list _ArgList) { return vwprintf(_Format, _ArgList); }
 #	endif
+#endif
+
+	inline int LogMsg(const char* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogMsgV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogErr(const char* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogErrV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogWrn(const char* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogWrnV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogVrb(const char* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogVrbV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+
+#if defined(FFTL_WCHAR)
+	inline int LogMsg(const tchar* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogMsgV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogErr(const tchar* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogErrV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogWrn(const tchar* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogWrnV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+	inline int LogVrb(const tchar* _Format, ...) { int _Result; va_list _ArgList; va_start(_ArgList, _Format); _Result = LogVrbV(_Format, _ArgList); va_end(_ArgList); return _Result; }
+#endif
+}
+
+#define FFTL_LOG_MSG(...)					((void)FFTL::LogMsg(__VA_ARGS__))
+#define FFTL_LOGV_MSG(_msg_, _argList_)		((void)FFTL::LogMsgV(_msg_, _argList_))
+#define FFTL_LOG_ERR(...)					((void)FFTL::LogErr(__VA_ARGS__))
+#define FFTL_LOGV_ERR(_msg_, _argList_)		((void)FFTL::LogErrV(_msg_, _argList_))
+#define FFTL_LOG_WRN(...)					((void)FFTL::LogWrn(__VA_ARGS__))
+#define FFTL_LOGV_WRN(_msg_, _argList_)		((void)FFTL::LogWrnV(_msg_, _argList_))
+#if defined(FFTL_ENABLE_ASSERT)
+#	define FFTL_LOG_VRB(...)				((void)FFTL::LogVrb(__VA_ARGS__))
+#	define FFTL_LOGV_VRB(_msg_, _argList_)	((void)FFTL::LogVrbV(_msg_, _argList_))
 #endif
 
 #if !defined(FFTL_ENABLE_ASSERT)
 #	define FFTL_LOG_VRB(...) ((void)0)
 #	define FFTL_LOGV_VRB(_msg_, _argList_) ((void)0)
 #endif
-
-}
 

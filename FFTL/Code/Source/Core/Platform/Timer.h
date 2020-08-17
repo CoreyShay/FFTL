@@ -95,7 +95,7 @@ private:
 // exactly the same as the CPU timer class (notice the typedef), because QueryPerformanceCounter
 // simply calls the CPU time stamp counter, and QueryPerformanceFrequency simply returns the
 // constant value of 1745620598 Hz. FYI, PS4 runs at 1593726008 Hz.
-#if !defined(_DURANGO) && !defined(__ORBIS__) && !defined(__PROSPERO___)
+#if !defined(_DURANGO) && !defined(__ORBIS__) && !defined(__PROSPERO__)
 class FFTL_NODISCARD Timer : public TimerBase
 {
 public:

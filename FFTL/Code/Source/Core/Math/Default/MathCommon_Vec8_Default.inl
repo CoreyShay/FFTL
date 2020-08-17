@@ -67,37 +67,29 @@ FFTL_FORCEINLINE Vec8f V8fLoadAR(const f32* pf)
 }
 FFTL_FORCEINLINE Vec8f V8fLoad1(const f32* pf)
 {
-	Vec8f r;
-	r.a = V4fLoad1(pf);
-	r.b = V4fZero();
-	return r;
+	return V8fSet(V4fLoad1(pf), V4fZero());
 }
 FFTL_FORCEINLINE Vec8f V8fLoad2(const f32* pf)
 {
-	Vec8f r;
-	r.a = V4fLoad2(pf);
-	r.b = V4fZero();
-	return r;
+	return V8fSet(V4fLoad2(pf), V4fZero());
 }
 FFTL_FORCEINLINE Vec8f V8fLoad3(const f32* pf)
 {
-	Vec8f r;
-	r.a = V4fLoad3(pf);
-	r.b = V4fZero();
-	return r;
+	return V8fSet(V4fLoad3(pf), V4fZero());
+}
+FFTL_FORCEINLINE Vec8f V8fLoad4(const f32* pf)
+{
+	return V8fSet(V4fLoadU(pf), V4fZero());
 }
 FFTL_FORCEINLINE Vec8f V8fLoad6(const f32* pf)
 {
-	return V8fSet( V4fLoadU(pf+0), V4fLoad2(pf+4) );
+	return V8fSet(V4fLoadU(pf + 0), V4fLoad2(pf + 4));
 }
 
 
 FFTL_FORCEINLINE Vec8f V8fLoadUR(const f32* pf)
 {
-	Vec8f r;
-	r.a = V4fReverse( V4fLoadU(pf+4) );
-	r.b = V4fReverse( V4fLoadU(pf+0) );
-	return r;
+	return Vec8f{ V4fReverse(V4fLoadU(pf + 4)), V4fReverse(V4fLoadU(pf + 0)) };
 }
 FFTL_FORCEINLINE void V8fStoreA(f32* pf, Vec8f_In v)
 {
@@ -121,6 +113,10 @@ FFTL_FORCEINLINE void V8fStore3(f32* pf, Vec8f_In v)
 {
 	V4fStore3(pf, v.a);
 }
+FFTL_FORCEINLINE void V8fStore4(f32* pf, Vec8f_In v)
+{
+	V4fStoreA(pf, v.a);
+}
 FFTL_FORCEINLINE void V8fStore6(f32* pf, Vec8f_In v)
 {
 	V4fStoreU(pf+0, v.a);
@@ -128,172 +124,187 @@ FFTL_FORCEINLINE void V8fStore6(f32* pf, Vec8f_In v)
 }
 FFTL_FORCEINLINE Vec8f V8fSet(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d)
 {
-	Vec8f r;
-	r.a = V4fSet(x, y, z, w);
-	r.b = V4fSet(a, b, c, d);
-	return r;
+	return Vec8f
+	{
+		V4fSet(x, y, z, w),
+		V4fSet(a, b, c, d),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fSet(Vec4f_In a, Vec4f_In b)
 {
-	const Vec8f r = { a, b };
-	return r;
+	return Vec8f{ a, b };
 }
 FFTL_FORCEINLINE Vec8f V8fSet0123(Vec8f_In a, Vec4f_In b)
 {
-	const Vec8f r = { b, a.b };
-	return r;
+	return Vec8f{ b, a.b };
 }
 FFTL_FORCEINLINE Vec8f V8fSet4567(Vec8f_In a, Vec4f_In b)
 {
-	const Vec8f r = { a.a, b };
-	return r;
+	return Vec8f{ a.a, b };
 }
-FFTL_FORCEINLINE Vec8f V8fSplat8(f32 f)
+FFTL_FORCEINLINE Vec8f V8fSplat(f32 f)
 {
-	Vec8f r;
-	r.a = V4fSplat4(f);
-	r.b = V4fSplat4(f);
-	return r;
+	return Vec8f
+	{
+		V4fSplat(f),
+		V4fSplat(f),
+	};
 }
-FFTL_FORCEINLINE Vec8f V8fSplat8(const f32* pf)
+FFTL_FORCEINLINE Vec8f V8fSplat(const f32* pf)
 {
-	Vec8f r;
-	r.a = V4fSplat4(pf);
-	r.b = V4fSplat4(pf);
-	return r;
+	return Vec8f
+	{
+		V4fSplat(pf),
+		V4fSplat(pf),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fSplat(Vec4f_In v)
 {
-	Vec8f r;
-	r.a = v;
-	r.b = v;
-	return r;
+	return Vec8f{v, v};
 }
 FFTL_FORCEINLINE Vec8f V8fAnd(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fAnd(a.a, b.a);
-	r.b = V4fAnd(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fAnd(a.a, b.a),
+		V4fAnd(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fAndNot(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fAndNot(a.a, b.a);
-	r.b = V4fAndNot(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fAndNot(a.a, b.a),
+		V4fAndNot(a.b, b.b)
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fOr(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fOr(a.a, b.a);
-	r.b = V4fOr(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fOr(a.a, b.a),
+		V4fOr(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fXOr(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fXOr(a.a, b.a);
-	r.b = V4fXOr(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fXOr(a.a, b.a),
+		V4fXOr(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fAdd(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fAdd(a.a, b.a);
-	r.b = V4fAdd(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fAdd(a.a, b.a),
+		V4fAdd(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fSub(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fSub(a.a, b.a);
-	r.b = V4fSub(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fSub(a.a, b.a),
+		V4fSub(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fMul(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fMul(a.a, b.a);
-	r.b = V4fMul(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fMul(a.a, b.a),
+		V4fMul(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fMul(Vec8f_In a, Vec4f_In b)
 {
-	Vec8f r;
-	r.a = V4fMul(a.a, b);
-	r.b = V4fMul(a.b, b);
-	return r;
+	return Vec8f
+	{
+		V4fMul(a.a, b),
+		V4fMul(a.b, b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fDiv(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fDiv(a.a, b.a);
-	r.b = V4fDiv(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fDiv(a.a, b.a),
+		V4fDiv(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fAddMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
 {
-	Vec8f r;
-	r.a = V4fAddMul(a.a, b.a, c.a);
-	r.b = V4fAddMul(a.b, b.b, c.b);
-	return r;
+	return Vec8f
+	{
+		V4fAddMul(a.a, b.a, c.a),
+		V4fAddMul(a.b, b.b, c.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
 {
-	Vec8f r;
-	r.a = V4fSubMul(a.a, b.a, c.a);
-	r.b = V4fSubMul(a.b, b.b, c.b);
-	return r;
+	return Vec8f
+	{
+		V4fSubMul(a.a, b.a, c.a),
+		V4fSubMul(a.b, b.b, c.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 {
-	Vec8f r;
-	r.a = V4fSqrt(v.a);
-	r.b = V4fSqrt(v.b);
-	return r;
+	return Vec8f
+	{
+		V4fSqrt(v.a),
+		V4fSqrt(v.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareEq(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareEq(a.a, b.a);
-	r.b = V4fCompareEq(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareEq(a.a, b.a),
+		V4fCompareEq(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareNq(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareNq(a.a, b.a);
-	r.b = V4fCompareNq(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareNq(a.a, b.a),
+		V4fCompareNq(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareGt(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareGt(a.a, b.a);
-	r.b = V4fCompareGt(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareGt(a.a, b.a),
+		V4fCompareGt(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareLt(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareLt(a.a, b.a);
-	r.b = V4fCompareLt(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareLt(a.a, b.a),
+		V4fCompareLt(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareGe(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareGe(a.a, b.a);
-	r.b = V4fCompareGe(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareGe(a.a, b.a),
+		V4fCompareGe(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareLe(Vec8f_In a, Vec8f_In b)
 {
-	Vec8f r;
-	r.a = V4fCompareLe(a.a, b.a);
-	r.b = V4fCompareLe(a.b, b.b);
-	return r;
+	return Vec8f
+	{
+		V4fCompareLe(a.a, b.a),
+		V4fCompareLe(a.b, b.b),
+	};
 }
 FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
 {
@@ -303,24 +314,25 @@ FFTL_FORCEINLINE int V8fToIntMask(Vec8f_In v)
 }
 FFTL_FORCEINLINE bool V8fIsEqual(Vec8f_In a, Vec8f_In b)
 {
-	Vec4f cmp1 = V4fCompareEq(a.a, b.a);
-	Vec4f cmp2 = V4fCompareEq(a.b, b.b);
-	Vec4f vAnd = V4fAnd(cmp1, cmp2);
+	const Vec4f cmp1 = V4fCompareEq(a.a, b.a);
+	const Vec4f cmp2 = V4fCompareEq(a.b, b.b);
+	const Vec4f vAnd = V4fAnd(cmp1, cmp2);
 	return V4fToIntMask(vAnd) == 15;
 }
 FFTL_FORCEINLINE bool V8fIsAllZero(Vec8f_In v)
 {
-	Vec4f cmp1 = V4fCompareEq(v.a, V4fZero());
-	Vec4f cmp2 = V4fCompareEq(v.b, V4fZero());
-	Vec4f vAnd = V4fAnd(cmp1, cmp2);
+	const Vec4f cmp1 = V4fCompareEq(v.a, V4fZero());
+	const Vec4f cmp2 = V4fCompareEq(v.b, V4fZero());
+	const Vec4f vAnd = V4fAnd(cmp1, cmp2);
 	return V4fToIntMask(vAnd) == 15;
 }
 FFTL_FORCEINLINE Vec8f V8fReverse(Vec8f_In v)
 {
-	Vec8f r;
-	r.a = V4fReverse(v.b);
-	r.b = V4fReverse(v.a);
-	return r;
+	return Vec8f
+	{
+		V4fReverse(v.b),
+		V4fReverse(v.a),
+	};
 }
 FFTL_FORCEINLINE Vec4f V8fAsV4f(Vec8f_In v)
 {

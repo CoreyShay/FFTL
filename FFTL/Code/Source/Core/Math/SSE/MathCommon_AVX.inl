@@ -76,6 +76,10 @@ FFTL_FORCEINLINE Vec8f V8fLoad3(const f32* pf)
 {
 	return _mm256_castps128_ps256(f32_4::Load3(pf).GetNative());
 }
+FFTL_FORCEINLINE Vec8f V8fLoad4(const f32* pf)
+{
+	return _mm256_castps128_ps256(f32_4::LoadA(pf).GetNative());
+}
 FFTL_FORCEINLINE Vec8f V8fLoad6(const f32* pf)
 {
 	return V8fSet(V4fLoadU(pf+0), V4fLoad2(pf+4));
@@ -114,6 +118,10 @@ FFTL_FORCEINLINE void V8fStore3(f32* pf, Vec8f_In v)
 {
 	V4fStore3(pf, _mm256_castps256_ps128(v));
 }
+FFTL_FORCEINLINE void V8fStore4(f32* pf, Vec8f_In v)
+{
+	V4fStoreA(pf, _mm256_castps256_ps128(v));
+}
 FFTL_FORCEINLINE void V8fStore6(f32* pf, Vec8f_In v)
 {
 	V4fStoreU(pf+0, _mm256_castps256_ps128(v));
@@ -135,11 +143,11 @@ FFTL_FORCEINLINE Vec8f V8fSet(Vec4f_In a, Vec4f_In b)
 {
 	return _mm256_insertf128_ps(_mm256_castps128_ps256(a), b, 1);
 }
-FFTL_FORCEINLINE Vec8f V8fSplat8(f32 f)
+FFTL_FORCEINLINE Vec8f V8fSplat(f32 f)
 {
 	return _mm256_set1_ps(f);
 }
-FFTL_FORCEINLINE Vec8f V8fSplat8(const f32* pf)
+FFTL_FORCEINLINE Vec8f V8fSplat(const f32* pf)
 {
 	return _mm256_broadcast_ss(pf);
 }

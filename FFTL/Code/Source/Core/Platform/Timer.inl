@@ -113,6 +113,9 @@ inline TimerBase::StaticInfo::StaticInfo(TimerType type)
 		m_TicksToUsScalar = 1.0 / 1000.0;
 	}
 #endif
+
+	//	Silence warning on durango
+	(void)type;
 }
 
 

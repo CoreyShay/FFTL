@@ -312,6 +312,79 @@ FFTL_FORCEINLINE __m128 sse_fCeil_ps(const __m128& v)
 #endif
 }
 
+FFTL_FORCEINLINE __m128 sse_MulAdd_ps(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_macc_ps(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fmadd_ps(a, b, c);
+#else
+	__m128 r = _mm_mul_ps(a, b);
+	r = _mm_add_ps(r, c);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE __m128 sse_MulAdd_ss(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_macc_ss(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fmadd_ss(a, b, c);
+#else
+	__m128 r = _mm_mul_ss(a, b);
+	r = _mm_add_ss(r, c);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE __m128 sse_NMulAdd_ps(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_macc_ps(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fmadd_ps(a, b, c);
+#else
+	__m128 r = _mm_mul_ps(a, b);
+	r = _mm_sub_ps(c, r);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE __m128 sse_NMulAdd_ss(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_nmacc_ss(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fnmadd_ss(a, b, c);
+#else
+	__m128 r = _mm_mul_ss(a, b);
+	r = _mm_sub_ss(c, r);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE __m128 sse_MulSub_ps(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_msub_ps(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fmsub_ps(a, b, c);
+#else
+	__m128 r = _mm_mul_ps(a, b);
+	r = _mm_sub_ps(r, c);
+	return r;
+#endif
+}
+FFTL_FORCEINLINE __m128 sse_MulSub_ss(const __m128& a, const __m128& b, const __m128& c)
+{
+#if defined(FFTL_FMA4)
+	return _mm_msub_ss(a, b, c);
+#elif defined(FFTL_FMA3)
+	return _mm_fmsub_ss(a, b, c);
+#else
+	__m128 r = _mm_mul_ss(a, b);
+	r = _mm_sub_ps(r, c);
+	return r;
+#endif
+}
+
 FFTL_FORCEINLINE __m128 sse_AddMul_ps(const __m128& a, const __m128& b, const __m128& c)
 {
 #if defined(FFTL_FMA4)

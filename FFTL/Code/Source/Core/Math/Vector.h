@@ -410,7 +410,7 @@ class vecmask
 	template<uint N> friend class vecT;
 
 public:
-	vecmask();
+	vecmask() = default;
 	constexpr vecmask(const vecmask& v);
 	vecmask& operator=(const vecmask& v);
 
@@ -567,7 +567,7 @@ template<uint M> FFTL_NODISCARD u32		MinIndex(const vecT<M>& v); // Returns the 
 template<uint M> FFTL_NODISCARD u32		MaxIndex(const vecT<M>& v); // Returns the index of max lowest value
 template<uint M> FFTL_NODISCARD vecT<M>	Sqrt(const vecT<M>& v);
 template<uint M> FFTL_NODISCARD vecT<M>	RSqrt(const vecT<M>& v); // Newton-Rhapson fast inverse square root
-template<uint M> FFTL_NODISCARD vecT<M>	Lerp(const vecT<M>& lhs, const vecT<M>& b, f32 amt);
+template<uint M> FFTL_NODISCARD vecT<M>	Lerp(f32 mu, const vecT<M>& from, const vecT<M>& to);
 template<uint M> FFTL_NODISCARD vecT<M>	Abs(const vecT<M>& a);
 template<uint M> FFTL_NODISCARD vecT<M>	AbsDiff(const vecT<M>& a, const vecT<M>& b);
 template<uint M> FFTL_NODISCARD vecT<M>	Pow4(const vecT<M>& a, f32 exp);

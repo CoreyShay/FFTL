@@ -149,9 +149,11 @@ void UnpauseThread(ThreadHandle handle);
 
 #if defined(_MSC_VER)
 #	pragma warning(push)
-#	pragma warning( disable : 4407 ) //warning C4407: cast between different pointer to member representations, compiler may generate incorrect code
+#	pragma warning(disable : 4407) //warning C4407: cast between different pointer to member representations, compiler may generate incorrect code
 #endif
-class FFTL_DLLEXPORT FFTL_NODISCARD ThreadOwner
+
+// This class must be derived and the Run function must be overridden.
+class FFTL_DLLEXPORT ThreadOwner
 {
 public:
 	virtual ~ThreadOwner() = default;
@@ -165,16 +167,10 @@ public:
 
 
 
-//	The Thread class is a simple wrapper of a created thread and its platform specific handles.
-// The class must be derived and the Run function must be overridden.
-class FFTL_DLLEXPORT Thread
+class ThreadBase
 {
 public:
-	Thread(ThreadOwner::RunFunction func);
-	~Thread() { Stop(true); }
-
-	void Start(ThreadOwner* pOwner, const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
-	void Stop(bool bWaitForDone = true);
+	ThreadBase() = default;
 
 	void Pause();
 	void Unpause();
@@ -185,20 +181,54 @@ public:
 	FFTL_NODISCARD bool GetIsRunning() const;
 	FFTL_NODISCARD bool GetIsFlaggedForStop() const;
 
+protected:
+	ThreadHandle					m_Handle = 0;
+#if !defined(FFTL_THREAD_HANDLE_IS_ID)
+	ThreadId						m_ID = 0; //	Handle and ID are the same on posix platforms.
+#endif
+	ThreadResult					m_RunResult = ReturnCode::OK;
+	volatile bool					m_bIsRunning = false;
+	volatile bool					m_bFlaggedForStop = false;
+};
+
+
+//	The ThreadMember class is a simple wrapper of a created thread and its platform specific handles.
+// Derive your class from ThreadOwner and contain a ThreadMember as a member variable.
+class ThreadMember : public ThreadBase
+{
+public:
+	ThreadMember(ThreadOwner::RunFunction func) : m_funcRun(func) {}
+	~ThreadMember() { Stop(true); }
+
+	void Start(ThreadOwner* pOwner, const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
+	void Stop(bool bWaitForDone = true);
+
 private:
 	void Run();
 	static FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV InternalStartFunc(void* pThis);
 
 private:
-	ThreadOwner*				m_pOwner;
-	ThreadOwner::RunFunction	m_pRunFunction;
-	ThreadHandle				m_Handle;
-#if !defined(FFTL_THREAD_HANDLE_IS_ID)
-	ThreadId					m_ID; //	Handle and ID are the same on posix platforms.
-#endif
-	ThreadResult				m_RunResult;
-	volatile bool				m_bIsRunning;
-	volatile bool				m_bFlaggedForStop;
+	ThreadOwner::RunFunction const	m_funcRun = nullptr;
+	ThreadOwner*					m_pOwner = nullptr;
+};
+
+//	The ThreadFunctor class calls a function in a separate thread
+template <typename T_Functor>
+class ThreadFunctor : public ThreadBase
+{
+public:
+	ThreadFunctor(T_Functor func) : m_funcRun(func) {}
+	~ThreadFunctor() { Stop(true); }
+
+	void Start(const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
+	void Stop(bool bWaitForDone = true);
+
+private:
+	void Run();
+	static FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV InternalStartFunc(void* pThis);
+
+private:
+	T_Functor const					m_funcRun = nullptr;
 };
 
 

@@ -133,13 +133,18 @@ FFTL_FORCEINLINE Vec4f V4fSet1(f32 x)
 {
 	return vsetq_lane_f32(x, vdupq_n_f32(0), 0);
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(f32 f)
+FFTL_FORCEINLINE Vec4f V4fSplat(f32 f)
 {
 	return vdupq_n_f32(f);
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(const f32* pf)
+FFTL_FORCEINLINE Vec4f V4fSplat(const f32* pf)
 {
 	return vdupq_n_f32(*pf);
+}
+FFTL_FORCEINLINE Vec4f V4fSplatXY(const f32* pf)
+{
+	const auto v2 = vld1_f32(pf);
+	return vcombine_f32(v2, v2);
 }
 FFTL_FORCEINLINE Vec4f V4fAnd(Vec4f_In a, Vec4f_In b)
 {
@@ -194,6 +199,30 @@ FFTL_FORCEINLINE Vec4f V4fMin(Vec4f_In a, Vec4f_In b)
 FFTL_FORCEINLINE Vec4f V4fMax(Vec4f_In a, Vec4f_In b)
 {
 	return vmaxq_f32(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	//return a*b+c;
+#if defined(__clang__) && !defined(FFTL_64BIT)
+	//	The advertised vmlaw_32 intrinsic doesn't actually perform fused-multiply-add like it's supposed to in some cases.
+	// In some headers you'll see it simply inlined to a+b*c. The inline assembly below fixes this issue so it's a single instruction.
+	Vec4f ret = c;
+	__asm__("vmla.f32 %0, %1, %2" : "+w" (ret) : "w" (a), "w" (b));
+	return ret;
+#else
+	return vmlaq_f32(c, a, b); // Fused-multiply-add
+#endif
+}
+FFTL_FORCEINLINE Vec4f V4fNMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	//return -a*b+c;
+	return V4fSubMul(c, a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fMulSub(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	//return a*b-c;
+	FFTL_ASSERT_MSG(0, "MulSub is sub-optimal on ARM, due to forced negation. Use SubMul instead.");
+	return V4fMulAdd(a, b, V4fNegate(c));
 }
 FFTL_FORCEINLINE Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
 {
@@ -506,56 +535,55 @@ FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
 
 
 
+#if defined(FFTL_64BIT)
+#	define FFTL_ASM_READ_FPCR "mrs"
+#	define FFTL_ASM_WRITE_FPCR "msr"
+#	define FFTL_ASM_FPCR "FPCR"
+#else
+#	define FFTL_ASM_READ_FPCR "vmrs"
+#	define FFTL_ASM_WRITE_FPCR "vmsr"
+#	define FFTL_ASM_FPCR "FPSCR"
+#endif
 
 
 
 
-
-FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()
+FFTL_FORCEINLINE bool GetCpuFlushDenormalMode()
 {
 	size_t x;
 
 	//	Get the floating-point status and control register and store it into x.
-	asm(
-		"vmrs %[result],FPSCR \r\n"
-		:[result] "=r" (x) : :
+	__asm(
+	FFTL_ASM_READ_FPCR " %[result], " FFTL_ASM_FPCR " \r\n"
+		: [result] "=r" (x) : :
 		);
 
-	//	Store the flush-to-zero bit.
-	m_prevMode = static_cast<u32>(x & (1<<24));
-	
-	//	Enable the flush-to-zero bit.
-	x |= (1<<24);
-	
-	//	Store the new x with the flush-to-zero bit enabled into the floating-point status and control register
-	asm(
-		"vmsr FPSCR,%[value]"
+	//	Return the flush-to-zero bit.
+	return (x & (1 << 24)) != 0;
+}
+FFTL_FORCEINLINE void SetCpuFlushDenormalMode(bool bEnable)
+{
+	size_t x;
+
+	//	Get the floating-point status and control register and store it into x.
+	__asm(
+		FFTL_ASM_READ_FPCR " %[result], " FFTL_ASM_FPCR " \r\n"
+		: [result] "=r" (x) : :
+		);
+
+	//	Enable or disable the flush to zero bit
+	x = bEnable ? x | (1 << 24) : x & ~(1 << 24);
+
+	//	Store the new x into the floating-point status and control register
+	__asm(
+		FFTL_ASM_WRITE_FPCR " " FFTL_ASM_FPCR " ,%[value]"
 		:
 		: [value] "r" (x)
 		:
 		);
 }
-FFTL_FORCEINLINE ScopedFlushDenormals::~ScopedFlushDenormals()
-{
-	size_t x;
 
-	//	Get the floating-point status and control register and store it into x.
-	asm(
-		"vmrs %[result],FPSCR \r\n"
-		:[result] "=r" (x) : :
-		);
 
-	//	If the flush-to-zero bit was enabled before, it will be disabled here.
-	x &= ~(1<<24) | m_prevMode;
-
-	//	Restore the previous value of the flush-to-zero bit into the the floating-point status and control register.
-	asm(
-		"vmsr FPSCR,%[value]"
-		:
-		: [value] "r" (x)
-		:
-		);
-}
 
 } // namespace FFTL
 

@@ -513,6 +513,24 @@ protected:
 #endif
 };
 
+template <typename T, typename T_Twiddle = T>
+class ConvolverV_Base
+{
+public:
+	virtual ~ConvolverV_Base() = default;
+	virtual uint InitKernel(T* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength) const = 0;
+	virtual void Convolve(T* fInOutput, const T* pKernelArray_FD, size_t kernelArraySize) = 0;
+};
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle = T>
+class ConvolverV : public ConvolverV_Base<T, T_Twiddle>, public Convolver<M, T_MAX_KERNELS, T, T_Twiddle>
+{
+public:
+	using BaseConvolver = Convolver<M, T_MAX_KERNELS, T, T_Twiddle>;
+	uint InitKernel(T* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength) const override;
+	void Convolve(T* fInOutput, const T* pKernelArray_FD, size_t kernelArraySize) override;
+};
+
 
 
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>

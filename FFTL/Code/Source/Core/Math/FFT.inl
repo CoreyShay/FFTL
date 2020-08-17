@@ -404,12 +404,12 @@ FFTL_FORCEINLINE T_TO LoadTo(const T_FROM* a)
 template<>
 FFTL_FORCEINLINE f32_4 LoadTo<f32_4, f32>(const f32* a)
 {
-	return f32_4::Splat4(a);
+	return f32_4::Splat(a);
 }
 template<>
 FFTL_FORCEINLINE f32_8 LoadTo<f32_8, f32>(const f32* a)
 {
-	return f32_8::Splat8(a);
+	return f32_8::Splat(a);
 }
 
 template<typename T_TO, typename T_FROM>
@@ -420,12 +420,12 @@ constexpr FFTL_FORCEINLINE T_TO ConvertTo(const T_FROM& a)
 template<>
 FFTL_FORCEINLINE f32_4 ConvertTo<f32_4, f32>(const f32& a)
 {
-	return f32_4::Splat4(a);
+	return f32_4::Splat(a);
 }
 template<>
 FFTL_FORCEINLINE f32_8 ConvertTo<f32_8, f32>(const f32& a)
 {
-	return f32_8::Splat8(&a);
+	return f32_8::Splat(&a);
 }
 
 
@@ -2375,7 +2375,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveInitial_LastStage(FixedA
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveResumePartial(const Kernel* pKernelArray_FD, size_t kernelArraySize, size_t startKernelIndex, size_t endKernelIndex)
 {
-	auto ConvolveLoopLambda = [this](const Kernel* pKernelArray_FD, size_t kernelArraySize, size_t startKernelIndex, size_t endKernelIndex)
+	auto ConvolveLoopLambda = [this](const Kernel* pKernelArray_FD, size_t startKernelIndex, size_t endKernelIndex)
 	{
 		//	Use min here just in case we start processing a different array than we did in ConvolveInitial
 //		m_LeftoverKernelCount = Min(m_LeftoverKernelCount, kernelArraySize);
@@ -2432,7 +2432,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveResumePartial(const Kern
 
 	if (m_bInputSignalHasData)
 	{
-		ConvolveLoopLambda(pKernelArray_FD, kernelArraySize, startKernelIndex, endKernelIndex);
+		ConvolveLoopLambda(pKernelArray_FD, startKernelIndex, endKernelIndex);
 		
 		if (endKernelIndex >= kernelArraySize)
 		{
@@ -2722,7 +2722,7 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
 	FFTL_IF_CONSTEXPR (std::is_same<T, f32>::value)
 	{
-		const f32_8 vGainY = f32_8::Splat8(fGainY);
+		const f32_8 vGainY = f32_8::Splat(fGainY);
 
 		for (uint n = 0; n < N; n += 8)
 		{
@@ -2782,8 +2782,8 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
 	FFTL_IF_CONSTEXPR (std::is_same<T, f32>::value)
 	{
-		const f32_8 vGainY = f32_8::Splat8(fGainY);
-		const f32_8 vGainZ = f32_8::Splat8(fGainZ);
+		const f32_8 vGainY = f32_8::Splat(fGainY);
+		const f32_8 vGainZ = f32_8::Splat(fGainZ);
 
 		for (uint n = 0; n < N; n += 8)
 		{
@@ -2898,6 +2898,19 @@ uint Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(Kernel* pKernelOutput
 	return kernelCount;
 }
 
+
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
+uint ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(T* pKernelOutput_FD, const T* pKernelInput_TD, size_t kernelLength) const
+{
+	return BaseConvolver::InitKernel(reinterpret_cast<typename BaseConvolver::Kernel*>(pKernelOutput_FD), pKernelInput_TD, kernelLength);
+}
+
+template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
+void ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(T* fInOutput, const T* pKernelArray_FD, size_t kernelArraySize)
+{
+	return BaseConvolver::Convolve(*reinterpret_cast<FixedArray_Aligned32<T, BaseConvolver::N>*>(fInOutput), reinterpret_cast<const typename BaseConvolver::Kernel*>(pKernelArray_FD), kernelArraySize);
+}
 
 
 

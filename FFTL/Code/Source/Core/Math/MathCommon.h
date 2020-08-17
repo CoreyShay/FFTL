@@ -153,24 +153,18 @@ class f32_8;
 #define FFTL_PERMUTEMASK(x) (x & 3)
 
 template <typename T>
-inline constexpr T PI_ = 3.14159265358979323846264338327L; // Trailing underscore to prevent conflicts with #define PI_
+inline constexpr T PI_ = static_cast<T>(3.14159265358979323846264338327L); // Trailing underscore to prevent conflicts with #define PI
 
-template <>
-inline constexpr f64 PI_<f64> = 3.14159265358979323846264338327;
+inline constexpr f32 PI_32 = PI_<f32>;
+inline constexpr f64 PI_64 = PI_<f64>;
 
-template <>
-inline constexpr f32 PI_<f32> = 3.14159265358979323846264338327f;
+inline constexpr f64 invLog2_64 = 1.4426950408889634073599246810019;
+inline constexpr f32 invLog2_32 = 1.4426950408889634073599246810019f;
 
-constexpr f32 PI_32 = PI_<f32>;
-constexpr f64 PI_64 = PI_<f64>;
-
-constexpr f64 invLog2_64 = 1.4426950408889634073599246810019;
-constexpr f32 invLog2_32 = 1.4426950408889634073599246810019f;
-
-constexpr f32 INV_SQRT2 = 0.707106781186547524401f;
-constexpr f32 PI_4 = 0.78539816339744830961566084581988f;
-constexpr f32 SPEED_OF_SOUND = 343.2f;
-constexpr f32 NEAR_SPEED_OF_SOUND = SPEED_OF_SOUND * 0.95f;
+inline constexpr f32 INV_SQRT2 = 0.707106781186547524401f;
+inline constexpr f32 PI_4 = 0.78539816339744830961566084581988f;
+inline constexpr f32 SPEED_OF_SOUND = 343.2f;
+inline constexpr f32 NEAR_SPEED_OF_SOUND = SPEED_OF_SOUND * 0.95f;
 
 }// namespace FFTL
 
@@ -198,10 +192,16 @@ FFTL_NODISCARD inline u32			LS1Bit(u64 val);
 FFTL_NODISCARD inline u32			LS1Bit(s64 val) { return LS1Bit(static_cast<u64>(val)); }
 
 
-
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T LogBase(T base, T y) { return std::log(y) / std::log(base); }
-
+FFTL_NODISCARD FFTL_FORCEINLINE T Log(T y)
+{
+	return std::log(y);
+}
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE T LogBase(T base, T y)
+{
+	return Log(y) / Log(base);
+}
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Log2(T y)
 {
@@ -212,9 +212,15 @@ FFTL_NODISCARD FFTL_FORCEINLINE T Log2(T y)
 #endif
 }
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Log10(T y) { return std::log10(y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Log10(T y)
+{
+	return std::log10(y);
+}
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Pow(T x, T y) { return std::pow(x, y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Pow(T x, T y)
+{
+	return std::pow(x, y);
+}
 
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Pow2(T b)
@@ -233,11 +239,26 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr uint Pow2()
 }
 
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Cos(T y) { return std::cos(y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Cos(T y)
+{
+	return std::cos(y);
+}
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Sin(T y) { return std::sin(y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Sin(T y)
+{
+	return std::sin(y);
+}
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE T Tan(T y) { return std::tan(y); }
+FFTL_NODISCARD FFTL_FORCEINLINE T Tan(T y)
+{
+	return std::tan(y);
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE T Exp(T y)
+{
+	return std::exp(y);
+}
 
 inline void SinCos(f32 a, f32 &s, f32 &c)
 {
@@ -261,10 +282,10 @@ FFTL_NODISCARD FFTL_FORCEINLINE T Abs(T y) { return static_cast<T>(std::abs(y));
 
 
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Square(T y) { return y*y; }
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Square(T y) { return y * y; }
 
 template <typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Cube(T y) { return y*y*y; }
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Cube(T y) { return y * y * y; }
 
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE T Sqrt(T f) { return std::sqrt(f); }
@@ -327,6 +348,13 @@ template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE bool IsNan(T y)
 {
 	return std::isnan(y);
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE T NanCheck(T y)
+{
+	FFTL_ASSERT(!IsNan(y));
+	return y;
 }
 
 template <typename T>
@@ -496,6 +524,105 @@ FFTL_NODISCARD FFTL_FORCEINLINE f64 ReinterpretAs(const u64& v)
 	return ReinterpretAs<f64>(static_cast<s64>(v));
 }
 #endif
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T>::is_integer && std::numeric_limits<T>::is_signed, T>::type Wrap(T val, T range)
+{
+	if (val < 0)
+		val += range * (-val / range + 1);
+
+	return val % range;
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr typename std::enable_if<std::numeric_limits<T>::is_integer && std::numeric_limits<T>::is_signed, T>::type Wrap(T val, T lowBnd, T end)
+{
+	const T range = end - lowBnd;
+
+	if (val < lowBnd)
+		val += range * ((lowBnd - val) / range + 1);
+
+	return lowBnd + (val - lowBnd) % range;
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator|(T a, T b)
+{
+	return static_cast<T>(underlying_cast(a) | underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T& operator|=(T& a, T b)
+{
+	return reinterpret_cast<T&>(reinterpret_cast<typename std::underlying_type<T>::type&>(a) |= underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator&(T a, T b)
+{
+	return static_cast<T>(underlying_cast(a) & underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T& operator&=(T& a, T b)
+{
+	return reinterpret_cast<T&>(reinterpret_cast<typename std::underlying_type<T>::type&>(a) &= underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator^(T a, T b)
+{
+	return static_cast<T>(underlying_cast(a) ^ underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T& operator^=(T& a, T b)
+{
+	return reinterpret_cast<T&>(reinterpret_cast<typename std::underlying_type<T>::type&>(a) ^= underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator~(T a)
+{
+	return static_cast<T>(~underlying_cast(a));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator+(T a, typename std::underlying_type<T>::type b)
+{
+	return static_cast<T>(underlying_cast(a) + b);
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+constexpr T& operator+=(T& a, typename std::underlying_type<T>::type b)
+{
+	return reinterpret_cast<T&>(reinterpret_cast<typename std::underlying_type<T>::type&>(a) += b);
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator-(T a, typename std::underlying_type<T>::type b)
+{
+	return static_cast<T>(underlying_cast(a) - b);
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T& operator-=(T& a, typename std::underlying_type<T>::type b)
+{
+	return reinterpret_cast<T&>(reinterpret_cast<typename std::underlying_type<T>::type&>(a) -= b);
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T operator%(T a, T b)
+{
+	return static_cast<T>(underlying_cast(a) % underlying_cast(b));
+}
+
+template <typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+FFTL_NODISCARD constexpr T Wrap(T val, T lowBnd, T end)
+{
+	static_assert(sizeof(T) <= sizeof(ptrdiff_t), "Only enums of reasonable size allowed");
+	return static_cast<T>(Wrap(static_cast<ptrdiff_t>(val), static_cast<ptrdiff_t>(lowBnd), static_cast<ptrdiff_t>(end)));
+}
 
 
 #if defined(_MSC_VER)
@@ -777,7 +904,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 Ceil(f32 val)
 FFTL_NODISCARD FFTL_FORCEINLINE f32 AddMul(f32 a, f32 b, f32 c)
 {
 #if defined(FFTL_SSE)
-	return _mm_cvtss_f32( sse_AddMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)) );
+	return _mm_cvtss_f32(sse_AddMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
 #elif defined(FFTL_ARM_NEON)
 	return fmaf(b, c, a);
 #else
@@ -787,7 +914,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 AddMul(f32 a, f32 b, f32 c)
 FFTL_NODISCARD FFTL_FORCEINLINE f32 SubMul(f32 a, f32 b, f32 c)
 {
 #if defined(FFTL_SSE)
-	return _mm_cvtss_f32( sse_SubMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)) );
+	return _mm_cvtss_f32(sse_SubMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
 #elif defined(FFTL_ARM_NEON)
 #if defined(__clang__)
 	//	The advertised vmlaw_32 intrinsic doesn't actually perform fused-multiply-add like it's supposed to in some cases.
@@ -802,6 +929,35 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 SubMul(f32 a, f32 b, f32 c)
 	return a - b * c;
 #endif
 } // a-b*c
+FFTL_NODISCARD FFTL_FORCEINLINE f32 MulAdd(f32 a, f32 b, f32 c)
+{
+#if defined(FFTL_SSE)
+	return _mm_cvtss_f32(sse_MulAdd_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
+#elif defined(FFTL_ARM_NEON)
+	return fmaf(a, b, c);
+#else
+	return std::fma(a, b, c);
+#endif
+} // a*b+c
+FFTL_NODISCARD FFTL_FORCEINLINE f32 NMulAdd(f32 a, f32 b, f32 c)
+{
+#if defined(FFTL_SSE)
+	return _mm_cvtss_f32(sse_NMulAdd_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
+#else
+	return SubMul(c, a, b);
+#endif
+} // -a*b+c
+FFTL_NODISCARD FFTL_FORCEINLINE f32 MulSub(f32 a, f32 b, f32 c)
+{
+#if defined(FFTL_SSE)
+	return _mm_cvtss_f32(sse_SubMul_ss(_mm_set_ss(a), _mm_set_ss(b), _mm_set_ss(c)));
+#elif defined(FFTL_ARM_NEON)
+	FFTL_ASSERT_MSG(0, "MulSub is sub-optimal on ARM, due to forced negation. Use SubMul instead.");
+	return fmaf(a, b, -c); // Fused-multiply-subtract
+#else
+	return a * b - c;
+#endif
+} // a*b-c
 
 
 FFTL_NODISCARD inline const f32* FindFirstValueNotEqualTo(f32 val, const f32* pBuffer, size_t nSize)
@@ -1004,7 +1160,7 @@ class FFTL_NODISCARD trig_coeffs
 	template<std::size_t ... NS>
 	constexpr static inline array_type _coeffs(seq<NS ...>)
 	{
-		return { {base::coeff(NS) ...} };
+		return {base::coeff(NS) ...};
 	}
 public:
 	constexpr static array_type coeffs = _coeffs(gen_seq<N>{});
@@ -1111,8 +1267,9 @@ void V4fStore3(f32* pf, Vec4f_In v);
 void V4fScatter(f32* pf, Vec4f_In v, int iA, int iB, int iC, int iD);
 FFTL_NODISCARD Vec4f V4fSet(f32 x, f32 y, f32 z, f32 w);
 FFTL_NODISCARD Vec4f V4fSet1(f32 x);
-FFTL_NODISCARD Vec4f V4fSplat4(f32 f);
-FFTL_NODISCARD Vec4f V4fSplat4(const f32* pf);
+FFTL_NODISCARD Vec4f V4fSplat(f32 f);
+FFTL_NODISCARD Vec4f V4fSplat(const f32* pf);
+FFTL_NODISCARD Vec4f V4fSplatXY(const f32* pf);
 FFTL_NODISCARD Vec4f V4fAnd(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec4f V4fOr(Vec4f_In a, Vec4f_In b);
@@ -1123,6 +1280,9 @@ FFTL_NODISCARD Vec4f V4fMul(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec4f V4fDiv(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec4f V4fMin(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec4f V4fMax(Vec4f_In a, Vec4f_In b);
+FFTL_NODISCARD Vec4f V4fMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a*b+c
+FFTL_NODISCARD Vec4f V4fNMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c); // -a*b+c
+FFTL_NODISCARD Vec4f V4fMulSub(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a*b-c
 FFTL_NODISCARD Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a+b*c
 FFTL_NODISCARD Vec4f V4fSubMul(Vec4f_In a, Vec4f_In b, Vec4f_In c); // a-b*c
 FFTL_NODISCARD Vec4f V4fNegate(Vec4f_In v);
@@ -1193,19 +1353,21 @@ FFTL_NODISCARD Vec8f V8fLoadUR(const f32* pf);
 FFTL_NODISCARD Vec8f V8fLoad1(const f32* pf);
 FFTL_NODISCARD Vec8f V8fLoad2(const f32* pf);
 FFTL_NODISCARD Vec8f V8fLoad3(const f32* pf);
+FFTL_NODISCARD Vec8f V8fLoad4(const f32* pf);
 FFTL_NODISCARD Vec8f V8fLoad6(const f32* pf);
 void V8fStoreA(f32* pf, Vec8f_In v);
 void V8fStoreU(f32* pf, Vec8f_In v);
 void V8fStore1(f32* pf, Vec8f_In v);
 void V8fStore2(f32* pf, Vec8f_In v);
 void V8fStore3(f32* pf, Vec8f_In v);
+void V8fStore4(f32* pf, Vec8f_In v);
 void V8fStore6(f32* pf, Vec8f_In v);
 FFTL_NODISCARD Vec8f V8fSet(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d);
 FFTL_NODISCARD Vec8f V8fSet(Vec4f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec8f V8fSet0123(Vec8f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec8f V8fSet4567(Vec8f_In a, Vec4f_In b);
-FFTL_NODISCARD Vec8f V8fSplat8(f32 f);
-FFTL_NODISCARD Vec8f V8fSplat8(const f32* pf);
+FFTL_NODISCARD Vec8f V8fSplat(f32 f);
+FFTL_NODISCARD Vec8f V8fSplat(const f32* pf);
 FFTL_NODISCARD Vec8f V8fSplat(Vec4f_In v);
 FFTL_NODISCARD Vec8f V8fAnd(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fAndNot(Vec8f_In a, Vec8f_In b);
@@ -1254,6 +1416,8 @@ enum enMoveAlignment
 class FFTL_NODISCARD f32_4
 {
 public:
+	using InType = f32_4_In;
+
 	FFTL_FORCEINLINE static constexpr size_t GetSize() { return 4; }
 
 	FFTL_FORCEINLINE f32_4() = default;
@@ -1271,9 +1435,11 @@ public:
 	FFTL_FORCEINLINE static f32_4 Load1(const f32* pf)	{ return f32_4(V4fLoad1(pf)); }
 	FFTL_FORCEINLINE static f32_4 Load2(const f32* pf)	{ return f32_4(V4fLoad2(pf)); }
 	FFTL_FORCEINLINE static f32_4 Load3(const f32* pf)	{ return f32_4(V4fLoad3(pf)); }
-	FFTL_FORCEINLINE static f32_4 Splat4(const f32* pf)	{ return f32_4(V4fSplat4(pf)); }
-	FFTL_FORCEINLINE static f32_4 Splat1(f32 f) { return f32_4(V4fSet1(f)); }
-	FFTL_FORCEINLINE static f32_4 Splat4(f32 f) { return f32_4(V4fSplat4(f)); }
+	FFTL_FORCEINLINE static f32_4 Set1(f32 f)			{ return f32_4(V4fSet1(f)); }
+	FFTL_FORCEINLINE static f32_4 Set2(f32 x, f32 y);
+	FFTL_FORCEINLINE static f32_4 Splat(const f32* pf)	{ return f32_4(V4fSplat(pf)); }
+	FFTL_FORCEINLINE static f32_4 Splat(f32 f)			{ return f32_4(V4fSplat(f)); }
+	FFTL_FORCEINLINE static f32_4 SplatXY(const f32* pf) { return f32_4(V4fSplatXY(pf)); }
 
 	FFTL_FORCEINLINE void StoreA(f32* pf) const			{ V4fStoreA(pf, m_v); }
 	FFTL_FORCEINLINE void StoreU(f32* pf) const			{ V4fStoreU(pf, m_v); }
@@ -1282,11 +1448,26 @@ public:
 	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V4fStore3(pf, m_v); }
 	FFTL_FORCEINLINE void Scatter(f32* pf, int iA, int iB, int iC, int iD) const	{ V4fScatter(pf, m_v, iA, iB, iC, iD); }
 
-	template<enMoveAlignment _A>
-	FFTL_FORCEINLINE static f32_4 Load(const f32* pf)	{ return f32_4(_A==kAligned ? V4fLoadA(pf) : V4fLoadU(pf)); }
-	template<enMoveAlignment _A>
-	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V4fStoreA(pf, m_v) : V4fStoreU(pf, m_v); }
+	template<enMoveAlignment _A> FFTL_FORCEINLINE static f32_4 Load(const f32* pf)	{ return _A == kAligned ? LoadA(pf) : LoadU(pf); }
+	template<enMoveAlignment _A> FFTL_FORCEINLINE void Store(f32* pf) const			{ _A == kAligned ? StoreA(pf) : StoreA(pf); }
 
+	template<uint N> FFTL_FORCEINLINE static f32_4 Load(const f32* pf)
+	{
+		static_assert(N >= 1 && N <= 4, "Only loads between 1 and 4 allowed");
+		if constexpr (N == 1) return Load1(pf);
+		if constexpr (N == 2) return Load2(pf);
+		if constexpr (N == 3) return Load3(pf);
+		if constexpr (N == 4) return LoadA(pf);
+	}
+
+	template<uint N> FFTL_FORCEINLINE void Store(f32* pf) const
+	{
+		static_assert(N >= 1 && N <= 4, "Only stores between 1 and 4 allowed");
+		if		constexpr (N == 1)	Store1(pf);
+		else if constexpr (N == 2)	Store2(pf);
+		else if constexpr (N == 3)	Store3(pf);
+		else						StoreA(pf);
+	}
 
 	FFTL_FORCEINLINE void Set(f32 x, f32 y, f32 z, f32 w)	{ m_v = V4fSet(x, y, z, w); }
 
@@ -1312,10 +1493,10 @@ public:
 	FFTL_FORCEINLINE f32_4& operator^=(f32_4_In b)		{ m_v = V4fXOr(m_v, b.m_v);	return *this; }
 
 	//	Scalar methods
-	FFTL_FORCEINLINE f32_4 operator*(f32 b) const		{ return f32_4(V4fMul(m_v, V4fSplat4(b))); }
-	FFTL_FORCEINLINE f32_4 operator/(f32 b) const		{ return f32_4(V4fDiv(m_v, V4fSplat4(b))); }
-	FFTL_FORCEINLINE f32_4& operator*=(f32 b)			{ m_v = V4fMul(m_v, V4fSplat4(b));	return *this; }
-	FFTL_FORCEINLINE f32_4& operator/=(f32 b)			{ m_v = V4fDiv(m_v, V4fSplat4(b));	return *this; }
+	FFTL_FORCEINLINE f32_4 operator*(f32 b) const		{ return f32_4(V4fMul(m_v, V4fSplat(b))); }
+	FFTL_FORCEINLINE f32_4 operator/(f32 b) const		{ return f32_4(V4fDiv(m_v, V4fSplat(b))); }
+	FFTL_FORCEINLINE f32_4& operator*=(f32 b)			{ m_v = V4fMul(m_v, V4fSplat(b));	return *this; }
+	FFTL_FORCEINLINE f32_4& operator/=(f32 b)			{ m_v = V4fDiv(m_v, V4fSplat(b));	return *this; }
 
 	//	Unary operators
 	FFTL_FORCEINLINE f32_4 operator+() const			{ return *this; }
@@ -1330,9 +1511,6 @@ protected:
 	Vec4f m_v;
 };
 
-FFTL_FORCEINLINE void StoreA(f32* pf, f32_4_In v)									{ v.StoreA(pf); }
-FFTL_FORCEINLINE void StoreU(f32* pf, f32_4_In v)									{ v.StoreU(pf); }
-
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Sqrt(f32_4_In v)								{ return f32_4(V4fSqrt(v.GetNative())); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 HSumV(f32_4_In v)								{ return V4fHSumV(v.GetNative()); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32 HSumF(f32_4_In v)								{ return V4fHSumF(v.GetNative()); }
@@ -1342,6 +1520,9 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32_4 MergeZW(f32_4_In a, f32_4_In b)				{ retur
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 SplitXZ(f32_4_In a, f32_4_In b)				{ return V4fSplitXZ(a.GetNative(), b.GetNative()); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 SplitYW(f32_4_In a, f32_4_In b)				{ return V4fSplitYW(a.GetNative(), b.GetNative()); }
 
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 MulAdd(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fMulAdd(a.GetNative(), b.GetNative(), c.GetNative()); } // a*b+c
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 NMulAdd(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fNMulAdd(a.GetNative(), b.GetNative(), c.GetNative()); } // -a*b+c
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 MulSub(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fMulSub(a.GetNative(), b.GetNative(), c.GetNative()); } // a*b-c
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 AddMul(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fAddMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a+b*c
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 SubMul(f32_4_In a, f32_4_In b, f32_4_In c)	{ return V4fSubMul(a.GetNative(), b.GetNative(), c.GetNative()); } // a-b*c
 
@@ -1360,12 +1541,16 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32_4 WZYX(f32_4_In v)								{ return Permute<3
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 ZYXX(f32_4_In v)								{ return Permute<2,1,0,0>(v); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Reverse(f32_4_In v)							{ return f32_4(V4fReverse(v.GetNative())); }
 
+FFTL_FORCEINLINE f32_4 f32_4::Set2(f32 x, f32 y)									{ return Permute<0, 4, 1, 5>(Set1(x), Set1(y)); }
+
 
 
 
 class f32_8
 {
 public:
+	using InType = f32_8_In;
+
 	FFTL_NODISCARD FFTL_FORCEINLINE static constexpr size_t GetSize() { return 8; }
 
 	FFTL_FORCEINLINE f32_8() = default;
@@ -1384,9 +1569,10 @@ public:
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load1(const f32* pf)	{ return f32_8(V8fLoad1(pf)); }
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load2(const f32* pf)	{ return f32_8(V8fLoad2(pf)); }
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load3(const f32* pf)	{ return f32_8(V8fLoad3(pf)); }
+	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load4(const f32* pf)	{ return f32_8(V8fLoad4(pf)); }
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load6(const f32* pf)	{ return f32_8(V8fLoad6(pf)); }
-	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Splat8(const f32* pf) { return f32_8(V8fSplat8(pf)); }
-	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Splat8(f32 f)			{ return f32_8(V8fSplat8(f)); }
+	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Splat(const f32* pf)	{ return f32_8(V8fSplat(pf)); }
+	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Splat(f32 f)			{ return f32_8(V8fSplat(f)); }
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Splat(f32_4_In v)		{ return f32_8(V8fSplat(v.GetNative())); }
 
 	FFTL_FORCEINLINE void StoreA(f32* pf) const			{ V8fStoreA(pf, m_v); }
@@ -1394,12 +1580,33 @@ public:
 	FFTL_FORCEINLINE void Store1(f32* pf) const			{ V8fStore1(pf, m_v); }
 	FFTL_FORCEINLINE void Store2(f32* pf) const			{ V8fStore2(pf, m_v); }
 	FFTL_FORCEINLINE void Store3(f32* pf) const			{ V8fStore3(pf, m_v); }
+	FFTL_FORCEINLINE void Store4(f32* pf) const			{ V8fStore4(pf, m_v); }
 	FFTL_FORCEINLINE void Store6(f32* pf) const			{ V8fStore6(pf, m_v); }
 
 	template<enMoveAlignment _A>
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Load(const f32* pf)	{ return f32_8(_A==kAligned ? V8fLoadA(pf) : V8fLoadU(pf)); }
 	template<enMoveAlignment _A>
 	FFTL_FORCEINLINE void Store(f32* pf) const			{ _A==kAligned ? V8fStoreA(pf, m_v) : V8fStoreU(pf, m_v); }
+
+	template<uint N> FFTL_FORCEINLINE static f32_8 Load(const f32* pf)
+	{
+		static_assert((N >= 1 && N <= 4) || N == 6 || N == 8, "Only loads of some sizes allowed");
+		if constexpr (N == 1) return Load1(pf);
+		if constexpr (N == 2) return Load2(pf);
+		if constexpr (N == 3) return Load3(pf);
+		if constexpr (N == 4) return Load4(pf);
+		if constexpr (N == 6) return Load6(pf);
+		if constexpr (N == 8) return LoadA(pf);
+	}
+
+	template<uint N> FFTL_FORCEINLINE void Store(f32* pf) const
+	{
+		static_assert((N >= 1 && N <= 4) || N == 6 || N == 8, "Only stores between of some sizes allowed");
+		if		constexpr (N == 1)	Store1(pf);
+		else if constexpr (N == 2)	Store2(pf);
+		else if constexpr (N == 3)	Store3(pf);
+		else						StoreA(pf);
+	}
 
 	FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Asf32_4() const				{ return V8fAsV4f(m_v); }
 	FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Get0123() const				{ return V8fAsV4f(m_v); }
@@ -1427,15 +1634,15 @@ public:
 
 	//	Scalar methods
 #if FFTL_SIMD_F32x8
-	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ return f32_8(V8fMul(m_v, V8fSplat8(b))); }
-	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ return f32_8(V8fDiv(m_v, V8fSplat8(b))); }
-	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ m_v = V8fMul(m_v, V8fSplat8(b));	return *this; }
-	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ m_v = V8fDiv(m_v, V8fSplat8(b));	return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ return f32_8(V8fMul(m_v, V8fSplat(b))); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ return f32_8(V8fDiv(m_v, V8fSplat(b))); }
+	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ m_v = V8fMul(m_v, V8fSplat(b));	return *this; }
+	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ m_v = V8fDiv(m_v, V8fSplat(b));	return *this; }
 #else
-	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ Vec4f vB = V4fSplat4(b); return f32_8( V8fSet( V4fMul(m_v.a, vB), V4fMul(m_v.b, vB) ) ); }
-	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ Vec4f vB = V4fSplat4(b); return f32_8( V8fSet( V4fDiv(m_v.a, vB), V4fDiv(m_v.b, vB) ) ); }
-	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ Vec4f vB = V4fSplat4(b); m_v.a = V4fMul(m_v.a, vB); m_v.b = V4fMul(m_v.b, vB); return *this; }
-	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ Vec4f vB = V4fSplat4(b); m_v.a = V4fDiv(m_v.a, vB); m_v.b = V4fDiv(m_v.b, vB); return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator*(f32 b) const		{ Vec4f vB = V4fSplat(b); return f32_8( V8fSet( V4fMul(m_v.a, vB), V4fMul(m_v.b, vB) ) ); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32_8 operator/(f32 b) const		{ Vec4f vB = V4fSplat(b); return f32_8( V8fSet( V4fDiv(m_v.a, vB), V4fDiv(m_v.b, vB) ) ); }
+	FFTL_FORCEINLINE f32_8& operator*=(f32 b)			{ Vec4f vB = V4fSplat(b); m_v.a = V4fMul(m_v.a, vB); m_v.b = V4fMul(m_v.b, vB); return *this; }
+	FFTL_FORCEINLINE f32_8& operator/=(f32 b)			{ Vec4f vB = V4fSplat(b); m_v.a = V4fDiv(m_v.a, vB); m_v.b = V4fDiv(m_v.b, vB); return *this; }
 #endif
 
 	//	Unary operators
@@ -1451,8 +1658,29 @@ private:
 	Vec8f m_v;
 };
 
-FFTL_FORCEINLINE void StoreA(f32* pf, f32_8_In v)		{ v.StoreA(pf); }
-FFTL_FORCEINLINE void StoreU(f32* pf, f32_8_In v)		{ v.StoreU(pf); }
+template<typename T> FFTL_FORCEINLINE T LoadA(const f32* pf) { return T::LoadA(pf); }
+template<typename T> FFTL_FORCEINLINE T LoadU(const f32* pf) { return T::LoadU(pf); }
+template<uint N, typename T> FFTL_FORCEINLINE T Load(const f32* pf) { return T::template Load<N>(pf); }
+template<typename T> FFTL_FORCEINLINE T Load1(const f32* pf) { return T::Load<1>(pf); }
+template<typename T> FFTL_FORCEINLINE T Load2(const f32* pf) { return T::Load<2>(pf); }
+template<typename T> FFTL_FORCEINLINE T Load3(const f32* pf) { return T::Load<3>(pf); }
+
+template<typename T> FFTL_FORCEINLINE T Splat(const f32* pf) { return T::Splat(pf); }
+template<typename T> FFTL_FORCEINLINE T Splat(f32 f) { return T::Splat(f); }
+
+template<typename T> FFTL_FORCEINLINE void StoreA(f32* pf, const T& v) { v.StoreA(pf); }
+template<typename T> FFTL_FORCEINLINE void StoreU(f32* pf, const T& v) { v.StoreU(pf); }
+template<uint N, typename T> FFTL_FORCEINLINE void Store(f32* pf, const T& v) { v.template Store<N>(pf); }
+template<typename T> FFTL_FORCEINLINE void Store1(f32* pf, const T& v) { Store<1>(pf, v); }
+template<typename T> FFTL_FORCEINLINE void Store2(f32* pf, const T& v) { Store<2>(pf, v); }
+template<typename T> FFTL_FORCEINLINE void Store3(f32* pf, const T& v) { Store<3>(pf, v); }
+
+//	f32 specializations
+template<> FFTL_FORCEINLINE f32 Load<1, f32>(const f32* pf) { return *pf; }
+template<> FFTL_FORCEINLINE f32 Splat<f32>(const f32* pf) { return *pf; }
+template<> FFTL_FORCEINLINE f32 Splat<f32>(f32 f) { return f; }
+template<> FFTL_FORCEINLINE void Store<1, f32>(f32* pf, const f32& v) { *pf = v; }
+
 
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Sqrt(f32_8_In v)					{ return f32_8(V8fSqrt(v.GetNative())); }
 
@@ -1569,17 +1797,27 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 DitherFloat(u32& inout_nSeed, size_t n)
 	return fDither;
 }
 
+//	Gets the CPU's current setting for flushing denormalized float values to zero
+bool GetCpuFlushDenormalMode();
+
+//	Sets the CPU's current setting for flushing denormalized float values to zero
+void SetCpuFlushDenormalMode(bool bEnable);
 
 
 class ScopedFlushDenormals
 {
 public:
-	ScopedFlushDenormals();
-	~ScopedFlushDenormals();
+	ScopedFlushDenormals(bool bEnable)
+	{
+		m_prevMode = GetCpuFlushDenormalMode();
+		SetCpuFlushDenormalMode(bEnable);
+	}
+	~ScopedFlushDenormals()
+	{
+		SetCpuFlushDenormalMode(m_prevMode);
+	}
 private:
-#if defined(FFTL_SSE) || FFTL_ARM_NEON
-	u32 m_prevMode;
-#endif
+	bool m_prevMode;
 };
 
 

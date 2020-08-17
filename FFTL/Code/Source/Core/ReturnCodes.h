@@ -43,6 +43,7 @@ namespace FFTL
 
 		ERROR_UNKNOWN = 0x0010,
 		ERROR_INCOMPATIBLE,
+		ERROR_INVALID_BUFFER_SIZE,
 	};
 
 } // namespace FFTL

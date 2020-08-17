@@ -64,34 +64,64 @@ inline void UnpauseThread(ThreadHandle handle) { (void)handle; }
 
 
 
-inline Thread::Thread(ThreadOwner::RunFunction func)
-	: m_pOwner(nullptr)
-	, m_pRunFunction(func)
-	, m_Handle(0)
-#if !defined(FFTL_THREAD_HANDLE_IS_ID)
-	, m_ID(0)
-#endif
-	, m_RunResult(ReturnCode::OK)
-	, m_bIsRunning(false)
-	, m_bFlaggedForStop(false)
+
+inline void ThreadBase::Pause()
 {
+	PauseThread(m_Handle);
 }
 
-inline void Thread::Start(ThreadOwner* pOwner, const char* pszName, ThreadPriority priority, uint coreAffinityMask, u32 stackSize)
+inline void ThreadBase::Unpause()
+{
+	UnpauseThread(m_Handle);
+}
+
+inline ThreadHandle ThreadBase::GetThreadHandle() const
+{
+	return m_Handle;
+}
+
+inline ThreadId ThreadBase::GetThreadId() const
+{
+#if !defined(FFTL_THREAD_HANDLE_IS_ID)
+	return m_ID;
+#else
+	return m_Handle.GetId(); //	Handle and ID are the same for all non ms platforms.
+#endif
+}
+
+inline ThreadResult ThreadBase::GetRunResult()
+{
+	FFTL_ASSERT(!GetIsRunning());
+	return m_RunResult;
+}
+
+inline bool ThreadBase::GetIsRunning() const
+{
+	return m_bIsRunning;
+}
+
+inline bool ThreadBase::GetIsFlaggedForStop() const
+{
+	return m_bFlaggedForStop;
+}
+
+
+
+inline void ThreadMember::Start(ThreadOwner* pOwner, const char* pszName, ThreadPriority priority, uint coreAffinityMask, u32 stackSize)
 {
 	if (!GetIsRunning())
 	{
 		m_pOwner = pOwner;
 		m_bFlaggedForStop = false;
 #if defined(FFTL_THREAD_HANDLE_IS_ID)
-		CreateAndStartThread(&m_Handle, &Thread::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
+		CreateAndStartThread(&m_Handle, &ThreadMember::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
 #else
-		m_ID = CreateAndStartThread(&m_Handle, &Thread::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
+		m_ID = CreateAndStartThread(&m_Handle, &ThreadMember::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
 #endif
 	}
 }
 
-inline void Thread::Stop(bool bWaitForDone)
+inline void ThreadMember::Stop(bool bWaitForDone)
 {
 	if (GetIsRunning() && !m_bFlaggedForStop)
 	{
@@ -108,56 +138,66 @@ inline void Thread::Stop(bool bWaitForDone)
 	}
 }
 
-inline void Thread::Pause()
-{
-	PauseThread(m_Handle);
-}
-
-inline void Thread::Unpause()
-{
-	UnpauseThread(m_Handle);
-}
-
-inline ThreadHandle Thread::GetThreadHandle() const
-{
-	return m_Handle;
-}
-
-inline ThreadId Thread::GetThreadId() const
-{
-#if !defined(FFTL_THREAD_HANDLE_IS_ID)
-	return m_ID;
-#else
-	return m_Handle.GetId(); //	Handle and ID are the same for all non ms platforms.
-#endif
-}
-
-inline ThreadResult Thread::GetRunResult()
-{
-	FFTL_ASSERT(!GetIsRunning());
-	return m_RunResult;
-}
-
-inline bool Thread::GetIsRunning() const
-{
-	return m_bIsRunning;
-}
-
-inline bool Thread::GetIsFlaggedForStop() const
-{
-	return m_bFlaggedForStop;
-}
-
-inline void Thread::Run()
+inline void ThreadMember::Run()
 {
 	m_bIsRunning = true;
-	m_RunResult = (m_pOwner->*m_pRunFunction)();
+	m_RunResult = (m_pOwner->*m_funcRun)();
 	m_bIsRunning = false;
 }
 
-inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV Thread::InternalStartFunc(void* pThis)
+inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV ThreadMember::InternalStartFunc(void* pThis)
 {
-	auto* pThread = reinterpret_cast<Thread*>(pThis);
+	auto* pThread = reinterpret_cast<ThreadMember*>(pThis);
+	pThread->Run();
+	return FFTL_THREAD_RETURNVALUE;
+}
+
+
+
+template <typename T_Functor>
+inline void ThreadFunctor<T_Functor>::Start(const char* pszName, ThreadPriority priority, uint coreAffinityMask, u32 stackSize)
+{
+	if (!GetIsRunning())
+	{
+		m_bFlaggedForStop = false;
+#if defined(FFTL_THREAD_HANDLE_IS_ID)
+		CreateAndStartThread(&m_Handle, &ThreadFunctor<T_Functor>::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
+#else
+		m_ID = CreateAndStartThread(&m_Handle, &ThreadFunctor<T_Functor>::InternalStartFunc, this, priority, coreAffinityMask, pszName, stackSize);
+#endif
+	}
+}
+
+template <typename T_Functor>
+inline void ThreadFunctor<T_Functor>::Stop(bool bWaitForDone)
+{
+	if (GetIsRunning() && !m_bFlaggedForStop)
+	{
+		m_bFlaggedForStop = true;
+		if (bWaitForDone)
+			WaitForThread(m_Handle);
+
+		FreeThreadHandle(m_Handle);
+		m_Handle = 0;
+#if !defined(FFTL_THREAD_HANDLE_IS_ID)
+		m_ID = 0;
+#endif
+	}
+}
+
+template <typename T_Functor>
+inline void ThreadFunctor<T_Functor>::Run()
+{
+	m_bIsRunning = true;
+	m_funcRun();
+	m_RunResult = ThreadResult::OK;
+	m_bIsRunning = false;
+}
+
+template <typename T_Functor>
+inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV ThreadFunctor<T_Functor>::InternalStartFunc(void* pThis)
+{
+	auto* pThread = reinterpret_cast<ThreadFunctor<T_Functor>*>(pThis);
 	pThread->Run();
 	return FFTL_THREAD_RETURNVALUE;
 }

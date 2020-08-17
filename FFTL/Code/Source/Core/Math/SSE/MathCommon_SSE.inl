@@ -140,7 +140,7 @@ FFTL_FORCEINLINE Vec4f V4fLoad1(const f32* pf)
 }
 FFTL_FORCEINLINE Vec4f V4fLoad2(const f32* pf)
 {
-	return _mm_loadl_pi(_mm_setzero_ps(), (const __m64*)pf);
+	return _mm_castpd_ps( _mm_load_sd(reinterpret_cast<const f64*>(pf)) );
 }
 FFTL_FORCEINLINE Vec4f V4fLoad3(const f32* pf)
 {
@@ -196,17 +196,25 @@ FFTL_FORCEINLINE Vec4f V4fSet1(f32 x)
 {
 	return _mm_set_ss(x);
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(f32 f)
+FFTL_FORCEINLINE Vec4f V4fSplat(f32 f)
 {
+#if defined(FFTL_AVX2)
+	return _mm_broadcastss_ps(_mm_set_ss(f));
+#else
 	return _mm_set1_ps(f);
+#endif
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(const f32* pf)
+FFTL_FORCEINLINE Vec4f V4fSplat(const f32* pf)
 {
 #if defined(FFTL_AVX)
 	return _mm_broadcast_ss(pf);
 #else
 	return _mm_load1_ps(pf);
 #endif
+}
+FFTL_FORCEINLINE Vec4f V4fSplatXY(const f32* pf)
+{
+	return _mm_castpd_ps(_mm_load1_pd(reinterpret_cast<const f64*>(pf)));
 }
 FFTL_FORCEINLINE Vec4f V4fAnd(Vec4f_In a, Vec4f_In b)
 {
@@ -247,6 +255,18 @@ FFTL_FORCEINLINE Vec4f V4fMin(Vec4f_In a, Vec4f_In b)
 FFTL_FORCEINLINE Vec4f V4fMax(Vec4f_In a, Vec4f_In b)
 {
 	return _mm_max_ps(a, b);
+}
+FFTL_FORCEINLINE Vec4f V4fMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	return sse_MulAdd_ps(a, b, c);
+}
+FFTL_FORCEINLINE Vec4f V4fNMulAdd(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	return sse_NMulAdd_ps(a, b, c);
+}
+FFTL_FORCEINLINE Vec4f V4fMulSub(Vec4f_In a, Vec4f_In b, Vec4f_In c)
+{
+	return sse_MulSub_ps(a, b, c);
 }
 FFTL_FORCEINLINE Vec4f V4fAddMul(Vec4f_In a, Vec4f_In b, Vec4f_In c)
 {
@@ -731,14 +751,20 @@ FFTL_FORCEINLINE Vec4i V4fRoundToVfi( Vec4f_In a )
 }
 
 
-FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()
+FFTL_FORCEINLINE bool GetCpuFlushDenormalMode()
 {
-	m_prevMode = _MM_GET_FLUSH_ZERO_MODE();
-	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+	const u32 x = _MM_GET_FLUSH_ZERO_MODE();
+
+	//	Return the flush-to-zero bit.
+	return (x & _MM_FLUSH_ZERO_ON) != 0;
 }
-FFTL_FORCEINLINE ScopedFlushDenormals::~ScopedFlushDenormals()
+FFTL_FORCEINLINE void SetCpuFlushDenormalMode(bool bEnable)
 {
-	_MM_SET_FLUSH_ZERO_MODE(m_prevMode);
+	//	Enable or disable the flush to zero bit
+	const u32 x = bEnable ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF;
+
+	//	Store the new x into the floating-point status and control register
+	_MM_SET_FLUSH_ZERO_MODE(x);
 }
 
 

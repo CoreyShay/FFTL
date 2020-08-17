@@ -397,9 +397,9 @@ FFTL_FORCEINLINE u32 MaxIndex(const vecT<4>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecT<N> Lerp(const vecT<N>& lhs, const vecT<N>& b, f32 amt)
+FFTL_FORCEINLINE vecT<N> Lerp(f32 mu, const vecT<N>& from, const vecT<N>& to)
 {
-	return lhs + (b - lhs) * amt;
+	return from + (to - from) * mu;
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N> Deg2Rad(const vecT<N>& degrees)
@@ -450,8 +450,6 @@ FFTL_FORCEINLINE vecT<N> ClosestPointOnLineSegment(const vecT<N>& a, const vecT<
 }
 
 
-FFTL_FORCEINLINE vecmask::vecmask()
-= default;
 
 FFTL_FORCEINLINE vecmask& vecmask::operator|=(const vecmask& b)
 {

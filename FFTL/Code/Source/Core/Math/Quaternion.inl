@@ -576,11 +576,11 @@ FFTL_FORCEINLINE f32 Dot(const quat& a, const quat& b)
 	return Dot(a.m_v, b.m_v);
 }
 
-FFTL_FORCEINLINE quat Lerp(const quat& lhs, const quat& b, f32 amount)
+FFTL_FORCEINLINE quat Lerp(f32 mu, const quat& from, const quat& to)
 {
-	quat _b = b;
+	quat _b = to;
 
-	vec4 vCosTheta = DotV(lhs.m_v, b.m_v);
+	vec4 vCosTheta = DotV(from.m_v, to.m_v);
 #if 1
 	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
 	_b.m_v = Blend(_b.m_v, -_b.m_v, cmlLT);
@@ -589,7 +589,7 @@ FFTL_FORCEINLINE quat Lerp(const quat& lhs, const quat& b, f32 amount)
 		_b = -_b;
 #endif
 
-	return quat(Lerp(lhs.AsVec4(), _b.AsVec4(), amount));
+	return quat(Lerp(mu, from.AsVec4(), _b.AsVec4()));
 }
 
 

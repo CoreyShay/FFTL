@@ -126,11 +126,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__) || defined(__FMA3__) || defined(__PROSPERO__))
 #	define FFTL_FMA3 1
-#	define FFTL_HAS_FMA 1
 #endif
 #if !defined(FFTL_FMA4) && (defined(FFTL_USE_FMA4) || defined(__FMA4__))
 #	define FFTL_FMA4 1
-#	define FFTL_HAS_FMA 1
 #endif
 
 #if defined(FFTL_SSE)
@@ -166,8 +164,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #	define FFTL_ARM_NEON 1
+#endif
+
+#if defined(FFTL_FMA3) || defined(FFTL_FMA4) || defined(FFTL_ARM_NEON)
 #	define FFTL_HAS_FMA 1
 #endif
+
 
 #if defined(__ORBIS__) || defined(__PROSPERO__) || defined(_DURANGO) || defined(FFTL_ARM_NEON) // TODO: ARM NEON
 #	define FFTL_CPU_INFO_KNOWN_TO_COMPILER 1

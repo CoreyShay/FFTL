@@ -125,12 +125,12 @@ FFTL_FORCEINLINE Vec4f V4fSet1(f32 x)
 	const Vec4f r = { x, 0, 0, 0 };
 	return r;
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(f32 f)
+FFTL_FORCEINLINE Vec4f V4fSplat(f32 f)
 {
 	const Vec4f r = { f, f, f, f };
 	return r;
 }
-FFTL_FORCEINLINE Vec4f V4fSplat4(const f32* pf)
+FFTL_FORCEINLINE Vec4f V4fSplat(const f32* pf)
 {
 	const f32 f = *pf;
 	const Vec4f r = { f, f, f, f };
@@ -233,7 +233,7 @@ FFTL_FORCEINLINE f32 V4fHSumF(Vec4f_In v)
 }
 FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 {
-	return V4fSplat4(V4fHSumF(v));
+	return V4fSplat(V4fHSumF(v));
 }
 FFTL_FORCEINLINE Vec4f V4fCompareEq(Vec4f_In a, Vec4f_In b)
 {
@@ -500,11 +500,13 @@ FFTL_FORCEINLINE bool V2dIsEqual(Vec2d_In a, Vec2d_In b)
 }
 
 
-FFTL_FORCEINLINE ScopedFlushDenormals::ScopedFlushDenormals()
+FFTL_FORCEINLINE bool GetCpuFlushDenormalMode()
 {
+	return false;
 }
-FFTL_FORCEINLINE ScopedFlushDenormals::~ScopedFlushDenormals()
+FFTL_FORCEINLINE void SetCpuFlushDenormalMode(bool bEnable)
 {
+	(void)bEnable;
 }
 
 } // namespace FFTL

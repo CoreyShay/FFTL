@@ -20,11 +20,11 @@ struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error
 
 #include <atomic>
 #include <cmath>
+#include <cstring>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <new>
-#include <cstring>
 #include <type_traits>
 #include <utility>
 

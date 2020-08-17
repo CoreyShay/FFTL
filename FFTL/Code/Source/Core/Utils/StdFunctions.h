@@ -69,6 +69,40 @@ FFTL_FORCEINLINE T* MemCopy(FixedArray<T, N_DST>& dst, const FixedArray<T, N_SRC
 	return static_cast<T*>(memcpy(&dst, &src, Min(sizeof(dst), sizeof(src))));
 }
 
+template<typename T, size_t N_DST, size_t N_SRC>
+FFTL_FORCEINLINE T* ArrayCopy(T(&dst)[N_DST], const T(&src)[N_SRC])
+{
+	return static_cast<T*>(memcpy(dst, src, Min(sizeof(dst), sizeof(src))));
+}
+
+template<typename T, size_t N_DST, size_t N_SRC>
+FFTL_FORCEINLINE T* ArrayCopy(FixedArray<T, N_DST>& dst, const FixedArray<T, N_SRC>& src)
+{
+	return static_cast<T*>(memcpy(&dst, &src, Min(sizeof(dst), sizeof(src))));
+}
+
+template<size_t N_DST, size_t N_SRC>
+FFTL_FORCEINLINE f32* ArrayCopy(f32(&dst)[N_DST], const f64(&src)[N_SRC])
+{
+	const size_t count = Min(N_DST, N_SRC);
+	for (size_t n = 0; n < count; ++n)
+	{
+		dst[n] = static_cast<f32>(src[n]);
+	}
+	return dst;
+}
+
+template<size_t N_DST, size_t N_SRC>
+FFTL_FORCEINLINE f32* ArrayCopy(FixedArray<f32, N_DST>& dst, const FixedArray<f64, N_SRC>& src)
+{
+	const size_t count = Min(N_DST, N_SRC);
+	for (size_t n = 0; n < count; ++n)
+	{
+		dst[n] = static_cast<f32>(src[n]);
+	}
+	return dst.data();
+}
+
 template<typename T>
 FFTL_FORCEINLINE T* MemZero(T* pDst, size_t uCount)
 {
@@ -100,7 +134,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
 	return (offset + (T_ALIGNMENT - 1)) & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (alignment - 1)) & ~(alignment - 1);
@@ -113,7 +147,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
 	return offset & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(size_t alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(alignment - 1);
