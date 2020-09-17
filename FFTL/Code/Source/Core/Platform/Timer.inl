@@ -56,7 +56,7 @@ namespace FFTL
 inline TimerBase::StaticInfo::StaticInfo(TimerType type)
 {
 #if defined(_MSC_VER)
-#	if !defined(_DURANGO)
+#	if !defined(FFTL_TIMER_IS_CPUTIMER)
 	if (type == TimerType::CPU)
 	{
 		m_TicksToUsScalar = 1.0 / (2.6 * 1000000000);
@@ -112,9 +112,11 @@ inline TimerBase::StaticInfo::StaticInfo(TimerType type)
 	{
 		m_TicksToUsScalar = 1.0 / 1000.0;
 	}
+#else
+	m_TicksToUsScalar = 1.0 / 1000.0;
 #endif
 
-	//	Silence warning on durango
+	//	Silence warning on Durango
 	(void)type;
 }
 
@@ -127,6 +129,11 @@ inline void TimerBase::Reset()
 	m_nAccumCount = 0;
 }
 
+inline void TimerBase::Accum()
+{
+	m_nAccumCount += 1;
+}
+
 //	Use rdtscp for XB1 because QueryPerformanceCounter does exactly that inside a function call anyway.
 // Possibly we can do this on PS4 as well if we want CPU clock granularity. PC platforms have kernel
 // level throttling, etc, so we should probably stick to QueryPerformanceCounter there.
@@ -136,18 +143,18 @@ inline u64 CpuTimer::GetCurrentTicks()
 {
 	//	TODO: for PC platforms, consider surrounding this instruction with 2 cpuid instructions to fence instruction serialization.
 	// http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/ia-32-ia-64-benchmark-code-execution-paper.pdf
-#if defined(__AVX__) // rdtscp is slightly more accurate because it serializes all prior instructions, but not available on older CPU's.
+#	if defined(__AVX__) // rdtscp is slightly more accurate because it serializes all prior instructions, but not available on older CPU's.
 	uint x;
 	return __rdtscp(&x);
-#else
+#	else
 	return __rdtsc();
-#endif
+#	endif
 }
 inline const char* CpuTimer::GetTickUnitsString()
 {
 	return "Clock cycles";
 }
-#elif defined(__ANDROID__)
+#elif defined(_POSIX_VERSION)
 inline u64 CpuTimer::GetCurrentTicks()
 {
 	struct timespec now;
@@ -158,7 +165,9 @@ inline const char* CpuTimer::GetTickUnitsString()
 {
 	return "Nanoseconds";
 }
-#endif
+#else
+#	error "Need platform definitions for Timer methods"
+#endif // defined(_POSIX_VERSION)
 
 inline void CpuTimer::Start()
 {
@@ -184,14 +193,9 @@ inline void CpuTimer::PauseAccum()
 	Accum();
 }
 
-inline void CpuTimer::Accum()
-{
-	m_nAccumCount += 1;
-}
 
-
-# if defined(_MSC_VER) && !defined(_DURANGO)
-
+#if !defined(FFTL_TIMER_IS_CPUTIMER)
+#	if defined(_MSC_VER)
 inline u64 Timer::GetCurrentTicks()
 {
 	u64 ticks;
@@ -199,43 +203,11 @@ inline u64 Timer::GetCurrentTicks()
 	return ticks;
 }
 
-inline void Timer::Start()
-{
-	QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&m_StartTicks));
-}
-
-inline void Timer::Stop()
-{
-	LARGE_INTEGER end;
-	QueryPerformanceCounter(&end);
-	m_TotalTicks = end.QuadPart - m_StartTicks;
-	m_nAccumCount = 0;
-}
-
-inline void Timer::Pause()
-{
-	LARGE_INTEGER end;
-	QueryPerformanceCounter(&end);
-	m_TotalTicks += end.QuadPart - m_StartTicks;
-}
-
-inline void Timer::PauseAccum()
-{
-	Pause();
-	Accum();
-}
-
-inline void Timer::Accum()
-{
-	m_nAccumCount += 1;
-}
-
 inline const char* Timer::GetTickUnitsString()
 {
 	return "Microseconds";
 }
-
-#elif defined(__ANDROID__)
+#elif defined(_POSIX_VERSION)
 
 inline u64 Timer::GetCurrentTicks()
 {
@@ -244,6 +216,13 @@ inline u64 Timer::GetCurrentTicks()
 	return now.tv_sec * 1000000000ULL + safestatic_cast<u64>(now.tv_nsec);
 }
 
+inline const char* Timer::GetTickUnitsString()
+{
+	return "Nanoseconds";
+}
+#	else
+#		error "Need platform definitions for Timer methods"
+#	endif // defined(_POSIX_VERSION)
 inline void Timer::Start()
 {
 	m_StartTicks = GetCurrentTicks();
@@ -268,17 +247,8 @@ inline void Timer::PauseAccum()
 	Accum();
 }
 
-inline void Timer::Accum()
-{
-	m_nAccumCount += 1;
-}
+#endif // !defined(FFTL_TIMER_IS_CPUTIMER)
 
-inline const char* Timer::GetTickUnitsString()
-{
-	return "Nanoseconds";
-}
-
-#endif
 
 template <typename T>
 inline TimerScope<T>::TimerScope(T* pTimer)

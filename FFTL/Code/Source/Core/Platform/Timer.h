@@ -35,6 +35,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include <type_traits>
 
+#if defined(_DURANGO) || defined(__ORBIS__) | defined(__PROSPERO__)
+#	define FFTL_TIMER_IS_CPUTIMER 1
+#endif
+
 namespace FFTL
 {
 
@@ -44,7 +48,9 @@ class FFTL_NODISCARD TimerBase
 public:
 	TimerBase() = default;
 	void Reset();
+	void Accum();		// Increments the accumulation counter
 	FFTL_NODISCARD u64 GetTicks() const	{ return m_TotalTicks; }
+	FFTL_NODISCARD f64 GetAvgTicks() const { return m_TotalTicks / static_cast<f64>(m_nAccumCount); }
 
 protected:
 	u64 m_TotalTicks = 0;
@@ -72,18 +78,17 @@ public:
 	void Stop();		// Stamps the time from the last start
 	void Pause();		// Adds the time from the last start to the current stamped value, but does not increment the accumulation counter
 	void PauseAccum();	// Adds the time from the last start to the current stamped value, and increments the accumulation counter
-	void Accum();		// Increments the accumulation counter
 
 	FFTL_NODISCARD f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetSeconds() const					{ return ToSeconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetAvgMicroseconds() const			{ return ToMicroseconds(m_TotalTicks) / m_nAccumCount; }
 
-	static inline f64 ToMicroseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar; }
-	static inline f64 ToMilliseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000.0; }
-	static inline f64 ToSeconds(u64 t)		{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000000.0; }
+	FFTL_NODISCARD static inline f64 ToMicroseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar; }
+	FFTL_NODISCARD static inline f64 ToMilliseconds(u64 t)	{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000.0; }
+	FFTL_NODISCARD static inline f64 ToSeconds(u64 t)		{ return t * sm_StaticInfo.m_TicksToUsScalar / 1000000.0; }
 
-	static const char* GetTickUnitsString();
+	FFTL_NODISCARD static const char* GetTickUnitsString();
 
 private:
 	static const inline StaticInfo sm_StaticInfo{ StaticInfo::TimerType::CPU };
@@ -95,7 +100,7 @@ private:
 // exactly the same as the CPU timer class (notice the typedef), because QueryPerformanceCounter
 // simply calls the CPU time stamp counter, and QueryPerformanceFrequency simply returns the
 // constant value of 1745620598 Hz. FYI, PS4 runs at 1593726008 Hz.
-#if !defined(_DURANGO) && !defined(__ORBIS__) && !defined(__PROSPERO__)
+#if !defined(FFTL_TIMER_IS_CPUTIMER)
 class FFTL_NODISCARD Timer : public TimerBase
 {
 public:
@@ -105,7 +110,6 @@ public:
 	void Stop();		// Stamps the time from the last start
 	void Pause();		// Adds the time from the last start to the current stamped value, but does not increment the accumulation counter
 	void PauseAccum();	// Adds the time from the last start to the current stamped value, and increments the accumulation counter
-	void Accum();		// Increments the accumulation counter
 
 	FFTL_NODISCARD f64 GetMicroseconds() const				{ return ToMicroseconds(m_TotalTicks); }
 	FFTL_NODISCARD f64 GetMilliseconds() const				{ return ToMilliseconds(m_TotalTicks); }
