@@ -81,7 +81,7 @@ inline bool mat33::IsFinite() const
 	const __m128 r = _mm_and_ps(r0, c);
 	return( _mm_movemask_ps(r) & 7) == 7;
 }
-inline bool mat33::IsOutrageous() const
+inline bool mat33::IsNonFinite() const
 {
 	const __m128 vZero = _mm_setzero_ps();
 

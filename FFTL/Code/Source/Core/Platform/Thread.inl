@@ -205,7 +205,7 @@ inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV ThreadFunctor<T_Functor>::Int
 
 inline void ThreadSleep(uint ms)
 {
-#if defined(__ORBIS__) || defined(__PROSPERO__)
+#if defined(FFTL_PLATFORM_PLAYSTATION)
 	sceKernelUsleep(ms * 1000);
 #elif defined(_MSC_VER)
 	::Sleep(ms);

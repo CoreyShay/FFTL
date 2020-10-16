@@ -62,7 +62,7 @@ inline void FreeThreadHandle(ThreadHandle h)
 
 inline void SetThreadName(ThreadHandle handle, const char* pszName)
 {
-#if !defined(__ORBIS__) && !defined(__PROSPERO__) && (!defined(__ANDROID_API__) || __ANDROID_API__ >= 9)
+#if !defined(FFTL_PLATFORM_PLAYSTATION) && (!defined(__ANDROID_API__) || __ANDROID_API__ >= 9)
 	::pthread_setname_np(handle.GetId(), pszName);
 #else
 	(void)handle; (void)pszName;
@@ -92,7 +92,7 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 	pthread_attr_t attr;
 	FFTL_VERIFY_EQ(0, ::pthread_attr_init(&attr));
 
-#if !defined (__ANDROID__)
+#if !defined (FFTL_PLATFORM_ANDROID)
 	FFTL_VERIFY_EQ(0, ::pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
 #endif
 //	FFTL_VERIFY_EQ(0, ::pthread_attr_setschedpolicy(&attr, SCHED_FIFO));
@@ -102,7 +102,7 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 	if (stackSize > 0)
 		FFTL_VERIFY_EQ(0, ::pthread_attr_setstacksize(&attr, stackSize));
 
-#if !defined(__ANDROID__) && !defined(__ORBIS__) && !defined(__PROSPERO__) // Can't seem to find this yet on Android or Orbis
+#if !defined(FFTL_PLATFORM_ANDROID) && !defined(FFTL_PLATFORM_PLAYSTATION) // Can't seem to find this yet on Android or Orbis
 	if (coreAffinityMask != 0)
 	{
 		cpu_set_t cpuset;
@@ -118,7 +118,7 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 	FFTL_VERIFY_EQ(0, ::pthread_create(&id, &attr, pFunc, pParam));
 	FFTL_VERIFY_EQ(0, ::pthread_attr_destroy(&attr));
 
-#if !defined(__ORBIS__) && !defined(__PROSPERO__) && (!defined(__ANDROID_API__) || __ANDROID_API__ >= 9)
+#if !defined(FFTL_PLATFORM_PLAYSTATION) && (!defined(__ANDROID_API__) || __ANDROID_API__ >= 9)
 	if (pszName)
 		FFTL_VERIFY_EQ(0, ::pthread_setname_np(id, pszName));
 #else

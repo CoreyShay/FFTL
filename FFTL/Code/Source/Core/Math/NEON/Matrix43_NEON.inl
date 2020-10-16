@@ -108,7 +108,7 @@ inline bool mat43::IsFinite() const
 	const uint32_t c1 = vgetq_lane_u32(r, 2);
 	return (c0 == 0xffffffffffffffff) & (c1 == 0xffffffff);
 }
-inline bool mat43::IsOutrageous() const
+inline bool mat43::IsNonFinite() const
 {
 	const float32x4_t vZero = vdupq_n_f32(0);
 

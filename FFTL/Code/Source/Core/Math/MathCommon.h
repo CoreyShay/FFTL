@@ -40,6 +40,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 //#undef _USE_MATH_DEFINES
 
 #if defined(FFTL_SSE)
+#	if __has_include(<x86intrin.h>)
+#		include <x86intrin.h>
+#	elif __has_include(<intrin.h>)
+#		include <intrin.h>
+#	endif
 #	include <xmmintrin.h>
 #endif
 #if defined(FFTL_SSE2)
@@ -61,12 +66,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include <ammintrin.h>
 #endif
 
-#if defined(_MSC_VER)
-#	include <intrin.h>
-#elif defined(FFTL_ARM_NEON)
+#if defined(FFTL_ARM_NEON)
 #	include <arm_neon.h>
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
-#	include <avxintrin.h>
 #endif
 
 #define FFTL_MATH_ASSERT(___expr, ...) FFTL_ASSERT(___expr)
@@ -89,64 +90,61 @@ namespace FFTL
 {
 
 #if defined(FFTL_SSE)
-	typedef __m128 Vec4f;
-	typedef __m128i Vec4i;
-	typedef __m128i Vec4u;
+typedef __m128 Vec4f;
+typedef __m128i Vec4i;
+typedef __m128i Vec4u;
 #elif FFTL_ARM_NEON
-	typedef float32x4_t Vec4f;
-	typedef int32x4_t Vec4i;
-	typedef uint32x4_t Vec4u;
+typedef float32x4_t Vec4f;
+typedef int32x4_t Vec4i;
+typedef uint32x4_t Vec4u;
 #else
-	struct Vec4f { f32 x, y, z, w; };
-	struct Vec4i { s32 x, y, z, w; };
-	struct Vec4u { u32 x, y, z, w; };
+struct alignas(16) Vec4f { f32 x, y, z, w; };
+struct alignas(16) Vec4i { s32 x, y, z, w; };
+struct alignas(16) Vec4u { u32 x, y, z, w; };
 
 #endif
 	
 #if defined(FFTL_SSE2)
-	typedef __m128d Vec2d;
+typedef __m128d Vec2d;
 #elif FFTL_ARM_NEON && defined(__aarch64__)
-	typedef float64x2_t Vec2d;
+typedef float64x2_t Vec2d;
 #else
-	struct Vec2d
-	{
-		double x,y;
-	};
+struct alignas(16) Vec2d { f64 x, y; };
 #endif
 	
 #if defined(FFTL_AVX)
-	typedef __m256 Vec8f;
+typedef __m256 Vec8f;
 #else
-	struct Vec8f
-	{
-		Vec4f a, b;
-	};
+struct alignas(32) Vec8f { Vec4f a, b; };
 #endif
+
 
 class f32_4;
 class f64_2;
 class f32_8;
+class mask32x4;
+class mask32x8;
 
 
 #if 0
-	typedef Vec4f Vec4f_In;
-	typedef Vec2d Vec2d_In;
-	typedef Vec8f Vec8f_In;
-
-	typedef f32_4 f32_4Arg;
-	typedef f64_2 f64_2Arg;
-	typedef f32_8 f32_8Arg;
+typedef Vec4f Vec4f_In;
+typedef Vec2d Vec2d_In;
+typedef Vec8f Vec8f_In;
+typedef Vec4u Vec4u_In;
+typedef Vec4i Vec4i_In;
+typedef f32_4 f32_4Arg;
+typedef f64_2 f64_2Arg;
+typedef f32_8 f32_8Arg;
 
 #else
-	typedef const Vec4f& Vec4f_In;
-	typedef const Vec2d& Vec2d_In;
-	typedef const Vec8f& Vec8f_In;
-	typedef const Vec4u& Vec4u_In;
-	typedef const Vec4i& Vec4i_In;
-
-	typedef const f32_4& f32_4_In;
-	typedef const f64_2& f64_2_In;
-	typedef const f32_8& f32_8_In;
+typedef const Vec4f& Vec4f_In;
+typedef const Vec2d& Vec2d_In;
+typedef const Vec8f& Vec8f_In;
+typedef const Vec4u& Vec4u_In;
+typedef const Vec4i& Vec4i_In;
+typedef const f32_4& f32_4_In;
+typedef const f64_2& f64_2_In;
+typedef const f32_8& f32_8_In;
 #endif
 
 // Wraps around integers higher than 3
@@ -360,7 +358,19 @@ FFTL_NODISCARD FFTL_FORCEINLINE T NanCheck(T y)
 template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE bool IsInfinite(T y)
 {
-	std::isinf(y);
+	return std::isinf(y);
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE bool IsFinite(T y)		// true only if not infinite and not NaN
+{
+	return std::isfinite(y);
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE bool IsNonFinite(T y)	// Returns true if not finite, NaN included
+{
+	return !IsFinite(y);
 }
 
 template <typename T>
@@ -385,6 +395,15 @@ template <typename T>
 FFTL_NODISCARD FFTL_FORCEINLINE constexpr T FSel(T test, T retGE, T retLT)
 {
 	return test >= 0 ? retGE : retLT;
+}
+
+template <typename T>
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T Approach(T rate, T from, T to)
+{
+	const T diff = to - from;
+	const T fMin =  Min(diff, +rate);
+	const T delta = Max(fMin, -rate);
+	return from + delta;
 }
 
 template <typename T>
@@ -887,7 +906,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 Floor(f32 val)
 	return _mm_cvtss_f32( sse_fFloor_ss(v) );
 #else
 	const s64 ival = safestatic_cast<s64>(val);
-	return val < ival ? ival - 1 : ival;
+	return safestatic_cast<f32>(val < ival ? ival - 1 : ival);
 #endif
 }
 FFTL_NODISCARD FFTL_FORCEINLINE f32 Ceil(f32 val)
@@ -897,7 +916,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32 Ceil(f32 val)
 	return _mm_cvtss_f32( sse_fCeil_ss(v) );
 #else
 	const s64 ival = safestatic_cast<s64>(val);
-	return (val - ival) > 0.0f ? ival + 1 : ival;
+	return safestatic_cast<f32>((val - ival) > 0.0f ? ival + 1 : ival);
 #endif
 }
 
@@ -1023,7 +1042,7 @@ FFTL_NODISCARD inline const byte* FindFirstValueNotEqualTo(byte val, const byte*
 	{
 		const auto* p = pBuffer + i;
 		const auto f = *p;
-		if (f != 0)
+		if (f != val)
 		{
 			return p;
 		}
@@ -1380,7 +1399,10 @@ FFTL_NODISCARD Vec8f V8fMul(Vec8f_In a, Vec4f_In b);
 FFTL_NODISCARD Vec8f V8fDiv(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fAddMul(Vec8f_In a, Vec8f_In b, Vec8f_In c);
 FFTL_NODISCARD Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c);
+FFTL_NODISCARD Vec8f V8fMin(Vec8f_In a, Vec8f_In b);
+FFTL_NODISCARD Vec8f V8fMax(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fSqrt(Vec8f_In v);
+FFTL_NODISCARD Vec8f V8fAbs(Vec8f_In v);
 FFTL_NODISCARD Vec8f V8fCompareEq(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fCompareNq(Vec8f_In a, Vec8f_In b);
 FFTL_NODISCARD Vec8f V8fCompareGt(Vec8f_In a, Vec8f_In b);
@@ -1418,13 +1440,19 @@ class FFTL_NODISCARD f32_4
 public:
 	using InType = f32_4_In;
 
+	enum enZeroType { ZERO };
+
 	FFTL_FORCEINLINE static constexpr size_t GetSize() { return 4; }
 
 	FFTL_FORCEINLINE f32_4() = default;
+	FFTL_FORCEINLINE f32_4(enZeroType) : m_v(V4fZero()) {}
 	constexpr inline f32_4(Vec4f_In v) : m_v(v) {}
 	constexpr inline f32_4(f32_4_In v) = default;
 	constexpr inline f32_4(f32 x, f32 y, f32 z, f32 w) : m_v{ x, y, z, w } {}
-	FFTL_FORCEINLINE f32_4& operator=(f32_4_In v)		{ m_v = v.m_v; return *this; }
+	FFTL_FORCEINLINE f32_4& operator=(f32_4_In v) = default;
+	FFTL_FORCEINLINE f32_4& operator=(Vec4f_In v)		{ m_v = v; return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE operator const Vec4f&() const { return GetNative(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE operator Vec4f&()	{ return GetNative(); }
 
 	FFTL_FORCEINLINE static f32_4 Zero()				{ return f32_4(V4fZero()); }
 
@@ -1471,10 +1499,10 @@ public:
 
 	FFTL_FORCEINLINE void Set(f32 x, f32 y, f32 z, f32 w)	{ m_v = V4fSet(x, y, z, w); }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetX() const					{ return V4fGetX(m_v); }
-	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetY() const					{ return V4fGetY(m_v); }
-	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetZ() const					{ return V4fGetZ(m_v); }
-	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetW() const					{ return V4fGetW(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetX() const	{ return V4fGetX(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetY() const	{ return V4fGetY(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetZ() const	{ return V4fGetZ(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32 GetW() const	{ return V4fGetW(m_v); }
 
 	FFTL_FORCEINLINE f32_4 operator+(f32_4_In b) const	{ return f32_4(V4fAdd(m_v, b.m_v)); }
 	FFTL_FORCEINLINE f32_4 operator-(f32_4_In b) const	{ return f32_4(V4fSub(m_v, b.m_v)); }
@@ -1505,13 +1533,35 @@ public:
 	FFTL_FORCEINLINE bool operator==(f32_4_In b) const		{ return V4fIsEqual(m_v, b.m_v); }
 	FFTL_NODISCARD FFTL_FORCEINLINE bool IsAllZero() const	{ return V4fIsAllZero(m_v); }
 
+	FFTL_NODISCARD f32_4 operator|(const mask32x4& b) const;
+	FFTL_NODISCARD f32_4 operator&(const mask32x4& b) const;
+	FFTL_NODISCARD f32_4 operator^(const mask32x4& b) const;
+	friend f32_4 AndNot(f32_4_In a, const mask32x4& b);
+	friend f32_4 AndNot(const mask32x4& a, f32_4_In b);
+
+	f32_4& operator|=(const mask32x4& b);
+	f32_4& operator&=(const mask32x4& b);
+	f32_4& operator^=(const mask32x4& b);
+
+	//	Comparison friends
+	friend mask32x4		CmpEq(f32_4_In a, f32_4_In b);
+	friend mask32x4		CmpNe(f32_4_In a, f32_4_In b);
+	friend mask32x4		CmpLt(f32_4_In a, f32_4_In b);
+	friend mask32x4		CmpLe(f32_4_In a, f32_4_In b);
+	friend mask32x4		CmpGt(f32_4_In a, f32_4_In b);
+	friend mask32x4		CmpGe(f32_4_In a, f32_4_In b);
+
 	FFTL_NODISCARD FFTL_FORCEINLINE const Vec4f& GetNative() const		{ return m_v; }
+	FFTL_NODISCARD FFTL_FORCEINLINE Vec4f& GetNative()					{ return m_v; }
 
 protected:
 	Vec4f m_v;
 };
 
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Min(f32_4_In a, f32_4_In b)					{ return f32_4(V4fMin(a.GetNative(), b.GetNative())); }
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Max(f32_4_In a, f32_4_In b)					{ return f32_4(V4fMax(a.GetNative(), b.GetNative())); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Sqrt(f32_4_In v)								{ return f32_4(V4fSqrt(v.GetNative())); }
+FFTL_NODISCARD FFTL_FORCEINLINE f32_4 Abs(f32_4_In v)								{ return f32_4(V4fAbs(v.GetNative())); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_4 HSumV(f32_4_In v)								{ return V4fHSumV(v.GetNative()); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32 HSumF(f32_4_In v)								{ return V4fHSumF(v.GetNative()); }
 
@@ -1559,8 +1609,10 @@ public:
 	FFTL_FORCEINLINE f32_8(f32_4_In a, f32_4_In b) : m_v(V8fSet(a.GetNative(), b.GetNative())) {}
 	constexpr inline f32_8(f32 x, f32 y, f32 z, f32 w, f32 a, f32 b, f32 c, f32 d) : m_v{ x, y, z, w, a, b, c, d } {}
 	FFTL_FORCEINLINE f32_8& operator=(f32_8_In v)		{ m_v = v.m_v; return *this; }
+	FFTL_NODISCARD FFTL_FORCEINLINE operator const Vec8f&() const	{ return GetNative(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE operator Vec8f&()				{ return GetNative(); }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Zero()				{ return f32_8(V8fZero()); }
+	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 Zero()					{ return f32_8(V8fZero()); }
 
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 LoadA(const f32* pf)	{ return f32_8(V8fLoadA(pf)); }
 	FFTL_NODISCARD FFTL_FORCEINLINE static f32_8 LoadU(const f32* pf)	{ return f32_8(V8fLoadU(pf)); }
@@ -1652,8 +1704,27 @@ public:
 	FFTL_NODISCARD FFTL_FORCEINLINE bool operator==(f32_8_In b) const	{ return V8fIsEqual(m_v, b.m_v); }
 	FFTL_NODISCARD FFTL_FORCEINLINE bool IsAllZero() const				{ return V8fIsAllZero(m_v); }
 
-	FFTL_NODISCARD FFTL_FORCEINLINE const Vec8f& GetNative() const		{ return m_v; }
 
+	FFTL_NODISCARD f32_8 operator|(const mask32x8& b) const;
+	FFTL_NODISCARD f32_8 operator&(const mask32x8& b) const;
+	FFTL_NODISCARD f32_8 operator^(const mask32x8& b) const;
+	friend f32_8 AndNot(f32_8_In a, const mask32x8& b);
+	friend f32_8 AndNot(const mask32x8& a, f32_8_In b);
+
+	f32_8& operator|=(const mask32x8& b);
+	f32_8& operator&=(const mask32x8& b);
+	f32_8& operator^=(const mask32x8& b);
+
+	//	Comparison friends
+	friend mask32x8		CmpEq(f32_8_In a, f32_8_In b);
+	friend mask32x8		CmpNe(f32_8_In a, f32_8_In b);
+	friend mask32x8		CmpLt(f32_8_In a, f32_8_In b);
+	friend mask32x8		CmpLe(f32_8_In a, f32_8_In b);
+	friend mask32x8		CmpGt(f32_8_In a, f32_8_In b);
+	friend mask32x8		CmpGe(f32_8_In a, f32_8_In b);
+
+	FFTL_NODISCARD FFTL_FORCEINLINE const Vec8f& GetNative() const		{ return m_v; }
+	FFTL_NODISCARD FFTL_FORCEINLINE Vec8f& GetNative()					{ return m_v; }
 private:
 	Vec8f m_v;
 };
@@ -1681,8 +1752,10 @@ template<> FFTL_FORCEINLINE f32 Splat<f32>(const f32* pf) { return *pf; }
 template<> FFTL_FORCEINLINE f32 Splat<f32>(f32 f) { return f; }
 template<> FFTL_FORCEINLINE void Store<1, f32>(f32* pf, const f32& v) { *pf = v; }
 
-
+FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Min(f32_8_In a, f32_8_In b)		{ return f32_8(V8fMin(a.GetNative(), b.GetNative())); }
+FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Max(f32_8_In a, f32_8_In b)		{ return f32_8(V8fMax(a.GetNative(), b.GetNative())); }
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Sqrt(f32_8_In v)					{ return f32_8(V8fSqrt(v.GetNative())); }
+FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Abs(f32_8_In v)					{ return f32_8(V8fAbs(v.GetNative())); }
 
 FFTL_NODISCARD FFTL_FORCEINLINE f32_8 Reverse(f32_8_In v)				{ return f32_8(V8fReverse(v.GetNative())); }
 
@@ -1696,6 +1769,188 @@ FFTL_NODISCARD FFTL_FORCEINLINE f32_8 TransformXandY(const f32_4& v, const f32_8
 	result += col1 * YYYY(v);
 	return result;
 }
+
+
+
+// Purpose: mask32x4 - Holds a vector comparison result, or used to mask vectors using bitwise logical operators.
+class mask32x4
+{
+	friend class f32_4;
+
+public:
+	mask32x4() = default;
+	constexpr mask32x4(const mask32x4& v) = default;
+	mask32x4& operator=(const mask32x4& v) = default;
+
+#if defined(FFTL_SSE)
+	constexpr mask32x4(const __m128& v);
+	mask32x4& operator=(const __m128& v);
+	FFTL_NODISCARD constexpr operator const __m128&() const;
+	operator __m128&();
+#elif defined(FFTL_ARM_NEON)
+	constexpr mask32x4(const uint32x4_t& v);
+	mask32x4& operator=(const uint32x4_t& v);
+	FFTL_NODISCARD constexpr operator const uint32x4_t&() const;
+	FFTL_NODISCARD operator uint32x4_t&();
+#else
+	constexpr mask32x4(u32 x, u32 y, u32 z, u32 w);
+	u32							Get(uint n) const { return m_v[n]; }
+	const u32*					Ptr() const { return m_v; }
+	u32*						Ptr() { return m_v; }
+#endif
+
+	FFTL_NODISCARD mask32x4		operator|(const mask32x4& b) const;
+	FFTL_NODISCARD mask32x4		operator&(const mask32x4& b) const;
+	FFTL_NODISCARD mask32x4		operator^(const mask32x4& b) const;
+	friend mask32x4				AndNot	 (const mask32x4& a, const mask32x4& b);
+
+	mask32x4&					operator|=(const mask32x4& b) { return *this = *this | b; }
+	mask32x4&					operator&=(const mask32x4& b) { return *this = *this & b; }
+	mask32x4&					operator^=(const mask32x4& b) { return *this = *this ^ b; }
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type>
+	FFTL_NODISCARD T			operator|(const T& b) const;
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type>
+	FFTL_NODISCARD T			operator&(const T& b) const;
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type>
+	FFTL_NODISCARD T			operator^(const T& b) const;
+
+	template<typename T, typename>
+	friend mask32x4				AndNot(const T& a, const mask32x4& b);
+
+	template<typename T, typename>
+	friend mask32x4				AndNot(const mask32x4& a, const T& b);
+
+
+	FFTL_NODISCARD int			ToIntMask() const; // returns a 4 bit int containing the high bit from each element
+
+	template<bool x, bool y, bool z, bool w>	FFTL_NODISCARD static mask32x4	GenMaskFromBools();
+	template<s32 x, s32 y, s32 z, s32 w>		FFTL_NODISCARD static mask32x4	GenMaskFromInts();
+	template<bool x, bool y, bool z, bool w>	FFTL_NODISCARD static mask32x4	PropagateInt(int i);
+
+private:
+#if defined(FFTL_SSE)
+	__m128	m_v;
+#elif defined(FFTL_ARM_NEON)
+	uint32x4_t m_v;
+#else
+	alignas(16) u32 m_v[4];
+#endif
+};
+
+//	AndNot
+template<typename T, typename = typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type>
+FFTL_NODISCARD T			AndNot(const T& a, const mask32x4& b);
+template<typename T, typename = typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type>
+FFTL_NODISCARD T			AndNot(const mask32x4& a, const T& b);
+FFTL_NODISCARD mask32x4		AndNot(const mask32x4& a, const mask32x4& b);
+
+// Comparisons that return a mask32x4 compare mask
+FFTL_NODISCARD mask32x4		CmpEq(f32_4_In a, f32_4_In b);
+FFTL_NODISCARD mask32x4		CmpNe(f32_4_In a, f32_4_In b);
+FFTL_NODISCARD mask32x4		CmpLt(f32_4_In a, f32_4_In b);
+FFTL_NODISCARD mask32x4		CmpLe(f32_4_In a, f32_4_In b);
+FFTL_NODISCARD mask32x4		CmpGt(f32_4_In a, f32_4_In b);
+FFTL_NODISCARD mask32x4		CmpGe(f32_4_In a, f32_4_In b);
+
+//	Blend
+template<typename T, bool bX, bool bY, bool bZ, bool bW>
+FFTL_NODISCARD typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b);
+template<typename T>
+FFTL_NODISCARD typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b);
+
+
+// Purpose: mask32x8 - Holds a vector comparison result, or used to mask vectors using bitwise logical operators.
+class mask32x8
+{
+	friend class f32_8;
+
+public:
+	mask32x8() = default;
+	constexpr mask32x8(const mask32x8& v) = default;
+	mask32x8& operator=(const mask32x8& v) = default;
+
+#if defined(FFTL_AVX)
+	constexpr mask32x8(const __m256& v);
+	mask32x8& operator=(const __m256& v);
+	FFTL_NODISCARD constexpr operator const __m256&() const;
+	operator __m256&();
+#else
+	constexpr mask32x8(const mask32x4& a, const mask32x4& b);
+	u32							Get(uint n) const { return Ptr()[n]; }
+	const u32*					Ptr() const { return reinterpret_cast<const u32*>(m_v.data()); }
+	u32*						Ptr() { return reinterpret_cast<u32*>(m_v.data()); }
+	const FixedArray_Aligned32<mask32x4, 2>& GetArray() const { return m_v; }
+#endif
+
+	FFTL_NODISCARD mask32x8		operator|(const mask32x8& b) const;
+	FFTL_NODISCARD mask32x8		operator&(const mask32x8& b) const;
+	FFTL_NODISCARD mask32x8		operator^(const mask32x8& b) const;
+	friend mask32x8				AndNot	 (const mask32x8& a, const mask32x8& b);
+
+	mask32x8&					operator|=(const mask32x8& b) { return *this = *this | b; }
+	mask32x8&					operator&=(const mask32x8& b) { return *this = *this & b; }
+	mask32x8&					operator^=(const mask32x8& b) { return *this = *this ^ b; }
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type>
+	FFTL_NODISCARD T			operator|(const T& b) const;
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type>
+	FFTL_NODISCARD T			operator&(const T& b) const;
+
+	template<typename T, typename = typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type>
+	FFTL_NODISCARD T			operator^(const T& b) const;
+
+	template<typename T, typename>
+	friend mask32x8				AndNot(const T& a, const mask32x8& b);
+
+	template<typename T, typename>
+	friend mask32x8				AndNot(const mask32x8& a, const T& b);
+
+
+	FFTL_NODISCARD int			ToIntMask() const; // returns an 8 bit int containing the high bit from each element
+
+	template<bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>	FFTL_NODISCARD static mask32x8	GenMaskFromBools();
+	template<s32 i0, s32 i1, s32 i2, s32 i3, s32 i4, s32 i5, s32 i6, s32 i7>			FFTL_NODISCARD static mask32x8	GenMaskFromInts();
+	template<bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>	FFTL_NODISCARD static mask32x8	PropagateInt(int i);
+
+private:
+#if defined(FFTL_AVX)
+	__m256	m_v;
+#else
+	FixedArray_Aligned32<mask32x4, 2> m_v;
+#endif
+};
+
+//	AndNot
+template<typename T, typename = typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type>
+FFTL_NODISCARD T			AndNot(const T& a, const mask32x8& b);
+template<typename T, typename = typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type>
+FFTL_NODISCARD T			AndNot(const mask32x8& a, const T& b);
+FFTL_NODISCARD mask32x8		AndNot(const mask32x8& a, const mask32x8& b);
+
+
+// Comparisons that return a mask32x8 compare mask
+FFTL_NODISCARD mask32x8		CmpEq(f32_8_In a, f32_8_In b);
+FFTL_NODISCARD mask32x8		CmpNe(f32_8_In a, f32_8_In b);
+FFTL_NODISCARD mask32x8		CmpLt(f32_8_In a, f32_8_In b);
+FFTL_NODISCARD mask32x8		CmpLe(f32_8_In a, f32_8_In b);
+FFTL_NODISCARD mask32x8		CmpGt(f32_8_In a, f32_8_In b);
+FFTL_NODISCARD mask32x8		CmpGe(f32_8_In a, f32_8_In b);
+
+//	Blend: return b(N) ? a[N] : b[N]
+template<typename T, bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
+FFTL_NODISCARD typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const T& a, const T& b);
+
+//	Blend: return msk ? a : b
+template<typename T>
+FFTL_NODISCARD typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b);
+
+
+
+
 
 
 FFTL_NODISCARD FFTL_FORCEINLINE Vec4f Vec4DitherFloat(Vec4u& inout_nSeeds)
@@ -1832,7 +2087,7 @@ private:
 #	include "NEON/MathCommon_NEON.inl"
 #	include "NEON/Utils_NEON.inl"
 #else
-#	include "Default/Math_Default.inl"
+#	include "Default/MathCommon_Default.inl"
 #endif
 
 #if defined(FFTL_AVX)

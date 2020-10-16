@@ -181,10 +181,10 @@ private:
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ExtFlags DetectExtensionSupport();
 
 #if defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
-#	if defined(__ORBIS__) || defined(_DURANGO)
+#	if defined(FFTL_PLATFORM_ORBIS) || defined(FFTL_PLATFORM_DURANGO)
 	static constexpr ArchFlags	s_archFlags	= ArchFlags::SSE | ArchFlags::SSE2 | ArchFlags::SSE3 | ArchFlags::SSE4 | ArchFlags::AVX;
 	static constexpr ExtFlags	s_extFlags	= ExtFlags::DEFAULT;
-#	elif defined(__PROSPERO__)
+#	elif defined(FFTL_PLATFORM_PROSPERO) || defined(FFTL_PLATFORM_SCARLETT)
 	static constexpr ArchFlags	s_archFlags = ArchFlags::SSE | ArchFlags::SSE2 | ArchFlags::SSE3 | ArchFlags::SSE4 | ArchFlags::AVX | ArchFlags::AVX2;
 	static constexpr ExtFlags	s_extFlags = ExtFlags::FMA3;
 #	else
@@ -265,9 +265,9 @@ FFTL_FORCEINLINE FFTL_CPU_INFO_COND_CONSTEXPR const char* CpuInfo::GetHighestExt
 #if defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
 FFTL_FORCEINLINE constexpr CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 {
-#if defined(__ORBIS__) || defined(_DURANGO)
+#if defined(FFTL_PLATFORM_ORBIS) || defined(FFTL_PLATFORM_DURANGO)
 	return ArchFlags::SSE | ArchFlags::SSE2 | ArchFlags::SSE3 | ArchFlags::SSE4 | ArchFlags::AVX;
-#elif defined(__PROSPERO__)
+#elif defined(FFTL_PLATFORM_PROSPERO) || defined(FFTL_PLATFORM_SCARLETT)
 	return ArchFlags::SSE | ArchFlags::SSE2 | ArchFlags::SSE3 | ArchFlags::SSE4 | ArchFlags::AVX | ArchFlags::AVX2;
 #else
 	return ArchFlags::DEFAULT;
@@ -275,7 +275,7 @@ FFTL_FORCEINLINE constexpr CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport
 }
 FFTL_FORCEINLINE constexpr CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
 {
-#if defined(__PROSPERO__)
+#if defined(FFTL_PLATFORM_PROSPERO) || defined(FFTL_PLATFORM_SCARLETT)
 	return ExtFlags::FMA3;
 #else
 	return ExtFlags::DEFAULT;

@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define FFTL_MUTEX_DEADLOCK_HELP 0 // Enable this to find possible deadlocks due to wrong mutex (un)locking
 
-#if defined(__ORBIS__) || defined(__PROSPERO__)
+#if defined(FFTL_PLATFORM_PLAYSTATION)
 #	include <kernel.h>
 #	include <sys/_defines/_sce_ok.h>
 #elif defined(_MSC_VER)
@@ -54,7 +54,7 @@ namespace FFTL
 
 class FFTL_NODISCARD Mutex
 {
-#if (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#if defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 public:
 	Mutex()
 	{

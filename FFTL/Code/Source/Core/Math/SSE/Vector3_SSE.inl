@@ -43,8 +43,8 @@ FFTL_FORCEINLINE void Transpose3x3(vec3& a, vec3& b, vec3& c)
 	const __m128 t1 = _mm_movehl_ps(a, t0);
 
 	a = _mm_movelh_ps(t0, c);
-	b = _mm_shuffle_ps(t1, c, _MM_SHUFFLE_XYZW(0, 1, 1, 1));
-	c = _mm_shuffle_ps(t2, c, _MM_SHUFFLE_XYZW(0, 1, 2, 3));
+	b = _mm_shuffle_ps(t1, c, FFTL_MM_SHUFFLE_XYZW(0, 1, 1, 1));
+	c = _mm_shuffle_ps(t2, c, FFTL_MM_SHUFFLE_XYZW(0, 1, 2, 3));
 }
 
 FFTL_FORCEINLINE void Transpose3x3SaveW(vec3& a, vec3& b, vec3& c)
@@ -58,12 +58,12 @@ FFTL_FORCEINLINE void Transpose3x3SaveW(vec3& a, vec3& b, vec3& c)
 	const __m128 t1 = _mm_movehl_ps(r0, t0);
 
 	r0 = _mm_movelh_ps(t0, r2);
-	r1 = _mm_shuffle_ps(t1, r2, _MM_SHUFFLE_XYZW(0, 1, 1, 1));
-	r2 = _mm_shuffle_ps(t2, r2, _MM_SHUFFLE_XYZW(0, 1, 2, 3));
+	r1 = _mm_shuffle_ps(t1, r2, FFTL_MM_SHUFFLE_XYZW(0, 1, 1, 1));
+	r2 = _mm_shuffle_ps(t2, r2, FFTL_MM_SHUFFLE_XYZW(0, 1, 2, 3));
 
-	a = sse_blend<1, 1, 1, 0>(a, r0);
-	b = sse_blend<1, 1, 1, 0>(b, r1);
-//	c = sse_blend<1, 1, 1, 0>(c, r2);
+	a = sse_blend<0, 0, 0, 1>(a, r0);
+	b = sse_blend<0, 0, 0, 1>(b, r1);
+//	c = sse_blend<0, 0, 0, 1>(c, r2);
 	c = r2; // c.w value is already preserved in r2.
 }
 

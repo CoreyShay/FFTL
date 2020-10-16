@@ -29,9 +29,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
+#if defined(__ANDROID__) && (defined(_LIBCPP_HAS_NO_ALIGNED_ALLOCATION) || _LIBCPP_STD_VER <= 14) // This fixes an odd error. Might resolve itself next compiler.
 #include "Alloc.h"
 
-#if defined(__ANDROID__) // This fixes an odd error. Might resolve itself next compiler.
 namespace std
 {
 	enum class align_val_t : size_t {};

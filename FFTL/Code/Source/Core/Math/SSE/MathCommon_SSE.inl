@@ -94,13 +94,22 @@ template<>
 FFTL_FORCEINLINE bool IsNan(f32 y)
 {
 	const __m128 v = _mm_set_ss(y);
+#if defined(FFTL_SSE) && __has_include(<immintrin.h>) && defined(_MSC_VER)
+	return _mm_comi_ss(v, v, _CMP_NEQ_UQ) != 0;
+//	return _mm_comieq_ss(v, v) == 0;
+#else
 	return _mm_movemask_ps(_mm_cmpneq_ps(v, v)) != 0;
+#endif
 }
 template<>
 FFTL_FORCEINLINE bool IsNan(f64 y)
 {
 	const __m128d v = _mm_set_sd(y);
-	return _mm_movemask_pd( _mm_cmpneq_pd(v, v) ) != 0;
+#if defined(FFTL_SSE2) && __has_include(<immintrin.h>) && defined(_MSC_VER)
+	return _mm_comi_sd(v, v, _CMP_NEQ_UQ) != 0;
+#else
+	return _mm_movemask_pd(_mm_cmpneq_pd(v, v)) != 0;
+#endif
 }
 
 
@@ -127,12 +136,12 @@ FFTL_FORCEINLINE Vec4f V4fLoadU(const f32* pf)
 FFTL_FORCEINLINE Vec4f V4fLoadAR(const f32* pf)
 {
 	const Vec4f v = _mm_load_ps(pf);
-	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW(3,2,1,0));
+	return _mm_shuffle_ps(v, v, FFTL_MM_SHUFFLE_XYZW(3,2,1,0));
 }
 FFTL_FORCEINLINE Vec4f V4fLoadUR(const f32* pf)
 {
 	const Vec4f v = _mm_loadu_ps(pf);
-	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW(3,2,1,0));
+	return _mm_shuffle_ps(v, v, FFTL_MM_SHUFFLE_XYZW(3,2,1,0));
 }
 FFTL_FORCEINLINE Vec4f V4fLoad1(const f32* pf)
 {
@@ -307,8 +316,8 @@ FFTL_FORCEINLINE Vec4f V4fHSumV(Vec4f_In v)
 	r = _mm_hadd_ps(v, v);
 	r = _mm_hadd_ps(r, r);
 #else
-	r = _mm_add_ps( v, _mm_shuffle_ps(v, v, _MM_SHUFFLE_XYZW(1,0,3,2)) );
-	r = _mm_add_ps( r, _mm_shuffle_ps(r, r, _MM_SHUFFLE_XYZW(2,2,0,0)) );
+	r = _mm_add_ps( v, _mm_shuffle_ps(v, v, FFTL_MM_SHUFFLE_XYZW(1,0,3,2)) );
+	r = _mm_add_ps( r, _mm_shuffle_ps(r, r, FFTL_MM_SHUFFLE_XYZW(2,2,0,0)) );
 #endif
 	return r;
 }
@@ -359,16 +368,16 @@ FFTL_FORCEINLINE Vec4f V4fMergeZW(Vec4f_In a, Vec4f_In b)
 }
 FFTL_FORCEINLINE Vec4f V4fSplitXZ(Vec4f_In a, Vec4f_In b)
 {
-	return _mm_shuffle_ps(a, b, _MM_SHUFFLE_XYZW(0,2,0,2));
+	return _mm_shuffle_ps(a, b, FFTL_MM_SHUFFLE_XYZW(0,2,0,2));
 }
 FFTL_FORCEINLINE Vec4f V4fSplitYW(Vec4f_In a, Vec4f_In b)
 {
-	return _mm_shuffle_ps(a, b, _MM_SHUFFLE_XYZW(1,3,1,3));
+	return _mm_shuffle_ps(a, b, FFTL_MM_SHUFFLE_XYZW(1,3,1,3));
 }
 
 FFTL_FORCEINLINE Vec4f V4fReverse(Vec4f_In v)
 {
-	return _mm_shuffle_ps(v, v, _MM_SHUFFLE_XYZW(3,2,1,0));
+	return _mm_shuffle_ps(v, v, FFTL_MM_SHUFFLE_XYZW(3,2,1,0));
 }
 
 FFTL_FORCEINLINE f32 V4fGetX(Vec4f_In v)
@@ -401,7 +410,7 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In v)
 		(T3 == 0 || T3 == 1 || T3 == 2 || T3 == 3),
 		"Template parameters need to be in range");
 
-	return _mm_shuffle_ps( v, v, _MM_SHUFFLE_XYZW( T0, T1, T2, T3 ) );
+	return _mm_shuffle_ps( v, v, FFTL_MM_SHUFFLE_XYZW( T0, T1, T2, T3 ) );
 }
 
 template<>
@@ -436,20 +445,20 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 	//	Catch when we only need values from either a or b.
 	FFTL_IF_CONSTEXPR ((T0 < 4) && (T1 < 4) && (T2 < 4) && (T3 < 4))
 	{
-		return _mm_shuffle_ps(a, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
+		return _mm_shuffle_ps(a, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
 	}
 	else FFTL_IF_CONSTEXPR ((T0 > 3) && (T1 > 3) && (T2 > 3) && (T3 > 3))
 	{
-		return _mm_shuffle_ps(b, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
+		return _mm_shuffle_ps(b, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
 	}
 	//	Catch the easy SSE condition when _X and _Y come from a different vector than _Z and _W.
 	// Uses only 1 SSE shuffle instruction.
 	else FFTL_IF_CONSTEXPR (shufX == shufY && shufZ == shufW)
 	{
 		FFTL_IF_CONSTEXPR (shufX == 0)	//	_X and _Y from v1. _Z and _W from v2.
-			return _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			return _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		else			//	_X and _Y from v2. _Z and _W from v1.
-			return _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			return _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 	}
 #if defined(FFTL_SSE4)
 	//	If we have SSE4, we can use the blend instruction as long as we don't need reordering
@@ -461,23 +470,23 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 	//	Next 4 cases, when we need 2 32 bit words from each vector, but it can't be handled with a single SSE instruction, so we use 2.
 	else FFTL_IF_CONSTEXPR (shufX==0 && shufY==1 && shufZ==0 && shufW==1)
 	{
-		const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3)) );
-		return _mm_shuffle_ps( t, t, _MM_SHUFFLE_XYZW(0,2,1,3) );
+		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3)) );
+		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(0,2,1,3) );
 	}
 	else FFTL_IF_CONSTEXPR (shufX==0 && shufY==1 && shufZ==1 && shufW==0)
 	{
-		const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0),FFTL_PERMUTEMASK( T3), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2)) );
-		return _mm_shuffle_ps( t, t, _MM_SHUFFLE_XYZW(0,2,3,1) );
+		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0),FFTL_PERMUTEMASK( T3), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2)) );
+		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(0,2,3,1) );
 	}
 	else FFTL_IF_CONSTEXPR (shufX==1 && shufY==0 && shufZ==0 && shufW==1)
 	{
-		const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T3)) );
-		return _mm_shuffle_ps( t, t, _MM_SHUFFLE_XYZW(2,0,1,3) );
+		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T3)) );
+		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(2,0,1,3) );
 	}
 	else FFTL_IF_CONSTEXPR (shufX==1 && shufY==0 && shufZ==1 && shufW==0)
 	{
-		const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2)) );
-		return _mm_shuffle_ps( t, t, _MM_SHUFFLE_XYZW(2,0,3,1) );
+		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2)) );
+		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(2,0,3,1) );
 	}
 
 
@@ -493,37 +502,37 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
+				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
-			return _mm_shuffle_ps( t, b, _MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
+			return _mm_shuffle_ps( t, b, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
 		else FFTL_IF_CONSTEXPR (shufY == 0)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
+				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
-			return _mm_shuffle_ps( t, b, _MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
+			return _mm_shuffle_ps( t, b, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
 		else FFTL_IF_CONSTEXPR (shufZ == 0)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
+				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
-			return _mm_shuffle_ps( b, t, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
+			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
+			return _mm_shuffle_ps( b, t, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
 		}
 		else // shufW==0
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
-				return _mm_insert_ps(b, a, _MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
+				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
-			return _mm_shuffle_ps( b, t, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
+			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
+			return _mm_shuffle_ps( b, t, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
 		}
 	}
 	else FFTL_IF_CONSTEXPR (
@@ -537,37 +546,37 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
+				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
-			return _mm_shuffle_ps( t, a, _MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
+			return _mm_shuffle_ps( t, a, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
 		else FFTL_IF_CONSTEXPR (shufY == 1)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
+				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
-			return _mm_shuffle_ps( t, a, _MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
+			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
+			return _mm_shuffle_ps( t, a, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
 		else FFTL_IF_CONSTEXPR (shufZ == 1)
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
-				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
+				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( b, a, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
-			return _mm_shuffle_ps( a, t, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
+			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
+			return _mm_shuffle_ps( a, t, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
 		}
 		else // shufW==1
 		{
 #if defined(FFTL_SSE4)
 			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
-				return _mm_insert_ps(a, b, _MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
+				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
 #endif
-			const __m128 t = _mm_shuffle_ps( a, b, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
-			return _mm_shuffle_ps( a, t, _MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
+			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
+			return _mm_shuffle_ps( a, t, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
 		}
 	}
 	else
@@ -745,10 +754,185 @@ FFTL_FORCEINLINE Vec4i V4iMul(Vec4i_In a, Vec4i_In b)
 	return sse_MulInt32(a, b);
 }
 
-FFTL_FORCEINLINE Vec4i V4fRoundToVfi( Vec4f_In a )
+FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
 {
 	return _mm_cvtps_epi32(a);
 }
+
+
+inline constexpr mask32x4::mask32x4(const __m128& v)
+	: m_v(v)
+{
+}
+
+FFTL_FORCEINLINE mask32x4& mask32x4::operator=(const __m128& v)
+{
+	m_v = v;
+	return *this;
+}
+
+inline constexpr mask32x4::operator const __m128&() const
+{
+	return m_v;
+}
+
+FFTL_FORCEINLINE mask32x4::operator __m128&()
+{
+	return m_v;
+}
+
+FFTL_FORCEINLINE int mask32x4::ToIntMask() const
+{
+	return _mm_movemask_ps(m_v);
+}
+
+template<s32 x, s32 y, s32 z, s32 w>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromInts()
+{
+	return mask32x4(_mm_castsi128_ps(_mm_setr_epi32(x, y, z, w)));
+}
+
+template<bool x, bool y, bool z, bool w>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools()
+{
+	constexpr int ix = x ? 0 : 1;
+	constexpr int iy = y ? 0 : 1;
+	constexpr int iz = z ? 0 : 2;
+	constexpr int iw = w ? 0 : 3;
+
+	__m128 a = _mm_setzero_ps();
+	a = _mm_cmpeq_ss(a, a);
+	a = V4fPermute<ix, iy, iz, iw>(a);
+	return mask32x4(a);
+}
+
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools<0, 0, 0, 0>()
+{
+	return mask32x4(_mm_setzero_ps());
+}
+
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools<1, 1, 1, 1>()
+{
+	__m128 a = _mm_setzero_ps();
+	a = _mm_cmpeq_ps(a, a);
+	return mask32x4(a);
+}
+
+template<bool bX, bool bY, bool bZ, bool bW>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt(int i)
+{
+	constexpr int ix = bX ? 0 : 2;
+	constexpr int iy = bY ? 0 : 2;
+	constexpr int iz = bZ ? 0 : 2;
+	constexpr int iw = bW ? 0 : 2;
+
+	__m128i a = _mm_cvtsi32_si128(i);
+	a = _mm_shuffle_epi32(a, FFTL_MM_SHUFFLE_XYZW(ix, iy, iz, iw));
+	return mask32x4(_mm_castsi128_ps(a));
+}
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<1, 0, 0, 0>(int i)
+{
+	__m128i a = _mm_cvtsi32_si128(i);
+	return mask32x4(_mm_castsi128_ps(a));
+}
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<0, 0, 0, 0>(int)
+{
+	return mask32x4(_mm_setzero_ps());
+}
+
+
+FFTL_FORCEINLINE mask32x4 mask32x4::operator|(const mask32x4& b) const
+{
+	return mask32x4(_mm_or_ps(m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 mask32x4::operator&(const mask32x4& b) const
+{
+	return mask32x4(_mm_and_ps(m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 mask32x4::operator^(const mask32x4& b) const
+{
+	return mask32x4(_mm_xor_ps(m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator|(const T& b) const
+{
+	return T(_mm_or_ps(m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator&(const T& b) const
+{
+	return T(_mm_and_ps(m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator^(const T& b) const
+{
+	return T(_mm_xor_ps(m_v, b.m_v));
+}
+
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x4& a, const T& b)
+{
+	return T(_mm_andnot_ps(b.m_v, a.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x4& b)
+{
+	return T(_mm_andnot_ps(b.m_v, a.m_v));
+}
+FFTL_FORCEINLINE mask32x4 AndNot(const mask32x4& a, const mask32x4& b)
+{
+	return mask32x4(_mm_andnot_ps(b.m_v, a.m_v));
+}
+
+FFTL_FORCEINLINE f32_4 f32_4::operator|(const mask32x4& b) const
+{
+	return f32_4(_mm_or_ps(m_v, b.m_v));
+}
+FFTL_FORCEINLINE f32_4 f32_4::operator&(const mask32x4& b) const
+{
+	return f32_4(_mm_and_ps(m_v, b.m_v));
+}
+FFTL_FORCEINLINE f32_4 f32_4::operator^(const mask32x4& b) const
+{
+	return f32_4(_mm_xor_ps(m_v, b.m_v));
+}
+
+FFTL_FORCEINLINE mask32x4 CmpEq(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmpeq_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpNe(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmpneq_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpLt(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmplt_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpLe(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmple_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGt(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmpgt_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGe(f32_4_In a, f32_4_In b)
+{
+	return mask32x4(_mm_cmpge_ps(a.m_v, b.m_v));
+}
+
+template<typename T, bool bX, bool bY, bool bZ, bool bW>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
+{
+	return T{ sse_blend<bX, bY, bZ, bW>(a.GetNative(), b.GetNative()) };
+}
+template<typename T>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
+{
+	return T{ sse_blend(msk, a.GetNative(), b.GetNative()) };
+}
+
+
 
 
 FFTL_FORCEINLINE bool GetCpuFlushDenormalMode()

@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "../defs.h"
 
-#if defined(__ANDROID__)
+#if defined(FFTL_PLATFORM_ANDROID)
 #	include <android/log.h>
 #else
 #	include <cstdio>
@@ -41,7 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace FFTL
 {
-#if defined(__ANDROID__)
+#if defined(FFTL_PLATFORM_ANDROID)
 	inline int LogMsgV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_INFO,		"FFTL", _Format, _ArgList); }
 	inline int LogErrV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_ERROR,		"FFTL", _Format, _ArgList); }
 	inline int LogWrnV(const char* _Format, va_list _ArgList) { return __android_log_vprint(ANDROID_LOG_WARN,		"FFTL", _Format, _ArgList); }

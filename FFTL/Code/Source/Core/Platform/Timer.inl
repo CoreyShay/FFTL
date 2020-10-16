@@ -37,15 +37,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include <windows.h>
 #	include <profileapi.h>
 #	include <intrin.h>
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
+#elif defined(FFTL_PLATFORM_PLAYSTATION)
 #	include <kernel.h>
 #	include <rtc.h>
-#elif defined(__ANDROID__)
+#elif defined(FFTL_PLATFORM_ANDROID)
 #	include <time.h>
 #endif
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 #	include <x86intrin.h>
+#endif
+
+#if !defined(FFTL_SSE) && !defined(FFTL_ARM_NEON)
+#	include <chrono>
 #endif
 
 
@@ -68,7 +72,7 @@ inline TimerBase::StaticInfo::StaticInfo(TimerType type)
 		QueryPerformanceFrequency(&freq);
 		m_TicksToUsScalar = 1000000.0 / static_cast<f64>(freq.QuadPart);
 	}
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
+#elif defined(FFTL_PLATFORM_PLAYSTATION)
 	if (type == TimerType::CPU)
 	{
 		const uint64_t freq = sceKernelGetTscFrequency();
@@ -78,7 +82,7 @@ inline TimerBase::StaticInfo::StaticInfo(TimerType type)
 	{
 		m_TicksToUsScalar = 1.0;
 	}
-#elif defined(__ANDROID__)
+#elif defined(FFTL_PLATFORM_ANDROID)
 	if (type == TimerType::CPU)
 	{
 #if 0//defined(__arm__)
@@ -157,16 +161,24 @@ inline const char* CpuTimer::GetTickUnitsString()
 #elif defined(_POSIX_VERSION)
 inline u64 CpuTimer::GetCurrentTicks()
 {
-	struct timespec now;
-	clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
-	return now.tv_sec * 1000000000ULL + safestatic_cast<u64>(now.tv_nsec);
+	struct timespec t0;
+	clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t0);
+	return t0.tv_sec * 1000000000ULL + safestatic_cast<u64>(t0.tv_nsec);
 }
 inline const char* CpuTimer::GetTickUnitsString()
 {
 	return "Nanoseconds";
 }
 #else
-#	error "Need platform definitions for Timer methods"
+inline u64 CpuTimer::GetCurrentTicks()
+{
+	const auto t0 = std::chrono::high_resolution_clock::now();
+	return std::chrono::duration_cast<std::chrono::nanoseconds>(t0.time_since_epoch()).count();
+}
+inline const char* CpuTimer::GetTickUnitsString()
+{
+	return "Nanoseconds";
+}
 #endif // defined(_POSIX_VERSION)
 
 inline void CpuTimer::Start()

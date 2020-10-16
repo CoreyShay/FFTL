@@ -1064,8 +1064,8 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 			const __m128i v16Indices = _mm_load_si128(reinterpret_cast<const __m128i*>(sm_BitReverseIndices + n));
 			const __m128i v32Indices_0_3 = _mm_unpacklo_epi16(v16Indices, _mm_setzero_si128());
 			const __m128i v32Indices_4_7 = _mm_unpackhi_epi16(v16Indices, _mm_setzero_si128());
-			const __m128i v32Indices_Ev = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(0, 2, 0, 2)));
-			const __m128i v32Indices_Od = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), _MM_SHUFFLE_XYZW(1, 3, 1, 3)));
+			const __m128i v32Indices_Ev = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), FFTL_MM_SHUFFLE_XYZW(0, 2, 0, 2)));
+			const __m128i v32Indices_Od = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), FFTL_MM_SHUFFLE_XYZW(1, 3, 1, 3)));
 
 			const f32_4 vCurR = _mm_i32gather_ps(fInReal.data(), v32Indices_Ev, 4);
 			const f32_4 vCurI = _mm_i32gather_ps(fInImag.data(), v32Indices_Ev, 4);
@@ -1817,7 +1817,7 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformForward_1stHalf(c
 	const FixedArray<cxT, N_4>& cxInput = *reinterpret_cast<const FixedArray<cxT, N_4>*>(&fTimeIn);
 
 	//	Perform the half size complex FFT
-	sm_fft::TransformForward(cxInput, fFreqOutR, fFreqOutI);
+	sm_fft::TransformForward_1stHalf(cxInput, fFreqOutR, fFreqOutI);
 
 #if FFTL_STAGE_TIMERS
 	Timer timer;
@@ -1918,7 +1918,7 @@ FFTL_COND_INLINE void FFT_Real_Base<M, T, T_Twiddle>::TransformInverse(const Fix
 #endif
 
 	//	Perform the half size complex inverse FFT
-	sm_fft::TransformInverse_InPlace_DIT(cxTimeOut, false);
+	sm_fft::TransformInverse_InPlace_DIT(cxTimeOut);
 }
 
 template <uint M, typename T, typename T_Twiddle>

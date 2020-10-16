@@ -170,9 +170,9 @@ FFTL_FORCEINLINE bool IsInf(const quat& q)
 {
 	return IsFinite(q.m_v);
 }
-FFTL_FORCEINLINE bool IsOutrageous(const quat& q)
+FFTL_FORCEINLINE bool IsNonFinite(const quat& q)
 {
-	return IsOutrageous(q.m_v);
+	return IsNonFinite(q.m_v);
 }
 FFTL_FORCEINLINE f32 Length_sq(const quat& q)
 {
@@ -257,12 +257,12 @@ FFTL_FORCEINLINE void quat::Rotate(const quat& in)
 
 FFTL_FORCEINLINE void quat::Conjugate()
 {
-	m_v = Blend<1, 1, 1, 0>(m_v, -m_v);
+	m_v = Blend<1, 1, 1, 0>(-m_v, m_v);
 }
 
 FFTL_FORCEINLINE void quat::NegateW()
 {
-	m_v = Blend<0, 0, 0, 1>(m_v, -m_v);
+	m_v = Blend<0, 0, 0, 1>(-m_v, m_v);
 }
 
 FFTL_FORCEINLINE quat quat::GetRotated(const quat& rot) const
@@ -310,7 +310,7 @@ inline void quat::BuildFromMatOrtho(const mat33& m)
 	q = max(q, vec4::genZero());
 	q = Sqrt(q);
 	q *= vec4::splat(0.5f);
-	const vecmask negxyz = vec4(-0.f, -0.f, -0.f, +0.f).asVecfcmp();
+	const mask32x4 negxyz = vec4(-0.f, -0.f, -0.f, +0.f).asVecfcmp();
 	q.AndNotAsn(negxyz);
 	vec4 copySign(
 		m21 - m12,
@@ -428,9 +428,9 @@ inline void quat::BuildSlerp(const quat& qFrom, const quat& qTo, f32 t)
 	vec4 vCosTheta = DotV(qFrom.m_v, q1);
 
 #if 1
-	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
-	vCosTheta =	Blend(vCosTheta, -vCosTheta, cmlLT);
-	q1 =		Blend(q1, -q1, cmlLT);
+	const mask32x4 cmlLT = CmpLt(vCosTheta, vec4::Zero());
+	vCosTheta =	Blend(cmlLT, -vCosTheta, vCosTheta);
+	q1 =		Blend(cmlLT, -q1, q1);
 #else
 	if (cos_theta.GetX() < 0.0f)
 	{
@@ -465,9 +465,9 @@ inline void quat::BuildSlerpFast(const quat& qFrom, const quat& qTo, f32 t)
 	vec4 vCosTheta = DotV(q0.m_v, qTo.m_v);
 
 #if 1
-	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
-	vCosTheta = Blend(vCosTheta, -vCosTheta, cmlLT);
-	q0.m_v = Blend(q0.m_v, -q0.m_v, cmlLT);
+	const mask32x4 cmlLT = CmpLt(vCosTheta, vec4::Zero());
+	vCosTheta = Blend(cmlLT, -vCosTheta, vCosTheta);
+	q0.m_v = Blend(cmlLT, -q0.m_v, q0.m_v);
 #else
 	if (cos_theta.GetX() < 0.0f)
 	{
@@ -573,23 +573,23 @@ FFTL_FORCEINLINE quat quat::genIdentity()
 
 FFTL_FORCEINLINE f32 Dot(const quat& a, const quat& b)
 {
-	return Dot(a.m_v, b.m_v);
+	return Dot(a.AsVec4(), b.AsVec4() );
 }
 
 FFTL_FORCEINLINE quat Lerp(f32 mu, const quat& from, const quat& to)
 {
-	quat _b = to;
+	vec4 _b = to.AsVec4();
 
-	vec4 vCosTheta = DotV(from.m_v, to.m_v);
+	vec4 vCosTheta = DotV(from.AsVec4(), to.AsVec4());
 #if 1
-	const vecmask cmlLT = CmpLt(vCosTheta, vec4::Zero());
-	_b.m_v = Blend(_b.m_v, -_b.m_v, cmlLT);
+	const mask32x4 cmlLT = CmpLt(vCosTheta, vec4::Zero());
+	_b = Blend(cmlLT, -_b, _b);
 #else
 	if (cos_theta.GetX() < 0.0f)
 		_b = -_b;
 #endif
 
-	return quat(Lerp(mu, from.AsVec4(), _b.AsVec4()));
+	return quat(Lerp(mu, from.AsVec4(), _b));
 }
 
 

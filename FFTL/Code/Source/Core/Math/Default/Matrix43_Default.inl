@@ -40,19 +40,19 @@ inline bool mat43::IsNearEqual(const mat43& rhs, f32 tol) const
 
 inline bool mat43::IsNan() const
 {
-	return Row<0>() != Row<0>() || Row<1>() != Row<1>() || Row<2>() != Row<2>() || Row<3>() != Row<3>();
+	return FFTL::IsNan(Row<0>()) || FFTL::IsNan(Row<1>()) || FFTL::IsNan(Row<2>()) || FFTL::IsNan(Row<3>());
 }
 inline bool	mat43::IsInf() const
 {
-	return Row<0>().IsInf() || Row<1>().IsInf() || Row<2>().IsInf() || Row<3>().IsInf();
+	return FFTL::IsInf(Row<0>()) || FFTL::IsInf(Row<1>()) || FFTL::IsInf(Row<2>()) || FFTL::IsInf(Row<3>());
 }
 inline bool mat43::IsFinite() const
 {
-	return Row<0>().IsFinite() && Row<1>().IsFinite() && Row<2>().IsFinite() && Row<3>().IsFinite();
+	return FFTL::IsFinite(Row<0>()) && FFTL::IsFinite(Row<1>()) && FFTL::IsFinite(Row<2>()) && FFTL::IsFinite(Row<3>());
 }
-inline bool	mat43::IsOutrageous() const
+inline bool	mat43::IsNonFinite() const
 {
-	return Row<0>().IsOutrageous() || Row<1>().IsOutrageous() || Row<2>().IsOutrageous() || Row<3>().IsOutrageous();
+	return FFTL::IsNonFinite(Row<0>()) || FFTL::IsNonFinite(Row<1>()) || FFTL::IsNonFinite(Row<2>()) || FFTL::IsNonFinite(Row<3>());
 }
 
 

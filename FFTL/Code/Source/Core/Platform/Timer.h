@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include <type_traits>
 
-#if defined(_DURANGO) || defined(__ORBIS__) | defined(__PROSPERO__)
+#if defined(FFTL_PLATFORM_XBOX) || defined(FFTL_PLATFORM_PLAYSTATION)
 #	define FFTL_TIMER_IS_CPUTIMER 1
 #endif
 

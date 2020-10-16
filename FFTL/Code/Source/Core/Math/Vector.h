@@ -17,23 +17,15 @@ namespace FFTL
 {
 
 //	Forward declarations
-class vecmask;
+class mask32x4;
 
-#if FFTL_SSE
-typedef __m128 vecNative;
-#elif FFTL_ARM_NEON
-typedef float32x4_t vecNative;
-#else
-typedef f32 vecNative[4];
-#endif
+typedef Vec4f vecNative;
 
 
 template<uint N>
 class vecT : public f32_4
 {
 public:
-
-	enum enZeroType { ZERO };
 
 	//
 	// Constructors
@@ -43,19 +35,17 @@ public:
 	vecT();
 
 	vecT(enZeroType);
-	constexpr vecT(const vecT& v);
+	constexpr vecT(const vecT& v) = default;
 	constexpr vecT(const f32_4& v);
-	vecT& operator=(const vecT& v);
+	constexpr vecT(Vec4f_In v);
+	vecT& operator=(const vecT& v) = default;
+	vecT& operator=(Vec4f_In v);
 
 #if defined(FFTL_SIMD_F32x4)
-	constexpr vecT(const Vec4f& v);
-	vecT& operator=(const Vec4f& v);
-	FFTL_NODISCARD constexpr operator const Vec4f&() const;
-	FFTL_NODISCARD operator Vec4f&();
 #else
-	FFTL_NODISCARD f32				Get(uint n) const { return m_v[n]; }
-	FFTL_NODISCARD const f32*		Ptr() const { return m_v; }
-	FFTL_NODISCARD f32*				Ptr() { return m_v; }
+	FFTL_NODISCARD f32				Get(uint n) const { return Ptr()[n]; }
+	FFTL_NODISCARD const f32*		Ptr() const { return reinterpret_cast<const f32*>(&m_v); }
+	FFTL_NODISCARD f32*				Ptr() { return reinterpret_cast<f32*>(&m_v); }
 #endif
 
 	constexpr vecT(f32 x, f32 y, f32 z, f32 w) : f32_4(x, y, z, w) {}	//(x, y, z, w)
@@ -89,11 +79,11 @@ public:
 
 
 	//	Returns the native type.
-	FFTL_NODISCARD constexpr const vecNative&	AsIntrinsic() const { return m_v; }
+	FFTL_NODISCARD constexpr const vecNative&		AsIntrinsic() const { return m_v; }
 
-	//	reinterprets as vecmask
-	FFTL_NODISCARD FFTL_FORCEINLINE const vecmask&	AsVecfcmp() const { return *reinterpret_cast<const vecmask*>(this); }
-	FFTL_NODISCARD FFTL_FORCEINLINE vecmask&		AsVecfcmp() { return *reinterpret_cast<vecmask*>(this); }
+	//	reinterprets as mask32x4
+	FFTL_NODISCARD FFTL_FORCEINLINE const mask32x4&	AsVecfcmp() const { return *reinterpret_cast<const mask32x4*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE mask32x4&		AsVecfcmp() { return *reinterpret_cast<mask32x4*>(this); }
 
 	//	Casting (reinterpreting) between N types (all data is compatible)
 	template<uint M>
@@ -159,27 +149,15 @@ public:
 	FFTL_NODISCARD bool				operator==(const vecT& b) const;
 	FFTL_NODISCARD bool				operator!=(const vecT& b) const;
 
-	FFTL_NODISCARD vecT				operator|(const vecmask& b) const;
-	FFTL_NODISCARD vecT				operator&(const vecmask& b) const;
-	FFTL_NODISCARD vecT				operator^(const vecmask& b) const;
-	template<uint M> friend vecT<M>	AndNot(const vecT<M>& a, const vecmask& b);
-	template<uint M> friend vecT<M>	AndNot(const vecmask& a, const vecT<M>& b);
+	FFTL_NODISCARD vecT				operator|(const mask32x4& b) const { return vecT{ f32_4::operator|(b) }; }
+	FFTL_NODISCARD vecT				operator&(const mask32x4& b) const { return vecT{ f32_4::operator&(b) }; }
+	FFTL_NODISCARD vecT				operator^(const mask32x4& b) const { return vecT{ f32_4::operator^(b) }; }
+	template<uint M> friend vecT<M>	AndNot(const vecT<M>& a, const mask32x4& b);
+	template<uint M> friend vecT<M>	AndNot(const mask32x4& a, const vecT<M>& b);
 
-	vecT&				operator|=(const vecmask& b);
-	vecT&				operator&=(const vecmask& b);
-	vecT&				operator^=(const vecmask& b);
-
-
-	//
-	// Comparisons that return a vecmask compare mask
-	//
-
-	template<uint M> friend vecmask		CmpEq(const vecT<M>& a, const vecT<M>& b);
-	template<uint M> friend vecmask		CmpNe(const vecT<M>& a, const vecT<M>& b);
-	template<uint M> friend vecmask		CmpLt(const vecT<M>& a, const vecT<M>& b);
-	template<uint M> friend vecmask		CmpLe(const vecT<M>& a, const vecT<M>& b);
-	template<uint M> friend vecmask		CmpGt(const vecT<M>& a, const vecT<M>& b);
-	template<uint M> friend vecmask		CmpGe(const vecT<M>& a, const vecT<M>& b);
+	vecT&				operator|=(const mask32x4& b) { return *this = *this | b; }
+	vecT&				operator&=(const mask32x4& b) { return *this = *this & b; }
+	vecT&				operator^=(const mask32x4& b) { return *this = *this ^ b; }
 
 
 	//
@@ -238,23 +216,23 @@ public:
 	template<uint M> friend void		StoreU(f32* p, const vecT<M>& v);
 
 	template<uint M> friend bool		IsNearEqual(const vecT<M>& a, const vecT<M>& b, f32 tol);
-	template<uint M> friend vecmask		IsNearEqualV(const vecT<M>& a, const vecT<M>& b, f32 tol);
+	template<uint M> friend mask32x4	IsNearEqualV(const vecT<M>& a, const vecT<M>& b, f32 tol);
 	template<uint M> friend bool		IsNearEqual(const vecT<M>& a, const vecT<M>& b, const vecT<M>& tol);
-	template<uint M> friend vecmask		IsNearEqualV(const vecT<M>& a, const vecT<M>& b, const vecT<M>& tol);
+	template<uint M> friend mask32x4	IsNearEqualV(const vecT<M>& a, const vecT<M>& b, const vecT<M>& tol);
 	template<uint M> friend bool		IsNearZero(const vecT<M>& v, f32 tol);
 	template<uint M> friend bool		IsNearZero(const vecT<M>& v, const vecT<M>& tol);
-	template<uint M> friend vecmask		IsNearZeroV(const vecT<M>& v, f32 tol);
-	template<uint M> friend vecmask		IsNearZeroV(const vecT<M>& v, const vecT<M>& tol);
+	template<uint M> friend mask32x4	IsNearZeroV(const vecT<M>& v, f32 tol);
+	template<uint M> friend mask32x4	IsNearZeroV(const vecT<M>& v, const vecT<M>& tol);
 
 	template<uint M> friend bool		IsNormal(const vecT<M>& v);
 	template<uint M> friend bool		IsNan(const vecT<M>& v);			// Returns true if any component is NaN
-	template<uint M> friend vecmask		IsNanV(const vecT<M>& v);			// Sets the return mask for any NaN component
+	template<uint M> friend mask32x4	IsNanV(const vecT<M>& v);			// Sets the return mask for any NaN component
 	template<uint M> friend bool		IsInf(const vecT<M>& v);			// Returns true if any component is infinite
-	template<uint M> friend vecmask		IsInfV(const vecT<M>& v);			// Sets the return mask for any infinite component
+	template<uint M> friend mask32x4	IsInfV(const vecT<M>& v);			// Sets the return mask for any infinite component
 	template<uint M> friend bool		IsFinite(const vecT<M>& v);			// Returns true only if all components are finite
-	template<uint M> friend vecmask		IsFiniteV(const vecT<M>& v);		// Sets the return mask for any finite component
-	template<uint M> friend bool		IsOutrageous(const vecT<M>& v);		// Returns true if any component is not finite
-	template<uint M> friend vecmask		IsOutrageousV(const vecT<M>& v);	// Sets the return mask for any NaN or infinite component
+	template<uint M> friend mask32x4	IsFiniteV(const vecT<M>& v);		// Sets the return mask for any finite component
+	template<uint M> friend bool		IsNonFinite(const vecT<M>& v);		// Returns true if any component is not finite
+	template<uint M> friend mask32x4	IsNonFiniteV(const vecT<M>& v);		// Sets the return mask for any NaN or infinite component
 	template<uint M> friend f32			Length_sq(const vecT<M>& v);
 	template<uint M> friend vecT<M>		Length_sqV(const vecT<M>& v);
 	template<uint M> friend f32			Length(const vecT<M>& v);
@@ -353,19 +331,9 @@ public:
 	template<int T0, int T1, int T2, int T3, uint M>
 	friend vecT<M> Permute(const vecT<M>& a, const vecT<M>& b);
 
-
-
-	//	Geometry functions
+	//	Geometry
 	template<uint M> friend vecT<M>	PointOnRay(const vecT<M>& start, const vecT<M>& dir, f32 dist);
 	template<uint M> friend vecT<M>	ClosestPointOnLineSegment(const vecT<M>& a, const vecT<M>& b, const vecT<M>& p);
-
-	//	Utility functions
-	template<bool bX, bool bY, bool bZ, bool bW, uint M>
-	friend vecT<M> Blend(const vecT<M>& a, const vecT<M>& b);
-	template<uint M>
-	friend vecT<M> Blend(const vecT<M>& a, const vecT<M>& b, const vecmask& msk);
-
-	//	Geometry
 	template<uint M> friend void SinCos(const vecT<M>& a, vecT<M>& s, vecT<M>& c);
 	template<uint M> friend vecT<M> Sin(const vecT<M>& y);
 	template<uint M> friend vecT<M> Cos(const vecT<M>& y);
@@ -400,71 +368,6 @@ constexpr vec3 vec3_zaxis{ 0, 0, 1, 0 };
 
 
 
-
-
-
-
-// Purpose: vecmask - Holds a vector comparison result, or used to mask vectors using bitwise logical operators.
-class vecmask
-{
-	template<uint N> friend class vecT;
-
-public:
-	vecmask() = default;
-	constexpr vecmask(const vecmask& v);
-	vecmask& operator=(const vecmask& v);
-
-#if defined(FFTL_SSE)
-	constexpr vecmask(const __m128& v);
-	vecmask& operator=(const __m128& v);
-	FFTL_NODISCARD constexpr operator const __m128&() const;
-	operator __m128&();
-#elif defined(FFTL_ARM_NEON)
-	constexpr vecmask(const uint32x4_t& v);
-	vecmask& operator=(const uint32x4_t& v);
-	FFTL_NODISCARD constexpr operator const uint32x4_t&() const;
-	FFTL_NODISCARD operator uint32x4_t&();
-#else
-	u32								Get(uint n) const { return m_v[n]; }
-	const u32*						Ptr() const { return m_v; }
-	u32*							Ptr() { return m_v; }
-#endif
-
-	FFTL_NODISCARD vecmask			operator|(const vecmask& b) const;
-	FFTL_NODISCARD vecmask			operator&(const vecmask& b) const;
-	FFTL_NODISCARD vecmask			operator^(const vecmask& b) const;
-	friend vecmask					AndNot	 (const vecmask& a, const vecmask& b);
-
-	vecmask&						operator|=(const vecmask& b);
-	vecmask&						operator&=(const vecmask& b);
-	vecmask&						operator^=(const vecmask& b);
-
-	template<uint N> FFTL_NODISCARD vecT<N>	operator|(const vecT<N>& b) const;
-	template<uint N> FFTL_NODISCARD vecT<N>	operator&(const vecT<N>& b) const;
-	template<uint N> FFTL_NODISCARD vecT<N>	operator^(const vecT<N>& b) const;
-	template<uint N> friend vecmask	AndNot(const vecT<N>& a, const vecmask& b);
-	template<uint N> friend vecmask	AndNot(const vecmask& a, const vecT<N>& b);
-
-	FFTL_NODISCARD int							ToIntMask() const; // returns a 4 bit int containing the high bit from each element
-
-	template<bool bX, bool bY, bool bZ, bool bW>	FFTL_NODISCARD static vecmask	GenMaskFromBools();
-	template<s32 x, s32 y, s32 z, s32 w>			FFTL_NODISCARD static vecmask	GenMaskFromInts();
-	template<bool bX, bool bY, bool bZ, bool bW>	FFTL_NODISCARD static vecmask	PropagateInt(int i);
-
-private:
-#if defined(FFTL_SSE)
-	__m128	m_v;
-#elif defined(FFTL_ARM_NEON)
-	uint32x4_t m_v;
-#else
-	alignas(16) u32 m_v[4];
-#endif
-};
-
-
-
-
-
 template<uint M> FFTL_NODISCARD vecT<M>	InsertX(const vecT<M>& v, f32 f);
 template<uint M> FFTL_NODISCARD vecT<M>	InsertY(const vecT<M>& v, f32 f);
 template<uint M> FFTL_NODISCARD vecT<M>	InsertZ(const vecT<M>& v, f32 f);
@@ -480,50 +383,12 @@ FFTL_NODISCARD vecT<M> ZeroElements(const vecT<M>& v);
 
 
 
+template<bool ALIGNED, uint M> void			Store(f32* p, const vecT<M>& v);
+template<uint M> void						StoreA(f32* p, const vecT<M>& v);
+template<uint M> void						StoreU(f32* p, const vecT<M>& v);
 
-
-
-
-template<uint M> FFTL_NODISCARD vecT<M>	AndNot(const vecT<M>& a, const vecmask& b);
-template<uint M> FFTL_NODISCARD vecT<M>	AndNot(const vecmask& a, const vecT<M>& b);
-
-
-//
-// Comparisons that return a vecmask compare mask
-//
-
-template<uint M> FFTL_NODISCARD vecmask		CmpEq(const vecT<M>& a, const vecT<M>& b);
-template<uint M> FFTL_NODISCARD vecmask		CmpNe(const vecT<M>& a, const vecT<M>& b);
-template<uint M> FFTL_NODISCARD vecmask		CmpLt(const vecT<M>& a, const vecT<M>& b);
-template<uint M> FFTL_NODISCARD vecmask		CmpLe(const vecT<M>& a, const vecT<M>& b);
-template<uint M> FFTL_NODISCARD vecmask		CmpGt(const vecT<M>& a, const vecT<M>& b);
-template<uint M> FFTL_NODISCARD vecmask		CmpGe(const vecT<M>& a, const vecT<M>& b);
-
-
-
-template<bool ALIGNED, uint M> void		Store(f32* p, const vecT<M>& v);
-template<uint M> void					StoreA(f32* p, const vecT<M>& v);
-template<uint M> void					StoreU(f32* p, const vecT<M>& v);
-
-template<uint M> FFTL_NODISCARD bool		IsNearEqual(const vecT<M>& a, const vecT<M>& b, f32 tol);
-template<uint M> FFTL_NODISCARD vecmask		IsNearEqualV(const vecT<M>& a, const vecT<M>& b, f32 tol);
-template<uint M> FFTL_NODISCARD bool		IsNearEqual(const vecT<M>& a, const vecT<M>& b, const vecT<M>& tol);
-template<uint M> FFTL_NODISCARD vecmask		IsNearEqualV(const vecT<M>& a, const vecT<M>& b, const vecT<M>& tol);
-template<uint M> FFTL_NODISCARD bool		IsNearZero(const vecT<M>& v, f32 tol);
-template<uint M> FFTL_NODISCARD bool		IsNearZero(const vecT<M>& v, const vecT<M>& tol);
-template<uint M> FFTL_NODISCARD vecmask		IsNearZeroV(const vecT<M>& v, f32 tol);
-template<uint M> FFTL_NODISCARD vecmask		IsNearZeroV(const vecT<M>& v, const vecT<M>& tol);
-
-template<uint M> FFTL_NODISCARD bool		IsNormal(const vecT<M>& v);
-template<uint M> FFTL_NODISCARD bool		IsNan(const vecT<M>& v);			// Returns true if any component is NaN
-template<uint M> FFTL_NODISCARD vecmask		IsNanV(const vecT<M>& v);			// Sets the return mask for any NaN component
-template<uint M> FFTL_NODISCARD bool		IsInf(const vecT<M>& v);			// Returns true if any component is infinite
-template<uint M> FFTL_NODISCARD vecmask		IsInfV(const vecT<M>& v);			// Sets the return mask for any infinite component
-template<uint M> FFTL_NODISCARD bool		IsFinite(const vecT<M>& v);			// Returns true only if all components are finite
-template<uint M> FFTL_NODISCARD vecmask		IsFiniteV(const vecT<M>& v);		// Sets the return mask for any finite component
-template<uint M> FFTL_NODISCARD bool		IsOutrageous(const vecT<M>& v);		// Returns true if any component is not finite
-template<uint M> FFTL_NODISCARD vecmask		IsOutrageousV(const vecT<M>& v);	// Sets the return mask for any NaN or infinite component
-template<uint M> FFTL_NODISCARD f32			Length_sq(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD bool		IsNormal( const vecT<M>& v );
+template<uint M> FFTL_NODISCARD f32			Length_sq( const vecT<M>& v );
 template<uint M> FFTL_NODISCARD vecT<M>		Length_sqV(const vecT<M>& v);
 template<uint M> FFTL_NODISCARD f32			Length(const vecT<M>& v);
 template<uint M> FFTL_NODISCARD vecT<M>		LengthV(const vecT<M>& v);
@@ -610,28 +475,24 @@ template<int T0, int T1, int T2, int T3, uint M>
 FFTL_NODISCARD vecT<M> Permute(const vecT<M>& a, const vecT<M>& b);
 
 
-
-//	Geometry functions
-template<uint M> FFTL_NODISCARD vecT<M>	PointOnRay(const vecT<M>& start, const vecT<M>& dir, f32 dist);
-template<uint M> FFTL_NODISCARD vecT<M>	ClosestPointOnLineSegment(const vecT<M>& a, const vecT<M>& b, const vecT<M>& p);
-
-//	Utility functions
+//	Blend: return b(N) ? a[N] : b[N]
 template<bool bX, bool bY, bool bZ, bool bW, uint M>
 FFTL_NODISCARD vecT<M> Blend(const vecT<M>& a, const vecT<M>& b);
+
+//	Blend: return msk ? a : b
 template<uint M>
-FFTL_NODISCARD vecT<M> Blend(const vecT<M>& a, const vecT<M>& b, const vecmask& msk);
+FFTL_NODISCARD vecT<M> Blend(const mask32x4& msk, const vecT<M>& a, const vecT<M>& b);
+
 
 //	Geometry
+template<uint M> FFTL_NODISCARD vecT<M>	PointOnRay(const vecT<M>& start, const vecT<M>& dir, f32 dist);
+template<uint M> FFTL_NODISCARD vecT<M>	ClosestPointOnLineSegment(const vecT<M>& a, const vecT<M>& b, const vecT<M>& p);
 template<uint M> void SinCos(const vecT<M>& a, vecT<M>& s, vecT<M>& c);
 template<uint M> FFTL_NODISCARD vecT<M> Sin(const vecT<M>& y);
 template<uint M> FFTL_NODISCARD vecT<M> Cos(const vecT<M>& y);
 
 
 
-
-FFTL_NODISCARD vecmask					AndNot(const vecmask& a, const vecmask& b);
-template<uint N> FFTL_NODISCARD vecmask	AndNot(const vecT<N>& a, const vecmask& b);
-template<uint N> FFTL_NODISCARD vecmask	AndNot(const vecmask& a, const vecT<N>& b);
 
 } // namespace FFTL
 

@@ -106,7 +106,7 @@ inline bool mat44::IsFinite() const
 	const uint64_t c1 = vgetq_lane_u64(vreinterpretq_u64_u32(r), 1);
 	return (c0 & c1) == 0xffffffffffffffff;
 }
-inline bool mat44::IsOutrageous() const
+inline bool mat44::IsNonFinite() const
 {
 	const float32x4_t vZero = vdupq_n_f32(0);
 

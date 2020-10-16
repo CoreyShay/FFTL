@@ -99,7 +99,7 @@ public:
 	friend bool		IsNormal(const quat& q);
 	friend bool		IsNan(const quat& q);
 	friend bool		IsInf(const quat& q);
-	friend bool		IsOutrageous(const quat& q);
+	friend bool		IsNonFinite(const quat& q);
 	friend f32		Length_sq(const quat& q);
 	friend f32		Length(const quat& q);
 	friend quat		Normalize(const quat& q);
@@ -163,9 +163,6 @@ public:
 	FFTL_NODISCARD static quat	LoadU(const f32* p);
 	FFTL_NODISCARD static quat	genIdentity();
 
-	friend f32	Dot(const quat& a, const quat& b);
-	friend quat	Lerp(f32 mu, const quat& from, const quat& to);
-
 private:
 
 	vec4 m_v;
@@ -181,7 +178,10 @@ FFTL_NODISCARD quat				InsertX(const quat& q, f32 f);
 FFTL_NODISCARD quat				InsertY(const quat& q, f32 f);
 FFTL_NODISCARD quat				InsertZ(const quat& q, f32 f);
 FFTL_NODISCARD quat				InsertW(const quat& q, f32 f);
-	
+
+FFTL_NODISCARD f32	Dot(const quat& a, const quat& b);
+FFTL_NODISCARD quat	Lerp(f32 mu, const quat& from, const quat& to);
+
 } // namespace FFTL
 
 #include "Quaternion.inl"

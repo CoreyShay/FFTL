@@ -14,6 +14,38 @@
 #endif
 
 
+//	Make sure some constructors are defined before they're used in SIMD specialization code included below
+namespace FFTL
+{
+
+template<uint N>
+FFTL_FORCEINLINE constexpr vecT<N>::vecT(const f32_4& v)
+	: f32_4(v)
+{
+}
+
+template<uint N>
+FFTL_FORCEINLINE constexpr vecT<N>::vecT(Vec4f_In v)
+	: f32_4(v)
+{
+}
+
+template<uint N>
+FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(Vec4f_In v)
+{
+	return static_cast<vecT<N>&>(f32_4::operator=(v));
+}
+
+template<uint N>
+FFTL_FORCEINLINE vecT<N>::vecT(f32_4::enZeroType zero)
+	: f32_4(zero)
+{
+}
+
+
+}
+
+
 #if defined(FFTL_SSE)
 #	include "SSE/Vector_SSE.inl"
 #elif defined(FFTL_ARM_NEON)
@@ -26,22 +58,10 @@
 namespace FFTL
 {
 
-template<uint N>
-FFTL_FORCEINLINE vecT<N>::vecT(enZeroType)
-{
-	*this = Zero();
-}
-
 template<>
 FFTL_FORCEINLINE vecT<4>::vecT(const vecT<3>& xyz, f32 w)
 {
 	*this = Permute<A0, A1, A2, B0>(xyz.CastTo<4>(), vec4(w));
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N> vecT<N>::operator+() const
-{
-	return *this;
 }
 
 template<uint N>
@@ -164,7 +184,7 @@ FFTL_FORCEINLINE bool IsNearEqual(const vecT<N>& a, const vecT<N>& b, f32 tol)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearEqualV(const vecT<N>& a, const vecT<N>& b, f32 tol)
+FFTL_FORCEINLINE mask32x4 IsNearEqualV(const vecT<N>& a, const vecT<N>& b, f32 tol)
 {
 	return IsNearEqualV(a, b, vecT<N>::Splat(tol));
 }
@@ -176,7 +196,7 @@ FFTL_FORCEINLINE bool IsNearZero(const vecT<N>& v, f32 tol)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearZeroV(const vecT<N>& v, f32 tol)
+FFTL_FORCEINLINE mask32x4 IsNearZeroV(const vecT<N>& v, f32 tol)
 {
 	return IsNearZeroV(v, vecT<N>::Splat(tol));
 }
@@ -449,32 +469,16 @@ FFTL_FORCEINLINE vecT<N> ClosestPointOnLineSegment(const vecT<N>& a, const vecT<
 	return r;
 }
 
-
-
-FFTL_FORCEINLINE vecmask& vecmask::operator|=(const vecmask& b)
+//	Utility functions
+template<bool bX, bool bY, bool bZ, bool bW, uint N>
+FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b)
 {
-	return *this = *this | b;
+	return vecT<N>(Blend<f32_4, bX, bY, bZ, bW>(a, b));
 }
-FFTL_FORCEINLINE vecmask& vecmask::operator&=(const vecmask& b)
+template<uint N>
+FFTL_FORCEINLINE vecT<N> Blend(const mask32x4& msk, const vecT<N>& a, const vecT<N>& b)
 {
-	return *this = *this & b;
-}
-FFTL_FORCEINLINE vecmask& vecmask::operator^=(const vecmask& b)
-{
-	return *this = *this ^ b;
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N>& vecT<N>::operator|=(const vecmask& b)
-{
-	return *this = *this | b;
-}
-template<uint N> FFTL_FORCEINLINE vecT<N>& vecT<N>::operator&=(const vecmask& b)
-{
-	return *this = *this & b;
-}
-template<uint N> FFTL_FORCEINLINE vecT<N>& vecT<N>::operator^=(const vecmask& b)
-{
-	return *this = *this ^ b;
+	return vecT<N>(Blend<f32_4>(msk, a, b));
 }
 
 template<uint M>
@@ -501,7 +505,12 @@ inline void SinCos(const vecT<M>& a, vecT<M>& s, vecT<M>& c)
 #elif defined(FFTL_ARM_NEON)
 	neon_SinCos(a.m_v, s.m_v, c.m_v);
 #else
-	SinCos(a.m_v, s.m_v, c.m_v);
+	for (uint i = 0; i < M; ++i)
+	{
+		s.Ptr()[i] = Sin(a.Ptr()[i]);
+		c.Ptr()[i] = Cos(a.Ptr()[i]);
+	}
+//	SinCos(a.m_v, s.m_v, c.m_v);
 #endif
 }
 

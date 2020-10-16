@@ -74,7 +74,7 @@ void CpuInfo::Init()
 	s_extFlags = DetectExtensionSupport();
 }
 
-#if !(defined(__ORBIS__) || defined(__PROSPERO__) || defined(_DURANGO)) && defined(FFTL_SSE)
+#if !(defined(FFTL_PLATFORM_PLAYSTATION) || defined(FFTL_PLATFORM_XBOX)) && defined(FFTL_SSE)
 CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 {
 	//	https://en.wikipedia.org/wiki/CPUID

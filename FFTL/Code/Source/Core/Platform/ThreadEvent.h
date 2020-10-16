@@ -46,13 +46,13 @@ public:
 
 #if defined(_MSC_VER)
 	typedef HANDLE HandleType;
-#elif (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 	typedef SceKernelEventFlag HandleType;
 #elif defined(FFTL_THREAD_USE_POSIX)
 	typedef pollfd HandleType;
 #endif //platform
 
-#if (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#if defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
 	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #else
@@ -102,7 +102,7 @@ inline void ThreadEvent::Unsignal()
 }
 
 
-#elif (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 
 inline ThreadEvent::ThreadEvent(const char* pszName)
 	: m_Handle(0)

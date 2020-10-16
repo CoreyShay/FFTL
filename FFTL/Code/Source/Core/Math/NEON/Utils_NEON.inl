@@ -20,42 +20,43 @@ namespace FFTL
 
 
 
-// r = mask ? b : a;
-FFTL_FORCEINLINE float32x4_t neon_blend(const float32x4_t& a, const float32x4_t& b, const uint32x4_t& mask)
-{
-#if 1
-	return vreinterpretq_f32_u32( vbslq_u32(mask, vreinterpretq_u32_f32(b), vreinterpretq_u32_f32(a)) );
-#else
-	return vreinterpretq_f32_u32( veorq_u32(vreinterpretq_u32_f32(a), vandq_u32(veorq_u32(vreinterpretq_u32_f32(a), vreinterpretq_u32_f32(b)), mask)) );
-#endif
-}
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE float32x4_t neon_blend(const float32x4_t& a, const float32x4_t& b)
 {
-	constexpr int i0 = bX ? 4 : 0;
-	constexpr int i1 = bY ? 5 : 1;
-	constexpr int i2 = bZ ? 6 : 2;
-	constexpr int i3 = bW ? 7 : 3;
+	constexpr int i0 = bX ? 0 : 4;
+	constexpr int i1 = bY ? 1 : 5;
+	constexpr int i2 = bZ ? 2 : 6;
+	constexpr int i3 = bW ? 3 : 7;
 	return V4fPermute<i0, i1, i2, i3>(a, b);
 }
 
 template<>
 FFTL_FORCEINLINE float32x4_t neon_blend<0, 0, 0, 0>(const float32x4_t& a, const float32x4_t& b)
 {
-	(void)b;
-	return a;
+	(void)a;
+	return b;
 }
 template<>
 FFTL_FORCEINLINE float32x4_t neon_blend<1, 1, 1, 1>(const float32x4_t& a, const float32x4_t& b)
 {
-	(void)a;
-	return b;
+	(void)b;
+	return a;
+}
+
+// r = mask ? a : b;
+FFTL_FORCEINLINE float32x4_t neon_blend(const uint32x4_t& mask, const float32x4_t& a, const float32x4_t& b)
+{
+#if 1
+	return vreinterpretq_f32_u32( vbslq_u32(mask, vreinterpretq_u32_f32(a), vreinterpretq_u32_f32(b)) );
+#else
+	return vreinterpretq_f32_u32( veorq_u32(vreinterpretq_u32_f32(b), vandq_u32(veorq_u32(vreinterpretq_u32_f32(b), vreinterpretq_u32_f32(a)), mask)) );
+#endif
 }
 
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE float32x4_t neon_zero_elements(const float32x4_t& v)
 {
-	return neon_blend<bX, bY, bZ, bW>(v, vdupq_n_f32(0));
+	return neon_blend<bX, bY, bZ, bW>(vdupq_n_f32(0), v);
 }
 template<>
 FFTL_FORCEINLINE float32x4_t neon_zero_elements<1, 1, 1, 1>(const float32x4_t&)
@@ -214,8 +215,8 @@ inline void neon_SinCos(const float32x4_t& rads, float32x4_t& s, float32x4_t& c)
 
 	{
 		// Use the poly mask to merge the polynomial results
-		float32x4_t sin = neon_blend(y2, y1, vreinterpretq_f32_s32(polyMask));
-		float32x4_t cos = neon_blend(y1, y2, vreinterpretq_f32_s32(polyMask));
+		float32x4_t sin = neon_blend(vreinterpretq_u32_s32(polyMask), y1, y2);
+		float32x4_t cos = neon_blend(vreinterpretq_u32_s32(polyMask), y2, y1);
 	
 		// Set the sign bit and store the result
 		s = veorq_s32(vreinterpretq_s32_f32(sin), sinSignBit);

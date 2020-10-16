@@ -250,12 +250,36 @@ FFTL_FORCEINLINE Vec8f V8fSubMul(Vec8f_In a, Vec8f_In b, Vec8f_In c)
 		V4fSubMul(a.b, b.b, c.b),
 	};
 }
+FFTL_FORCEINLINE Vec8f V8fMin(Vec8f_In a, Vec8f_In b)
+{
+	return Vec8f
+	{
+		V4fMin(a.a, b.a),
+		V4fMin(a.b, b.b),
+	};
+}
+FFTL_FORCEINLINE Vec8f V8fMax(Vec8f_In a, Vec8f_In b)
+{
+	return Vec8f
+	{
+		V4fMax(a.a, b.a),
+		V4fMax(a.b, b.b),
+	};
+}
 FFTL_FORCEINLINE Vec8f V8fSqrt(Vec8f_In v)
 {
 	return Vec8f
 	{
 		V4fSqrt(v.a),
 		V4fSqrt(v.b),
+	};
+}
+FFTL_FORCEINLINE Vec8f V8fAbs(Vec8f_In v)
+{
+	return Vec8f
+	{
+		V4fAbs(v.a),
+		V4fAbs(v.b),
 	};
 }
 FFTL_FORCEINLINE Vec8f V8fCompareEq(Vec8f_In a, Vec8f_In b)
@@ -341,6 +365,123 @@ FFTL_FORCEINLINE Vec4f V8fAsV4f(Vec8f_In v)
 FFTL_FORCEINLINE Vec4f V8fGet4567(Vec8f_In v)
 {
 	return v.b;
+}
+
+
+
+constexpr mask32x8::mask32x8(const mask32x4& a, const mask32x4& b)
+	: m_v{ { a, b } }
+{
+}
+
+FFTL_FORCEINLINE int mask32x8::ToIntMask() const
+{
+	return (m_v[0].ToIntMask()) | (m_v[1].ToIntMask() << 4);
+}
+
+template<s32 i0, s32 i1, s32 i2, s32 i3, s32 i4, s32 i5, s32 i6, s32 i7>
+FFTL_FORCEINLINE mask32x8 mask32x8::GenMaskFromInts()
+{
+	return { mask32x4::GenMaskFromInts<i0, i1, i2, i3>(), mask32x4::GenMaskFromInts<i4, i5, i6, i7>() };
+}
+
+template<bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
+FFTL_FORCEINLINE mask32x8 mask32x8::GenMaskFromBools()
+{
+	return { mask32x4::GenMaskFromBools<b0, b1, b2, b3>(), mask32x4::GenMaskFromBools<b4, b5, b6, b7>() };
+}
+
+template<bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
+FFTL_FORCEINLINE mask32x8 mask32x8::PropagateInt(int i)
+{
+	return { mask32x4::PropagateInt<b0, b1, b2, b3>(i), mask32x4::PropagateInt<b4, b5, b6, b7>(i) };
+}
+
+FFTL_FORCEINLINE mask32x8 mask32x8::operator|(const mask32x8& b) const
+{
+	return { m_v[0] | b.m_v[0], m_v[1] | b.m_v[1] };
+}
+FFTL_FORCEINLINE mask32x8 mask32x8::operator&(const mask32x8& b) const
+{
+	return { m_v[0] & b.m_v[0], m_v[1] & b.m_v[1] };
+}
+FFTL_FORCEINLINE mask32x8 mask32x8::operator^(const mask32x8& b) const
+{
+	return { m_v[0] ^ b.m_v[0], m_v[1] ^ b.m_v[1] };
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator|(const T& b) const
+{
+	return { m_v[0] | b.a, m_v[1] | b.b };
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator&(const T& b) const
+{
+	return { m_v[0] & b.a, m_v[1] & b.b };
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator^(const T& b) const
+{
+	return { m_v[0] & b.a, m_v[1] & b.b };
+}
+
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x8& a, const T& b)
+{
+	return { AndNot(a.m_v[0], b.a), AndNot(a.m_v[1], b.b) };
+}
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x8& b)
+{
+	return { AndNot(a.a, b.m_v[0]), AndNot(a.b, b.m_v[1]) };
+}
+FFTL_FORCEINLINE mask32x8 AndNot(const mask32x8& a, const mask32x8& b)
+{
+	return { AndNot(a.m_v[0], b.m_v[0]), AndNot(a.m_v[1], b.m_v[1]) };
+}
+
+FFTL_FORCEINLINE f32_8 f32_8::operator|(const mask32x8& b) const
+{
+	return { f32_4(m_v.a) | b.m_v[0], f32_4(m_v.b) | b.m_v[1] };
+}
+FFTL_FORCEINLINE f32_8 f32_8::operator&(const mask32x8& b) const
+{
+	return { f32_4(m_v.a) & b.m_v[0], f32_4(m_v.b) & b.m_v[1] };
+}
+FFTL_FORCEINLINE f32_8 f32_8::operator^(const mask32x8& b) const
+{
+	return { f32_4(m_v.a) ^ b.m_v[0], f32_4(m_v.b) ^ b.m_v[1] };
+}
+
+FFTL_FORCEINLINE mask32x8 CmpEq(f32_8_In a, f32_8_In b)
+{
+	return { CmpEq(a.m_v.a, b.m_v.a), CmpEq(a.m_v.b, b.m_v.b) };
+}
+FFTL_FORCEINLINE mask32x8 CmpNe(f32_8_In a, f32_8_In b)
+{
+	return { CmpNe(a.m_v.a, b.m_v.a), CmpNe(a.m_v.b, b.m_v.b) };
+}
+FFTL_FORCEINLINE mask32x8 CmpLt(f32_8_In a, f32_8_In b)
+{
+	return { CmpLt(a.m_v.a, b.m_v.a), CmpLt(a.m_v.b, b.m_v.b) };
+}
+FFTL_FORCEINLINE mask32x8 CmpLe(f32_8_In a, f32_8_In b)
+{
+	return { CmpLe(a.m_v.a, b.m_v.a), CmpLe(a.m_v.b, b.m_v.b) };
+}
+FFTL_FORCEINLINE mask32x8 CmpGt(f32_8_In a, f32_8_In b)
+{
+	return { CmpGt(a.m_v.a, b.m_v.a), CmpGt(a.m_v.b, b.m_v.b) };
+}
+FFTL_FORCEINLINE mask32x8 CmpGe(f32_8_In a, f32_8_In b)
+{
+	return { CmpGe(a.m_v.a, b.m_v.a), CmpGe(a.m_v.b, b.m_v.b) };
+}
+
+template<typename T, bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const T& a, const T& b)
+{
+	return { Blend<b0, b1, b2, b3>(f32_4(a.GetNative().a), f32_4(b.GetNative().a)), Blend<b4, b5, b6, b7>(f32_4(a.GetNative().b), f32_4(b.GetNative().b)) };
+}
+template<typename T>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
+{
+	return { Blend(msk.GetArray()[0], f32_4(a.GetNative().a), f32_4(b.GetNative().a)), Blend(msk.GetArray()[1], f32_4(a.GetNative().b), f32_4(b.GetNative().b)) };
 }
 
 

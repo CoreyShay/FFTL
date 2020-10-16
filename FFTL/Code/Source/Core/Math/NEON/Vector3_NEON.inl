@@ -60,9 +60,9 @@ FFTL_FORCEINLINE void Transpose3x3SaveW(vec3& a, vec3& b, vec3& c)
 	r1 = V4fPermute<0, 1, 5, 5>(t1, r2);
 	r2 = V4fPermute<0, 1, 6, 7>(t2, r2);
 
-	a = neon_blend<1, 1, 1, 0>(a, r0);
-	b = neon_blend<1, 1, 1, 0>(b, r1);
-//	c = neon_blend<1, 1, 1, 0>(c, r2);
+	a = neon_blend<0, 0, 0, 1>(a, r0);
+	b = neon_blend<0, 0, 0, 1>(b, r1);
+//	c = neon_blend<0, 0, 0, 1>(c, r2);
 	c = r2; // c.w value is already preserved in r2.
 }
 

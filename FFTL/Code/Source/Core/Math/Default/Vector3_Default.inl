@@ -16,10 +16,10 @@ namespace FFTL
 template<>
 inline void vecT<3>::Set(const vecT<3>& xy, f32 z)
 {
-	m_v[0] = xy.GetX();
-	m_v[1] = xy.GetY();
-	m_v[2] = z;
-	m_v[3] = 0;
+	m_v.x = xy.GetX();
+	m_v.y = xy.GetY();
+	m_v.z = z;
+	m_v.w = 0;
 }
 
 
@@ -30,9 +30,9 @@ inline void vecT<3>::Set(const vecT<3>& xy, f32 z)
 inline vec3 Cross(const vec3& a, const vec3& b)
 {
 return vec3(
-	a.GetY()*b.GetZ() - a.GetZ()*b.GetY(),
-	a.GetZ()*b.GetX() - a.GetX()*b.GetZ(),
-	a.GetX()*b.GetY() - a.GetY()*b.GetX()
+	a.GetY() * b.GetZ() - a.GetZ() * b.GetY(),
+	a.GetZ() * b.GetX() - a.GetX() * b.GetZ(),
+	a.GetX() * b.GetY() - a.GetY() * b.GetX()
 	);
 }
 

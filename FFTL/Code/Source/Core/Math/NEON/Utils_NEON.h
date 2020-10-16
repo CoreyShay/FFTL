@@ -15,9 +15,6 @@ namespace FFTL
 
 
 
-// r = mask ? b : a;
-FFTL_NODISCARD float32x4_t neon_blend(const float32x4_t& a, const float32x4_t& b, const uint32x4_t& mask);
-
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_NODISCARD float32x4_t neon_blend(const float32x4_t& a, const float32x4_t& b);
 
@@ -26,6 +23,9 @@ FFTL_NODISCARD float32x4_t neon_blend<0, 0, 0, 0>(const float32x4_t& a, const fl
 
 template<>
 FFTL_NODISCARD float32x4_t neon_blend<1, 1, 1, 1>(const float32x4_t& a, const float32x4_t& b);
+
+// r = mask ? a : b;
+FFTL_NODISCARD float32x4_t neon_blend(const uint32x4_t& mask, const float32x4_t& a, const float32x4_t& b);
 
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_NODISCARD float32x4_t neon_zero_elements(const float32x4_t& v);

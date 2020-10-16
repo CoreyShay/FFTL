@@ -124,7 +124,28 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_SSE 1
 #endif
 
-#if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__) || defined(__FMA3__) || defined(__PROSPERO__))
+//	Platforms
+#if defined(__ANDROID__)
+#	define FFTL_PLATFORM_ANDROID 1
+#elif defined(__ORBIS__)
+#	define FFTL_PLATFORM_ORBIS 1
+#elif defined(__PROSPERO__)
+#	define FFTL_PLATFORM_PROSPERO 1
+#elif defined(_DURANGO)
+#	define FFTL_PLATFORM_DURANGO 1
+#elif defined(_SCARLETT) || defined(_GAMING_XBOX_SCARLETT)
+#	define FFTL_PLATFORM_SCARLETT 1
+#elif defined(_WINDOWS) || defined(WIN32) || defined(__WIN32) || defined(__WIN32__)
+#	define FFTL_PLATFORM_WINDOWS 1
+#endif
+
+#if defined(FFTL_PLATFORM_ORBIS) || defined(FFTL_PLATFORM_PROSPERO)
+#	define FFTL_PLATFORM_PLAYSTATION 1
+#elif defined(FFTL_PLATFORM_DURANGO) || defined(FFTL_PLATFORM_SCARLETT)
+#	define FFTL_PLATFORM_XBOX 1
+#endif
+
+#if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__) || defined(__FMA3__) || defined(__PROSPERO__) || defined(_SCARLETT))
 #	define FFTL_FMA3 1
 #endif
 #if !defined(FFTL_FMA4) && (defined(FFTL_USE_FMA4) || defined(__FMA4__))
@@ -171,11 +192,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
-#if defined(__ORBIS__) || defined(__PROSPERO__) || defined(_DURANGO) || defined(FFTL_ARM_NEON) // TODO: ARM NEON
+#if defined(FFTL_PLATFORM_PLAYSTATION) || defined(FFTL_PLATFORM_XBOX) || defined(FFTL_ARM_NEON) || !defined(FFTL_SSE) // TODO: ARM NEON
 #	define FFTL_CPU_INFO_KNOWN_TO_COMPILER 1
 #endif
 
-#if defined(FFTL_SSE) && ((defined(_MSC_VER) && _MSC_VER >= 1700) || defined(__clang__) && !defined(__ANDROID__) && !defined(__PROSPERO__))
+#if defined(FFTL_SSE) && ((defined(_MSC_VER) && _MSC_VER >= 1700) || defined(__clang__) && !defined(__ANDROID__) && !defined(FFTL_PLATFORM_PROSPERO))
 #	define FFTL_VECTORCALL __vectorcall
 #elif 0//defined(FFTL_SSE) && defined(__GNUC__)   __attribute__((sseregparm)) doesn't seem to be recognized
 #	define FFTL_VECTORCALL __attribute__((sseregparm))
@@ -220,7 +241,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #if defined(FFTL_SIMD_F32x4)
 #	define FFTL_SIMD_F32x4_ONLY(__stuff__) __stuff__
 #else
-#	define FFTL_SIMD_F32x4_ONLY(__stuff__) __stuff__
+#	define FFTL_SIMD_F32x4_ONLY(__stuff__)
 #endif
 #if defined(FFTL_SIMD_I32x8)
 #	define FFTL_SIMD_I32x8_ONLY(__stuff__) __stuff__
@@ -302,7 +323,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	else
 #		define FFTL_DLLEXPORT __declspec(dllimport)
 #	endif
-#elif defined(__ANDROID__)
+#elif defined(FFTL_PLATFORM_ANDROID)
 #	define FFTL_FORCEINLINE inline __attribute__((always_inline))
 #	define FFTL_NOINLINE __attribute((noinline))
 #	ifdef FFTL_DLL
@@ -368,7 +389,7 @@ typedef char			tchar;
 } // namespace FFTL
 
 
-#if /*defined(__ORBIS__) ||*/ defined(__ANDROID__)
+#if !defined(_MSC_VER) && !defined(FFTL_PLATFORM_PLAYSTATION)
 #	define FFTL_THREAD_USE_POSIX 1
 #endif
 

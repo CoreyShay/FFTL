@@ -23,49 +23,6 @@ FFTL_FORCEINLINE vecT<N>::vecT()
 }
 
 template<uint N>
-inline constexpr vecT<N>::vecT(const vecT<N>& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-inline constexpr vecT<N>::vecT(const f32_4& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(const vecT<N>& v)
-{
-	m_v = v.m_v;
-	return *this;
-}
-
-template<uint N>
-inline constexpr vecT<N>::vecT(const float32x4_t& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(const float32x4_t& v)
-{
-	m_v = v; return *this;
-}
-
-template<uint N>
-inline constexpr vecT<N>::operator const float32x4_t&() const
-{
-	return m_v;
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>::operator float32x4_t&()
-{
-	return m_v;
-}
-
-template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT(f32 x, f32 y, f32 z)
 {
 	float32x4_t v = vdupq_n_f32(0);
@@ -475,7 +432,7 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::ReplaceNonFinite(const vecT& a) const
 	const float32x4_t vZero = vdupq_n_f32(0);
 	const float32x4_t vShouldBeZero = vsubq_f32(m_v, m_v);
 	const uint32x4_t vMask = vceqq_f32(vShouldBeZero, vZero);
-	return neon_blend(a.m_v, m_v, vMask);
+	return neon_blend(vMask, m_v, a.m_v);
 }
 
 
@@ -598,7 +555,7 @@ FFTL_FORCEINLINE bool IsNearEqual(const vecT<1>& a, const vecT<1>& b, const vecT
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
+FFTL_FORCEINLINE mask32x4 IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 	return vcleq_f32(vabsq_f32(vsubq_f32(a.m_v, b.m_v)), tol);
@@ -636,7 +593,7 @@ FFTL_FORCEINLINE bool IsNearZero(const vecT<1>& a, const vecT<1>& tol)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearZeroV(const vecT<N>& a, const vecT<N>& tol)
+FFTL_FORCEINLINE mask32x4 IsNearZeroV(const vecT<N>& a, const vecT<N>& tol)
 {
 	const float32x4_t vAbs = vabsq_f32(a.m_v);
 	return vcleq_f32(vAbs, tol);
@@ -667,7 +624,7 @@ FFTL_FORCEINLINE bool IsNan(const vecT<1>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNanV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsNanV(const vecT<N>& v)
 {
 	return vmvnq_u32( vceqq_f32(v.m_v, v.m_v) );
 }
@@ -712,7 +669,7 @@ FFTL_FORCEINLINE bool IsInf(const vecT<1>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsInfV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsInfV(const vecT<N>& v)
 {
 	const float32x4_t vZero = vdupq_n_f32(0);
 	const float32x4_t vInf = vrecpeq_f32(vZero);
@@ -752,13 +709,13 @@ FFTL_FORCEINLINE bool IsFinite(const vecT<1>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsFiniteV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsFiniteV(const vecT<N>& v)
 {
 	return vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0));
 }
 
 template<>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<4>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<4>& v)
 {
 	const uint32x4_t cmp = vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0));
 	const uint64_t c0 = vgetq_lane_u64(vreinterpretq_u64_u32(cmp), 0);
@@ -766,7 +723,7 @@ FFTL_FORCEINLINE bool IsOutrageous(const vecT<4>& v)
 	return (c0 & c1) != 0xffffffffffffffff;
 }
 template<>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<3>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<3>& v)
 {
 	const uint32x4_t cmp = vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0));
 	const uint64_t c0 = vgetq_lane_u64(vreinterpretq_u64_u32(cmp), 0);
@@ -774,14 +731,14 @@ FFTL_FORCEINLINE bool IsOutrageous(const vecT<3>& v)
 	return (c0 != 0xffffffffffffffff) | (c1 != 0xffffffff);
 }
 template<>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<2>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<2>& v)
 {
 	const uint32x4_t cmp = vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0));
 	const uint64_t c0 = vgetq_lane_u64(vreinterpretq_u64_u32(cmp), 0);
 	return (c0 != 0xffffffffffffffff);
 }
 template<>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<1>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<1>& v)
 {
 	const uint32x4_t cmp = vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0));
 	const uint32_t c0 = vgetq_lane_u32(cmp, 0);
@@ -789,7 +746,7 @@ FFTL_FORCEINLINE bool IsOutrageous(const vecT<1>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsOutrageousV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsNonFiniteV(const vecT<N>& v)
 {
 	return vmvnq_s32( vceqq_f32(vsubq_f32(v.m_v, v.m_v), vdupq_n_f32(0)) );
 }
@@ -1119,199 +1076,6 @@ FFTL_FORCEINLINE vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 {
 	return HSumV(a * b);
 }
-
-
-//	Utility functions
-template<bool bX, bool bY, bool bZ, bool bW, uint N>
-FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b)
-{
-	return neon_blend<bX, bY, bZ, bW>(a.m_v, b.m_v);
-}
-template<uint N>
-FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b, const vecmask& msk)
-{
-	return neon_blend(a.m_v, b.m_v, msk);
-}
-
-
-
-
-
-
-
-inline constexpr vecmask::vecmask(const vecmask& v)
-	: m_v(v.m_v)
-{
-}
-
-FFTL_FORCEINLINE vecmask& vecmask::operator=(const vecmask& v)
-{
-	m_v = v.m_v;
-	return *this;
-}
-
-inline constexpr vecmask::vecmask(const uint32x4_t& v)
-	: m_v(v)
-{
-}
-
-FFTL_FORCEINLINE vecmask& vecmask::operator=(const uint32x4_t& v)
-{
-	m_v = v;
-	return *this;
-}
-
-inline constexpr vecmask::operator const uint32x4_t&() const
-{
-	return m_v;
-}
-
-FFTL_FORCEINLINE vecmask::operator uint32x4_t&()
-{
-	return m_v;
-}
-
-FFTL_FORCEINLINE vecmask vecmask::operator|(const vecmask& b) const
-{
-	return vecmask(vorrq_u32(m_v, b));
-}
-FFTL_FORCEINLINE vecmask vecmask::operator&(const vecmask& b) const
-{
-	return vecmask(vandq_s32(m_v, b));
-}
-FFTL_FORCEINLINE vecmask vecmask::operator^(const vecmask& b) const
-{
-	return vecmask( veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator|(const vecT<N>& b) const
-{
-	return vecT<N>( vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator&(const vecT<N>& b) const
-{
-	return vecT<N>( vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator^(const vecT<N>& b) const
-{
-	return vecT<N>(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecmask& a, const vecT<N>& b)
-{
-	return vecT<N>(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecT<N>& a, const vecmask& b)
-{
-	return vecT<N>(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-FFTL_FORCEINLINE vecmask AndNot(const vecmask& a, const vecmask& b)
-{
-	return vecmask(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator|(const vecmask& b) const
-{
-	return vecT<N>(vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator&(const vecmask& b) const
-{
-	return vecT<N>(vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator^(const vecmask& b) const
-{
-	return vecT<N>(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
-}
-
-template<uint N> FFTL_FORCEINLINE vecmask CmpEq(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vceqq_f32(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpNe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vmvnq_u32(vceqq_f32(a.m_v, b.m_v)));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLt(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vcltq_f32(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vcleq_f32(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGt(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vcgtq_f32(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(vcgeq_f32(a.m_v, b.m_v));
-}
-
-FFTL_FORCEINLINE int vecmask::ToIntMask() const
-{
-	const uint32_t n0 = vgetq_lane_u32(m_v, 0) & 1;
-	const uint32_t n1 = vgetq_lane_u32(m_v, 1) & 2;
-	const uint32_t n2 = vgetq_lane_u32(m_v, 2) & 4;
-	const uint32_t n3 = vgetq_lane_u32(m_v, 3) & 8;
-	return static_cast<int>(n0 | n1 | n2 | n3);
-}
-
-template<s32 x, s32 y, s32 z, s32 w>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromInts()
-{
-	uint32x2_t a = vcreate_u32(static_cast<uint64_t>(x) | (static_cast<uint64_t>(y) << 32));
-	uint32x2_t b = vcreate_u32(static_cast<uint64_t>(z) | (static_cast<uint64_t>(w) << 32));
-	return vcombine_u32(a, b);
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools()
-{
-	constexpr int ix = bX ? 0 : 0xffffffff;
-	constexpr int iy = bY ? 0 : 0xffffffff;
-	constexpr int iz = bZ ? 0 : 0xffffffff;
-	constexpr int iw = bW ? 0 : 0xffffffff;
-	return GenMaskFromInts<ix, iy, iz, iw>();
-}
-
-template<>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools<0, 0, 0, 0>()
-{
-	return vdupq_n_u32(0);
-}
-
-template<>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools<1, 1, 1, 1>()
-{
-	return vdupq_n_u32(0xffffffff);
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt(int i)
-{
-	const int ix = bX ? 0 : 2;
-	const int iy = bY ? 0 : 2;
-	const int iz = bZ ? 0 : 2;
-	const int iw = bW ? 0 : 2;
-
-	uint32x4_t a = vreinterpretq_u32_u64( vsetq_lane_u64(i, vdupq_n_u64(0), 0) );
-	return __builtin_shufflevector(a, a, ix, iy, iz, iw);
-}
-template<>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt<1, 0, 0, 0>(int i)
-{
-	uint32x4_t a = vsetq_lane_u32(i, vdupq_n_u32(0), 0);
-	return a;
-}
-template<>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt<0, 0, 0, 0>(int)
-{
-	return vdupq_n_u32(0);
-}
-
-
-
 
 
 

@@ -434,8 +434,8 @@ inline void mat33::Invert()
 	const vec3 c12 = Cross(Row<1>(), Row<2>());
 
 	vec3 det = DotV(Row<2>(), c01);
-	const vecmask msk = CmpEq(det + vOne, vOne); // if (abs(det) < FLT_EPSILON) det = 1.f;
-	det = Blend(det, vOne, msk);
+	const mask32x4 msk = CmpEq(det + vOne, vOne); // if (abs(det) < FLT_EPSILON) det = 1.f;
+	det = Blend(msk, vOne, det);
 	const vec3 invDet = vOne / det;
 
 	vec3 a = c12 * invDet;
@@ -548,12 +548,12 @@ inline void mat33::BuildFromVector(const vec3& dir)
 	vec3& v2 = Row<(R + 2) % 3>();
 
 	const vec3 absDir = Abs(dir);
-	const vecmask msk = CmpLt(XXXX(absDir), YYYY(absDir));
+	const mask32x4 msk = CmpLt(XXXX(absDir), YYYY(absDir));
 	const vec3 v1000(1, 0, 0, 0);
 	const vec3 v0100 = Permute<1, 0, 1, 1>(v1000);
 	v0 = dir;
 //	v1 = cross(dir, (fabs(dir.x) < fabs(dir.y)) ? vec3(-1, 0, 0) : vec3(0, 1, 0));
-	v1 = Normalize(Cross(dir, Blend(v0100, v1000, msk)));
+	v1 = Normalize(Cross(dir, Blend(msk, v1000, v0100)));
 	v2 = Cross(v0, v1);
 }
 inline void mat33::BuildFromVector(const vec3& dir, int R)
@@ -565,12 +565,12 @@ inline void mat33::BuildFromVector(const vec3& dir, int R)
 	vec3& v2 = m_v[(R + 2) % 3].CastTo<3>();
 
 	const vec3 absDir = Abs(dir);
-	const vecmask msk = CmpLt(XXXX(absDir), YYYY(absDir));
+	const mask32x4 msk = CmpLt(XXXX(absDir), YYYY(absDir));
 	const vec3 v1000(1, 0, 0, 0);
 	const vec3 v0100 = Permute<1, 0, 1, 1>(v1000);
 	v0 = dir;
 //	v1 = cross(dir, (fabs(dir.x) < fabs(dir.y)) ? vec3(-1, 0, 0) : vec3(0, 1, 0));
-	v1 = Normalize(Cross(dir, Blend(v0100, v1000, msk)));
+	v1 = Normalize(Cross(dir, Blend(msk, v1000, v0100)));
 	v2 = Cross(v0, v1);
 }
 

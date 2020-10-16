@@ -103,7 +103,7 @@ public:
 	FFTL_NODISCARD bool			IsNan() const;
 	FFTL_NODISCARD bool			IsInf() const;
 	FFTL_NODISCARD bool			IsFinite() const;
-	FFTL_NODISCARD bool			IsOutrageous() const;
+	FFTL_NODISCARD bool			IsNonFinite() const;
 	/// Checks whether any element is larger than the given threshold
 	FFTL_NODISCARD bool			IsOrthogonal3x3() const;
 	/// Checks if the 3x3 sub-matrix is orthonormal

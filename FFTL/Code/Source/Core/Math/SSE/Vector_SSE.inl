@@ -26,50 +26,6 @@ FFTL_FORCEINLINE vecT<N>::vecT()
 }
 
 template<uint N>
-inline constexpr vecT<N>::vecT(const vecT<N>& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-inline constexpr vecT<N>::vecT(const f32_4& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(const vecT<N>& v)
-{
-	m_v = v.m_v;
-	return *this;
-}
-
-template<uint N>
-inline constexpr vecT<N>::vecT(const __m128& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(const __m128& v)
-{
-	m_v = v;
-	return *this;
-}
-
-template<uint N>
-inline constexpr vecT<N>::operator const __m128&() const
-{
-	return m_v;
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N>::operator __m128&()
-{
-	return m_v;
-}
-
-template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT(f32 x, f32 y, f32 z)
 {
 	const __m128 vx = _mm_set_ss(x);
@@ -161,7 +117,7 @@ FFTL_FORCEINLINE f32 vecT<N>::GetX() const
 template<uint N>
 FFTL_FORCEINLINE f32 vecT<N>::GetY() const
 {
-	return _mm_cvtss_f32(_mm_shuffle_ps(m_v, m_v, _MM_SHUFFLE_XYZW(1, 1, 1, 1)));
+	return _mm_cvtss_f32(_mm_shuffle_ps(m_v, m_v, FFTL_MM_SHUFFLE_XYZW(1, 1, 1, 1)));
 }
 template<uint N>
 FFTL_FORCEINLINE f32 vecT<N>::GetZ() const
@@ -171,7 +127,7 @@ FFTL_FORCEINLINE f32 vecT<N>::GetZ() const
 template<uint N>
 FFTL_FORCEINLINE f32 vecT<N>::GetW() const
 {
-	return _mm_cvtss_f32(_mm_shuffle_ps(m_v, m_v, _MM_SHUFFLE_XYZW(3, 3, 3, 3)));
+	return _mm_cvtss_f32(_mm_shuffle_ps(m_v, m_v, FFTL_MM_SHUFFLE_XYZW(3, 3, 3, 3)));
 }
 
 template<uint N>
@@ -189,7 +145,7 @@ FFTL_FORCEINLINE int vecT<N>::GetAsIntY() const
 #if defined(FFTL_VECTOR_USE_SSE4)
 	return _mm_extract_ps(m_v, 1);
 #else
-	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), _MM_SHUFFLE_XYZW(1, 1, 1, 1)));
+	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), FFTL_MM_SHUFFLE_XYZW(1, 1, 1, 1)));
 #endif
 }
 template<uint N>
@@ -198,7 +154,7 @@ FFTL_FORCEINLINE int vecT<N>::GetAsIntZ() const
 #if defined(FFTL_VECTOR_USE_SSE4)
 	return _mm_extract_ps(m_v, 2);
 #else
-	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), _MM_SHUFFLE_XYZW(2, 2, 2, 2)));
+	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), FFTL_MM_SHUFFLE_XYZW(2, 2, 2, 2)));
 #endif
 }
 template<uint N>
@@ -207,7 +163,7 @@ FFTL_FORCEINLINE int vecT<N>::GetAsIntW() const
 #if defined(FFTL_VECTOR_USE_SSE4)
 	return _mm_extract_ps(m_v, 3);
 #else
-	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), _MM_SHUFFLE_XYZW(3, 3, 3, 3)));
+	return _mm_cvtsi128_si32(_mm_shuffle_epi32(_mm_castps_si128(m_v), FFTL_MM_SHUFFLE_XYZW(3, 3, 3, 3)));
 #endif
 }
 
@@ -438,7 +394,7 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::ReplaceNonFinite(const vecT& a) const
 	const __m128 vZero = _mm_setzero_ps();
 	const __m128 vShouldBeZero = _mm_sub_ps(m_v, m_v);
 	const __m128 vMask = _mm_cmpeq_ps(vShouldBeZero, vZero);
-	m_v = sse_blend(a.m_v, m_v, vMask);
+	m_v = sse_blend(m_v, a.m_v, vMask);
 }
 
 
@@ -553,7 +509,7 @@ FFTL_FORCEINLINE bool IsNearEqual(const vecT<4>& a, const vecT<4>& b, const vecT
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
+FFTL_FORCEINLINE mask32x4 IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 	return _mm_cmple_ps(sse_abs_ps(_mm_sub_ps(a.m_v, b.m_v)), tol);
@@ -574,7 +530,7 @@ FFTL_FORCEINLINE bool IsNearZero(const vecT<N>& v, const vecT<N>& tol)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNearZeroV(const vecT<N>& v, const vecT<N>& tol)
+FFTL_FORCEINLINE mask32x4 IsNearZeroV(const vecT<N>& v, const vecT<N>& tol)
 {
 	const __m128 vAbs = sse_abs_ps(v.m_v);
 	return _mm_cmple_ps(vAbs, tol);
@@ -603,7 +559,7 @@ FFTL_FORCEINLINE bool IsNan(const vecT<1>& v)
 #endif
 }
 template<uint N>
-FFTL_FORCEINLINE vecmask IsNanV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsNanV(const vecT<N>& v)
 {
 	return _mm_cmpneq_ps(v.m_v, v.m_v);
 }
@@ -627,7 +583,7 @@ FFTL_FORCEINLINE bool IsInf(const vecT<4>& v)
 	return _mm_movemask_ps(vMask) != 0;
 }
 template<uint N>
-FFTL_FORCEINLINE vecmask IsInfV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsInfV(const vecT<N>& v)
 {
 	const __m128 vZero = _mm_setzero_ps();
 	const __m128 vInf = _mm_rcp_ps(vZero);
@@ -666,25 +622,25 @@ FFTL_FORCEINLINE bool IsFinite(const vecT<1>& v)
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecmask IsFiniteV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsFiniteV(const vecT<N>& v)
 {
 	return _mm_cmpeq_ps(_mm_sub_ps(v.m_v, v.m_v), _mm_setzero_ps());
 }
 
 template<uint N>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<N>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<N>& v)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 	const uint uMask = (1 << N) - 1;
 	return (_mm_movemask_ps(_mm_cmpneq_ps(_mm_sub_ps(v.m_v, v.m_v), _mm_setzero_ps())) & uMask) != 0;
 }
 template<>
-FFTL_FORCEINLINE bool IsOutrageous(const vecT<4>& v)
+FFTL_FORCEINLINE bool IsNonFinite(const vecT<4>& v)
 {
 	return _mm_movemask_ps(_mm_cmpneq_ps(_mm_sub_ps(v.m_v, v.m_v), _mm_setzero_ps())) != 0;
 }
 template<uint N>
-FFTL_FORCEINLINE vecmask IsOutrageousV(const vecT<N>& v)
+FFTL_FORCEINLINE mask32x4 IsNonFiniteV(const vecT<N>& v)
 {
 	return _mm_cmpneq_ps(_mm_sub_ps(v.m_v, v.m_v), _mm_setzero_ps());
 }
@@ -1002,7 +958,7 @@ template<uint N>
 FFTL_FORCEINLINE f32 Dot(const vecT<N>& a, const vecT<N>& b)
 {
 #if defined(FFTL_VECTOR_USE_SSE4)
-	const __m128 r = _mm_dp_ps(a, b, _MM_DPPS_MASK_HELPER((1<<N)-1, 1));
+	const __m128 r = _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1<<N)-1, 1));
 	return _mm_cvtss_f32(r);
 #else
 	return HSum(a * b);
@@ -1013,7 +969,7 @@ template<uint N>
 FFTL_FORCEINLINE vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 {
 #if defined(FFTL_VECTOR_USE_SSE4)
-	return _mm_dp_ps(a, b, _MM_DPPS_MASK_HELPER((1<<N)-1, 15));
+	return _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1<<N)-1, 15));
 #else
 	return HSumV(a * b);
 #endif
@@ -1023,208 +979,20 @@ template<uint R, uint N>
 FFTL_FORCEINLINE vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 {
 #if defined(FFTL_VECTOR_USE_SSE4)
-	return _mm_dp_ps(a, b, _MM_DPPS_MASK_HELPER((1 << N) - 1, (1 << R) - 1));
+	return _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1 << N) - 1, (1 << R) - 1));
 #else
 	FFTL_IF_CONSTEXPR (R == 4)
 		return HSumV(a * b);
 	else
 	{
-		const int ix = R <= 0;
-		const int iy = R <= 1;
-		const int iz = R <= 2;
-		const int iw = R <= 3;
+		constexpr int ix = R <= 0;
+		constexpr int iy = R <= 1;
+		constexpr int iz = R <= 2;
+		constexpr int iw = R <= 3;
 		return V4fPermute<ix, iy, iz, iw>( _mm_set_ss(HSum(a * b)) );
 	}
 #endif
 }
-
-
-//	Utility functions
-template<bool bX, bool bY, bool bZ, bool bW, uint N>
-FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b)
-{
-	return sse_blend<bX, bY, bZ, bW>(a, b);
-}
-template<uint N>
-FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b, const vecmask& msk)
-{
-	return sse_blend(a, b, msk);
-}
-
-
-
-
-
-
-
-inline constexpr vecmask::vecmask(const vecmask& v)
-	 
-= default;
-
-FFTL_FORCEINLINE vecmask& vecmask::operator=(const vecmask& v)
-= default;
-
-inline constexpr vecmask::vecmask(const __m128& v)
-	: m_v(v)
-{
-}
-
-FFTL_FORCEINLINE vecmask& vecmask::operator=(const __m128& v)
-{
-	m_v = v;
-	return *this;
-}
-
-inline constexpr vecmask::operator const __m128&() const
-{
-	return m_v;
-}
-
-FFTL_FORCEINLINE vecmask::operator __m128&()
-{
-	return m_v;
-}
-
-FFTL_FORCEINLINE vecmask vecmask::operator|(const vecmask& b) const
-{
-	return vecmask(_mm_or_ps(m_v, b.m_v));
-}
-FFTL_FORCEINLINE vecmask vecmask::operator&(const vecmask& b) const
-{
-	return vecmask(_mm_and_ps(m_v, b.m_v));
-}
-FFTL_FORCEINLINE vecmask vecmask::operator^(const vecmask& b) const
-{
-	return vecmask(_mm_xor_ps(m_v, b.m_v));
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator|(const vecT<N>& b) const
-{
-	return vecT<N>(_mm_or_ps(m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator&(const vecT<N>& b) const
-{
-	return vecT<N>(_mm_and_ps(m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator^(const vecT<N>& b) const
-{
-	return vecT<N>(_mm_xor_ps(m_v, b.m_v));
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecmask& a, const vecT<N>& b)
-{
-	return vecT<N>(_mm_andnot_ps(b.m_v, a.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecT<N>& a, const vecmask& b)
-{
-	return vecT<N>(_mm_andnot_ps(b.m_v, a.m_v));
-}
-FFTL_FORCEINLINE vecmask AndNot(const vecmask& a, const vecmask& b)
-{
-	return vecmask(_mm_andnot_ps(b.m_v, a.m_v));
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator|(const vecmask& b) const
-{
-	return vecT<N>(_mm_or_ps(m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator&(const vecmask& b) const
-{
-	return vecT<N>(_mm_and_ps(m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator^(const vecmask& b) const
-{
-	return vecT<N>(_mm_xor_ps(m_v, b.m_v));
-}
-
-template<uint N> FFTL_FORCEINLINE vecmask CmpEq(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmpeq_ps(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpNe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmpneq_ps(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLt(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmplt_ps(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmple_ps(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGt(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmpgt_ps(a.m_v, b.m_v));
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGe(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecmask(_mm_cmpge_ps(a.m_v, b.m_v));
-}
-
-FFTL_FORCEINLINE int vecmask::ToIntMask() const
-{
-	return _mm_movemask_ps(m_v);
-}
-
-template<s32 x, s32 y, s32 z, s32 w>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromInts()
-{
-	return _mm_castsi128_ps( _mm_setr_epi32(x, y, z, w) );
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools()
-{
-	const int ix = bX ? 0 : 1;
-	const int iy = bY ? 0 : 1;
-	const int iz = bZ ? 0 : 2;
-	const int iw = bW ? 0 : 3;
-
-	__m128 a = _mm_setzero_ps();
-	a = _mm_cmpeq_ss(a, a);
-	a = V4fPermute<ix, iy, iz, iw>(a);
-	return a;
-}
-
-template<>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools<0, 0, 0, 0>()
-{
-	return _mm_setzero_ps();
-}
-
-template<>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools<1, 1, 1, 1>()
-{
-	__m128 a = _mm_setzero_ps();
-	a = _mm_cmpeq_ps(a, a);
-	return a;
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt(int i)
-{
-	const int ix = bX ? 0 : 2;
-	const int iy = bY ? 0 : 2;
-	const int iz = bZ ? 0 : 2;
-	const int iw = bW ? 0 : 2;
-
-	__m128i a = _mm_cvtsi32_si128(i);
-	a = _mm_shuffle_epi32(a, _MM_SHUFFLE_XYZW(ix, iy, iz, iw));
-	return _mm_castsi128_ps(a);
-}
-template<>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt<1, 0, 0, 0>(int i)
-{
-	__m128i a = _mm_cvtsi32_si128(i);
-	return _mm_castsi128_ps(a);
-}
-template<>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt<0, 0, 0, 0>(int)
-{
-	return _mm_setzero_ps();
-}
-
 
 
 

@@ -102,7 +102,7 @@ public:
 	FFTL_NODISCARD bool			IsNan() const;
 	FFTL_NODISCARD bool			IsInf() const;
 	FFTL_NODISCARD bool			IsFinite() const;
-	FFTL_NODISCARD bool			IsOutrageous() const;
+	FFTL_NODISCARD bool			IsNonFinite() const;
 	/// Checks whether any element is larger than the given threshold
 	FFTL_NODISCARD f32			Determinant() const;
 

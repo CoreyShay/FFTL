@@ -527,9 +527,183 @@ FFTL_FORCEINLINE Vec4i V4fRoundToVfi(Vec4f_In a)
 	const auto vZero = vdupq_n_f32(0);
 	const auto v0p5 = vdupq_n_f32(0.5f);
 	const auto vMask = vcltq_f32(a, vZero);
-	const auto vRounded = neon_blend(vaddq_f32(a, v0p5), vsubq_f32(a, v0p5), vMask);
+	const auto vRounded = neon_blend(vsubq_f32(a, v0p5), vaddq_f32(a, v0p5), vMask);
 	return vcvtq_s32_f32(vRounded);
 #endif
+}
+
+
+
+inline constexpr mask32x4::mask32x4(const uint32x4_t& v)
+	: m_v(v)
+{
+}
+
+FFTL_FORCEINLINE mask32x4& mask32x4::operator=(const uint32x4_t& v)
+{
+	m_v = v;
+	return *this;
+}
+
+inline constexpr mask32x4::operator const uint32x4_t&() const
+{
+	return m_v;
+}
+
+FFTL_FORCEINLINE mask32x4::operator uint32x4_t&()
+{
+	return m_v;
+}
+
+FFTL_FORCEINLINE mask32x4 mask32x4::operator|(const mask32x4& b) const
+{
+	return mask32x4(vorrq_u32(m_v, b));
+}
+FFTL_FORCEINLINE mask32x4 mask32x4::operator&(const mask32x4& b) const
+{
+	return mask32x4(vandq_s32(m_v, b));
+}
+FFTL_FORCEINLINE mask32x4 mask32x4::operator^(const mask32x4& b) const
+{
+	return mask32x4( veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
+}
+
+FFTL_FORCEINLINE int mask32x4::ToIntMask() const
+{
+	const uint32_t n0 = vgetq_lane_u32(m_v, 0) & 1;
+	const uint32_t n1 = vgetq_lane_u32(m_v, 1) & 2;
+	const uint32_t n2 = vgetq_lane_u32(m_v, 2) & 4;
+	const uint32_t n3 = vgetq_lane_u32(m_v, 3) & 8;
+	return static_cast<int>(n0 | n1 | n2 | n3);
+}
+
+template<s32 x, s32 y, s32 z, s32 w>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromInts()
+{
+	uint32x2_t a = vcreate_u32(static_cast<uint64_t>(x) | (static_cast<uint64_t>(y) << 32));
+	uint32x2_t b = vcreate_u32(static_cast<uint64_t>(z) | (static_cast<uint64_t>(w) << 32));
+	return vcombine_u32(a, b);
+}
+
+template<bool bX, bool bY, bool bZ, bool bW>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools()
+{
+	constexpr int ix = bX ? 0 : 0xffffffff;
+	constexpr int iy = bY ? 0 : 0xffffffff;
+	constexpr int iz = bZ ? 0 : 0xffffffff;
+	constexpr int iw = bW ? 0 : 0xffffffff;
+	return GenMaskFromInts<ix, iy, iz, iw>();
+}
+
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools<0, 0, 0, 0>()
+{
+	return vdupq_n_u32(0);
+}
+
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromBools<1, 1, 1, 1>()
+{
+	return vdupq_n_u32(0xffffffff);
+}
+
+template<bool bX, bool bY, bool bZ, bool bW>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt(int i)
+{
+	constexpr int ix = bX ? 0 : 2;
+	constexpr int iy = bY ? 0 : 2;
+	constexpr int iz = bZ ? 0 : 2;
+	constexpr int iw = bW ? 0 : 2;
+
+	uint32x4_t a = vreinterpretq_u32_u64( vsetq_lane_u64(i, vdupq_n_u64(0), 0) );
+	return __builtin_shufflevector(a, a, ix, iy, iz, iw);
+}
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<1, 0, 0, 0>(int i)
+{
+	uint32x4_t a = vsetq_lane_u32(i, vdupq_n_u32(0), 0);
+	return a;
+}
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<0, 0, 0, 0>(int)
+{
+	return vdupq_n_u32(0);
+}
+
+
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator|(const T& b) const
+{
+	return T( vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator&(const T& b) const
+{
+	return T( vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
+}
+template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator^(const T& b) const
+{
+	return T(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x4& a, const T& b)
+{
+	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x4& b)
+{
+	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+FFTL_FORCEINLINE mask32x4 AndNot(const mask32x4& a, const mask32x4& b)
+{
+	return mask32x4(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+
+FFTL_FORCEINLINE f32_4 f32_4::operator|(const mask32x4& b) const
+{
+	return f32_4(vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+FFTL_FORCEINLINE f32_4 f32_4::operator&(const mask32x4& b) const
+{
+	return f32_4(vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+FFTL_FORCEINLINE f32_4 f32_4::operator^(const mask32x4& b) const
+{
+	return f32_4(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpEq(const T& a, const T& b)
+{
+	return mask32x4(vceqq_f32(a.m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpNe(const T& a, const T& b)
+{
+	return mask32x4(vmvnq_u32(vceqq_f32(a.m_v, b.m_v)));
+}
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpLt(const T& a, const T& b)
+{
+	return mask32x4(vcltq_f32(a.m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpLe(const T& a, const T& b)
+{
+	return mask32x4(vcleq_f32(a.m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpGt(const T& a, const T& b)
+{
+	return mask32x4(vcgtq_f32(a.m_v, b.m_v));
+}
+template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpGe(const T& a, const T& b)
+{
+	return mask32x4(vcgeq_f32(a.m_v, b.m_v));
+}
+
+template<typename T, bool bX, bool bY, bool bZ, bool bW>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
+{
+	return T{ neon_blend<bX, bY, bZ, bW>(a.GetNative(), b.GetNative()) };
+}
+template<typename T>
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
+{
+	return T{ neon_blend(msk, a.GetNative(), b.GetNative()) };
 }
 
 

@@ -17,16 +17,13 @@ Signal Flow Technologies comment
 #endif
 
 
-#define _MM_SHUFFLE_XYZW(_x_,_y_,_z_,_w_) _MM_SHUFFLE(_w_,_z_,_y_,_x_)
-#define _MM_DPPS_MASK_HELPER(_in_mask_, _out_mask_) ( (_out_mask_&15) | ((_in_mask_&15)<<4) )
-#define _MM_INSERTPS_MASK_HELPER(_to_a, _from_b, _zeroX_, _zeroY_, _zeroZ_, _zeroW_) ( (_zeroX_&1) | ((_zeroY_&1)<<1) | ((_zeroZ_&1)<<2) | ((_zeroW_&1)<<3) | ((_to_a&3)<<4) | ((_from_b&3)<<6) )
+#define FFTL_MM_SHUFFLE_XYZW(_x_,_y_,_z_,_w_) _MM_SHUFFLE(_w_,_z_,_y_,_x_)
+#define FFTL_MM_DPPS_MASK_HELPER(_in_mask_, _out_mask_) ( (_out_mask_&15) | ((_in_mask_&15)<<4) )
+#define FFTL_MM_INSERTPS_MASK_HELPER(_to_a, _from_b, _zeroX_, _zeroY_, _zeroZ_, _zeroW_) ( (_zeroX_&1) | ((_zeroY_&1)<<1) | ((_zeroZ_&1)<<2) | ((_zeroW_&1)<<3) | ((_to_a&3)<<4) | ((_from_b&3)<<6) )
 
 
 namespace FFTL
 {
-
-// r = mask ? b : a;
-FFTL_NODISCARD __m128 sse_blend(const __m128& a, const __m128& b, const __m128& mask);
 
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_NODISCARD __m128 sse_blend(const __m128& a, const __m128& b);
@@ -36,6 +33,9 @@ FFTL_NODISCARD __m128 sse_blend<0, 0, 0, 0>(const __m128& a, const __m128& b);
 
 template<>
 FFTL_NODISCARD __m128 sse_blend<1, 1, 1, 1>(const __m128& a, const __m128& b);
+
+// r = mask ? a : b;
+FFTL_NODISCARD __m128 sse_blend(const __m128& mask, const __m128& a, const __m128& b);
 
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_NODISCARD __m128 sse_zero_elements(const __m128& v);

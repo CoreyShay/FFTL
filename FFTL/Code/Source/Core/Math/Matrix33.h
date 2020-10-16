@@ -99,7 +99,7 @@ public:
 	FFTL_NODISCARD bool			IsNan() const;
 	FFTL_NODISCARD bool			IsInf() const;
 	FFTL_NODISCARD bool			IsFinite() const;
-	FFTL_NODISCARD bool			IsOutrageous() const;
+	FFTL_NODISCARD bool			IsNonFinite() const;
 	/// Checks if the 3x3 sub-matrix is orthogonal	
 	FFTL_NODISCARD bool			IsOrthogonal() const;
 	/// Checks if the 3x3 sub-matrix is orthonormal

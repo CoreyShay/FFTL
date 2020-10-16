@@ -21,23 +21,14 @@ namespace FFTL
 {
 
 
-// r = mask ? b : a;
-FFTL_FORCEINLINE __m128 sse_blend(const __m128& a, const __m128& b, const __m128& mask)
-{
-#if defined(FFTL_SSE4)
-	return _mm_blendv_ps(a, b, mask);
-#else
-	return _mm_xor_ps(a, _mm_and_ps(_mm_xor_ps(a, b), mask));
-#endif
-}
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE __m128 sse_blend(const __m128& a, const __m128& b)
 {
 #if defined(FFTL_SSE4)
-	constexpr int i0 = bX ? 1 : 0;
-	constexpr int i1 = bY ? 1 : 0;
-	constexpr int i2 = bZ ? 1 : 0;
-	constexpr int i3 = bW ? 1 : 0;
+	constexpr int i0 = bX ? 0 : 1;
+	constexpr int i1 = bY ? 0 : 1;
+	constexpr int i2 = bZ ? 0 : 1;
+	constexpr int i3 = bW ? 0 : 1;
 	constexpr int mask = (i0) | (i1<<1) | (i2<<2) | (i3<<3);
 	return _mm_blend_ps(a, b, mask);
 #else
@@ -52,33 +43,43 @@ FFTL_FORCEINLINE __m128 sse_blend(const __m128& a, const __m128& b)
 template<>
 FFTL_FORCEINLINE __m128 sse_blend<0, 0, 0, 0>(const __m128& a, const __m128& b)
 {
-	(void)b;
-	return a;
-}
-template<>
-FFTL_FORCEINLINE __m128 sse_blend<1, 1, 1, 1>(const __m128& a, const __m128& b)
-{
 	(void)a;
 	return b;
 }
 template<>
+FFTL_FORCEINLINE __m128 sse_blend<1, 1, 1, 1>(const __m128& a, const __m128& b)
+{
+	(void)b;
+	return a;
+}
+template<>
 FFTL_FORCEINLINE __m128 sse_blend<0, 1, 1, 1>(const __m128& a, const __m128& b)
 {
-	return _mm_move_ss(b, a);
+	return _mm_move_ss(a, b);
 }
 template<>
 FFTL_FORCEINLINE __m128 sse_blend<1, 0, 0, 0>(const __m128& a, const __m128& b)
 {
-	return _mm_move_ss(a, b);
+	return _mm_move_ss(b, a);
+}
+
+// r = mask ? b : a;
+FFTL_FORCEINLINE __m128 sse_blend(const __m128& mask, const __m128& a, const __m128& b)
+{
+#if defined(FFTL_SSE4)
+	return _mm_blendv_ps(b, a, mask);
+#else
+	return _mm_xor_ps(b, _mm_and_ps(_mm_xor_ps(b, a), mask));
+#endif
 }
 
 template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE __m128 sse_zero_elements(const __m128& v)
 {
 #if defined(FFTL_SSE4)
-	return _mm_insert_ps(v, v, _MM_INSERTPS_MASK_HELPER(0, 0, bX, bY, bZ, bW));
+	return _mm_insert_ps(v, v, FFTL_MM_INSERTPS_MASK_HELPER(0, 0, bX, bY, bZ, bW));
 #else
-	return sse_blend<bX, bY, bZ, bW>(v, _mm_setzero_ps());
+	return sse_blend<bX, bY, bZ, bW>(_mm_setzero_ps(), v);
 #endif
 }
 template<>
@@ -519,7 +520,7 @@ FFTL_FORCEINLINE void sse_store2(f32* p, const __m128& v)
 }
 FFTL_FORCEINLINE void sse_store3(f32* p, const __m128& v)
 {
-	const __m128 z = _mm_shuffle_ps(v, v, _MM_SHUFFLE_XYZW(2, 2, 2, 2));
+	const __m128 z = _mm_shuffle_ps(v, v, FFTL_MM_SHUFFLE_XYZW(2, 2, 2, 2));
 	_mm_store_sd((double*)p, _mm_castps_pd(v));
 	_mm_store_ss(p + 2, z);
 }

@@ -14,58 +14,36 @@ inline vecT<N>::vecT()
 #if defined(FFTL_ENABLE_ASSERT)
 	//	Fill with invalid stuff that will be more obvious if used accidentally
 	const f32 f = ReinterpretAs<f32>(0xffffffff);
-	m_v[0] = f;
-	m_v[1] = f;
-	m_v[2] = f;
-	m_v[3] = f;
+	m_v.x = f;
+	m_v.y = f;
+	m_v.z = f;
+	m_v.w = f;
 #endif
-}
-
-template<uint N>
-constexpr vecT<N>::vecT(const vecT<N>& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-constexpr vecT<N>::vecT(const f32_4& v)
-	: f32_4(v)
-{
-}
-
-template<uint N>
-inline vecT<N>& vecT<N>::operator=(const vecT<N>& v)
-{
-	m_v[0] = v.m_v[0];
-	m_v[1] = v.m_v[1];
-	m_v[2] = v.m_v[2];
-	m_v[3] = v.m_v[3];
-	return *this;
 }
 
 template<uint N>
 inline vecT<N>::vecT(f32 x, f32 y, f32 z)
 {
-	m_v[0] = x;
-	m_v[1] = y;
-	m_v[2] = z;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = y;
+	m_v.z = z;
+	m_v.w = 0;
 }
 template<uint N>
 inline vecT<N>::vecT(f32 x, f32 y)
 {
-	m_v[0] = x;
-	m_v[1] = y;
-	m_v[2] = 0;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = y;
+	m_v.z = 0;
+	m_v.w = 0;
 }
 template<uint N>
 inline vecT<N>::vecT(f32 x)
 {
-	m_v[0] = x;
-	m_v[1] = 0;
-	m_v[2] = 0;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = 0;
+	m_v.z = 0;
+	m_v.w = 0;
 }
 
 ///	Use these template sets when we know the input values at compile time to eliminate unnecessary code generation.
@@ -77,73 +55,73 @@ template<s32 x, s32 y, s32 z, s32 w>
 inline void vecT<N>::Set()
 {
 	const s32 i[] = { x, y, z, w };
-	m_v[0] = *reinterpret_cast<const f32*>(i+0);
-	m_v[1] = *reinterpret_cast<const f32*>(i+1);
-	m_v[2] = *reinterpret_cast<const f32*>(i+2);
-	m_v[3] = *reinterpret_cast<const f32*>(i+3);
+	m_v.x = *reinterpret_cast<const f32*>(i+0);
+	m_v.y = *reinterpret_cast<const f32*>(i+1);
+	m_v.z = *reinterpret_cast<const f32*>(i+2);
+	m_v.w = *reinterpret_cast<const f32*>(i+3);
 }
 template<uint N>
 template<s32 x, s32 y, s32 z>
 inline void vecT<N>::Set()
 {
 	const s32 i[] = { x, y, z };
-	m_v[0] = *reinterpret_cast<const f32*>(i + 0);
-	m_v[1] = *reinterpret_cast<const f32*>(i + 1);
-	m_v[2] = *reinterpret_cast<const f32*>(i + 2);
-	m_v[3] = 0.f;
+	m_v.x = *reinterpret_cast<const f32*>(i + 0);
+	m_v.y = *reinterpret_cast<const f32*>(i + 1);
+	m_v.z = *reinterpret_cast<const f32*>(i + 2);
+	m_v.w = 0.f;
 }
 template<uint N>
 template<s32 x, s32 y>
 inline void vecT<N>::Set()
 {
 	const s32 i[] = { x, y };
-	m_v[0] = *reinterpret_cast<const f32*>(i + 0);
-	m_v[1] = *reinterpret_cast<const f32*>(i + 1);
-	m_v[2] = 0.f;
-	m_v[3] = 0.f;
+	m_v.x = *reinterpret_cast<const f32*>(i + 0);
+	m_v.y = *reinterpret_cast<const f32*>(i + 1);
+	m_v.z = 0.f;
+	m_v.w = 0.f;
 }
 template<uint N>
 template<s32 x>
 inline void vecT<N>::Set()
 {
 	const s32 i = x;
-	m_v[0] = *reinterpret_cast<const f32*>(&i);
-	m_v[1] = 0.f;
-	m_v[2] = 0.f;
-	m_v[3] = 0.f;
+	m_v.x = *reinterpret_cast<const f32*>(&i);
+	m_v.y = 0.f;
+	m_v.z = 0.f;
+	m_v.w = 0.f;
 }
 
 template<uint N>
 inline void vecT<N>::Set(f32 x, f32 y, f32 z, f32 w)
 {
-	m_v[0] = x;
-	m_v[1] = y;
-	m_v[2] = z;
-	m_v[3] = w;
+	m_v.x = x;
+	m_v.y = y;
+	m_v.z = z;
+	m_v.w = w;
 }
 template<uint N>
 inline void vecT<N>::Set(f32 x, f32 y, f32 z)
 {
-	m_v[0] = x;
-	m_v[1] = y;
-	m_v[2] = z;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = y;
+	m_v.z = z;
+	m_v.w = 0;
 }
 template<uint N>
 inline void vecT<N>::Set(f32 x, f32 y)
 {
-	m_v[0] = x;
-	m_v[1] = y;
-	m_v[2] = 0;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = y;
+	m_v.z = 0;
+	m_v.w = 0;
 }
 template<uint N>
 inline void vecT<N>::Set(f32 x)
 {
-	m_v[0] = x;
-	m_v[1] = 0;
-	m_v[2] = 0;
-	m_v[3] = 0;
+	m_v.x = x;
+	m_v.y = 0;
+	m_v.z = 0;
+	m_v.w = 0;
 }
 
 
@@ -154,43 +132,43 @@ inline void vecT<N>::Set(f32 x)
 template<uint N>
 inline f32 vecT<N>::GetX() const
 {
-	return m_v[0];
+	return m_v.x;
 }
 template<uint N>
 inline f32 vecT<N>::GetY() const
 {
-	return m_v[1];
+	return m_v.y;
 }
 template<uint N>
 inline f32 vecT<N>::GetZ() const
 {
-	return m_v[2];
+	return m_v.z;
 }
 template<uint N>
 inline f32 vecT<N>::GetW() const
 {
-	return m_v[3];
+	return m_v.w;
 }
 
 template<uint N>
 inline int vecT<N>::GetAsIntX() const
 {
-	return *reinterpret_cast<const int*>(m_v+0);
+	return *reinterpret_cast<const int*>(&m_v) + 0;
 }
 template<uint N>
 inline int vecT<N>::GetAsIntY() const
 {
-	return *reinterpret_cast<const int*>(m_v+1);
+	return *reinterpret_cast<const int*>(&m_v) + 1;
 }
 template<uint N>
 inline int vecT<N>::GetAsIntZ() const
 {
-	return *reinterpret_cast<const int*>(m_v+2);
+	return *reinterpret_cast<const int*>(&m_v) + 2;
 }
 template<uint N>
 inline int vecT<N>::GetAsIntW() const
 {
-	return *reinterpret_cast<const int*>(m_v+3);
+	return *reinterpret_cast<const int*>(&m_v) + 3;
 }
 
 //
@@ -201,48 +179,48 @@ template<uint N>
 inline vecT<N> InsertX(const vecT<N>& v, f32 f)
 {
 	auto r = v.m_v;
-	r[0] = f;
+	r.x = f;
 	return r;
 }
 template<uint N>
 inline vecT<N> InsertY(const vecT<N>& v, f32 f)
 {
 	auto r = v.m_v;
-	r[1] = f;
+	r.y = f;
 	return r;
 }
 template<uint N>
 inline vecT<N> InsertZ(const vecT<N>& v, f32 f)
 {
 	auto r = v.m_v;
-	r[2] = f;
+	r.z = f;
 	return r;
 }
 template<uint N>
 inline vecT<N> InsertW(const vecT<N>& v, f32 f)
 {
 	auto r = v.m_v;
-	r[3] = f;
+	r.w = f;
 	return r;
 }
 
 template<uint N>
 inline void vecT<N>::SetAll(f32 f)
 {
-	m_v[0] = f;
-	m_v[1] = f;
-	m_v[2] = f;
-	m_v[3] = f;
+	m_v.x = f;
+	m_v.y = f;
+	m_v.z = f;
+	m_v.w = f;
 }
 
 template<bool bX, bool bY, bool bZ, bool bW, uint M>
 inline vecT<M> ZeroElements(const vecT<M>& v)
 {
 	auto r = v.m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] = 0;
-	FFTL_IF_CONSTEXPR (bY) r[1] = 0;
-	FFTL_IF_CONSTEXPR (bZ) r[2] = 0;
-	FFTL_IF_CONSTEXPR (bW) r[3] = 0;
+	FFTL_IF_CONSTEXPR (bX) r.x = 0;
+	FFTL_IF_CONSTEXPR (bY) r.y = 0;
+	FFTL_IF_CONSTEXPR (bZ) r.z = 0;
+	FFTL_IF_CONSTEXPR (bW) r.w = 0;
 	return r;
 }
 
@@ -250,16 +228,16 @@ template<uint N>
 template<u32 x, u32 y, u32 z, u32 w>
 FFTL_FORCEINLINE vecT<N> vecT<N>::GenConstRtp()
 {
-	const s32 x = x;
-	const s32 y = y;
-	const s32 z = z;
-	const s32 w = w;
+	const s32 _x = x;
+	const s32 _y = y;
+	const s32 _z = z;
+	const s32 _w = w;
 
 	vecT<N> r;
-	r.m_v[0] = *reinterpret_cast<const f32*>(&x);
-	r.m_v[1] = *reinterpret_cast<const f32*>(&y);
-	r.m_v[2] = *reinterpret_cast<const f32*>(&z);
-	r.m_v[3] = *reinterpret_cast<const f32*>(&w);
+	r.m_v.x = *reinterpret_cast<const f32*>(&_x);
+	r.m_v.y = *reinterpret_cast<const f32*>(&_y);
+	r.m_v.z = *reinterpret_cast<const f32*>(&_z);
+	r.m_v.w = *reinterpret_cast<const f32*>(&_w);
 	return r;
 }
 
@@ -270,10 +248,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::GenConstRtp()
 	const s32 v = val;
 	
 	vecT<N> r;
-	r.m_v[0] = *reinterpret_cast<const f32*>(&v);
-	r.m_v[1] = *reinterpret_cast<const f32*>(&v);
-	r.m_v[2] = *reinterpret_cast<const f32*>(&v);
-	r.m_v[3] = *reinterpret_cast<const f32*>(&v);
+	r.m_v.x = *reinterpret_cast<const f32*>(&v);
+	r.m_v.y = *reinterpret_cast<const f32*>(&v);
+	r.m_v.z = *reinterpret_cast<const f32*>(&v);
+	r.m_v.w = *reinterpret_cast<const f32*>(&v);
 	return r;
 }
 
@@ -285,12 +263,12 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::GenConstRtp()
 template<uint N>
 inline vecT<N> vecT<N>::operator-() const
 {
-	return vecT<N>(-m_v[0], -m_v[1], -m_v[2], -m_v[3]);
+	return vecT<N>(-m_v.x, -m_v.y, -m_v.z, -m_v.w);
 }
 template<uint N>
 inline vecT<N> vecT<N>::operator+(const vecT<N>& b) const
 {
-	return vecT<N>(m_v[0]+b.m_v[0], m_v[1]+b.m_v[1], m_v[2]+b.m_v[2], m_v[3]+b.m_v[3]);
+	return vecT<N>(m_v.x+b.m_v.x, m_v.y+b.m_v.y, m_v.z+b.m_v.z, m_v.w+b.m_v.w);
 }
 template<uint N>
 inline vecT<N>& vecT<N>::operator+=(const vecT<N>& b)
@@ -300,7 +278,7 @@ inline vecT<N>& vecT<N>::operator+=(const vecT<N>& b)
 template<uint N>
 inline vecT<N> vecT<N>::operator-(const vecT<N>& b) const
 {
-	return vecT<N>(m_v[0] - b.m_v[0], m_v[1] - b.m_v[1], m_v[2] - b.m_v[2], m_v[3] - b.m_v[3]);
+	return vecT<N>(m_v.x - b.m_v.x, m_v.y - b.m_v.y, m_v.z - b.m_v.z, m_v.w - b.m_v.w);
 }
 template<uint N>
 inline vecT<N>& vecT<N>::operator-=(const vecT<N>& b)
@@ -310,7 +288,7 @@ inline vecT<N>& vecT<N>::operator-=(const vecT<N>& b)
 template<uint N>
 inline vecT<N> vecT<N>::operator*(const vecT<N>& b) const
 {
-	return vecT<N>(m_v[0] * b.m_v[0], m_v[1] * b.m_v[1], m_v[2] * b.m_v[2], m_v[3] * b.m_v[3]);
+	return vecT<N>(m_v.x * b.m_v.x, m_v.y * b.m_v.y, m_v.z * b.m_v.z, m_v.w * b.m_v.w);
 }
 template<uint N>
 inline vecT<N>& vecT<N>::operator*=(const vecT<N>& b)
@@ -320,7 +298,7 @@ inline vecT<N>& vecT<N>::operator*=(const vecT<N>& b)
 template<uint N>
 inline vecT<N> vecT<N>::operator/(const vecT<N>& b) const
 {
-	return vecT<N>(m_v[0] / b.m_v[0], m_v[1] / b.m_v[1], m_v[2] / b.m_v[2], m_v[3] / b.m_v[3]);
+	return vecT<N>(m_v.x / b.m_v.x, m_v.y / b.m_v.y, m_v.z / b.m_v.z, m_v.w / b.m_v.w);
 }
 template<uint N>
 inline vecT<N>& vecT<N>::operator/=(const vecT& b)
@@ -333,9 +311,9 @@ inline bool vecT<N>::operator==(const vecT<N>& b) const
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 	
-	bool r = m_v[0] == b.m_v[0];
+	bool r = m_v.x == b.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r &= m_v[i] == b.m_v[i];
+		r &= Get(i) == b.Get(i);
 	return r;
 }
 template<uint N>
@@ -343,9 +321,9 @@ inline bool vecT<N>::operator!=(const vecT<N>& b) const
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 
-	bool r = m_v[0] != b.m_v[0];
+	bool r = m_v.x != b.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r |= m_v[i] != b.m_v[i];
+		r |= Get(i) != b.Get(i);
 	return r;
 }
 
@@ -398,11 +376,11 @@ inline vecT<N> vecT<N>::Div(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Negate() const
 {
-	auto r = m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] = -m_v[0];
-	FFTL_IF_CONSTEXPR (bY) r[1] = -m_v[1];
-	FFTL_IF_CONSTEXPR (bZ) r[2] = -m_v[2];
-	FFTL_IF_CONSTEXPR (bW) r[3] = -m_v[3];
+	auto r = *this;
+	FFTL_IF_CONSTEXPR (bX) r.Ptr()[0] = -m_v.x;
+	FFTL_IF_CONSTEXPR (bY) r.Ptr()[1] = -m_v.y;
+	FFTL_IF_CONSTEXPR (bZ) r.Ptr()[2] = -m_v.z;
+	FFTL_IF_CONSTEXPR (bW) r.Ptr()[3] = -m_v.w;
 	return r;
 }
 
@@ -421,22 +399,22 @@ template<uint N>
 inline vecT<N> vecT<N>::ZeroNonFinite() const
 {
 	const vecT<N> vShouldBeZero = *this - *this;
-	f32 alignas(16) r[4];
-	r[0] = vShouldBeZero.m_v[0] == 0 ? m_v[0] : 0;
-	r[1] = vShouldBeZero.m_v[1] == 0 ? m_v[1] : 0;
-	r[2] = vShouldBeZero.m_v[2] == 0 ? m_v[2] : 0;
-	r[3] = vShouldBeZero.m_v[3] == 0 ? m_v[3] : 0;
+	alignas(16) f32 r[4];
+	r[0] = vShouldBeZero.m_v.x == 0 ? m_v.x : 0;
+	r[1] = vShouldBeZero.m_v.y == 0 ? m_v.y : 0;
+	r[2] = vShouldBeZero.m_v.z == 0 ? m_v.z : 0;
+	r[3] = vShouldBeZero.m_v.w == 0 ? m_v.w : 0;
 	return r;
 }
 template<uint N>
 inline vecT<N> vecT<N>::ReplaceNonFinite(const vecT& a) const
 {
 	const vecT<N> vShouldBeZero = *this - *this;
-	f32 alignas(16) r[4];
-	r[0] = vShouldBeZero.m_v[0] == 0 ? m_v[0] : a.m_v[0];
-	r[1] = vShouldBeZero.m_v[1] == 0 ? m_v[1] : a.m_v[1];
-	r[2] = vShouldBeZero.m_v[2] == 0 ? m_v[2] : a.m_v[2];
-	r[3] = vShouldBeZero.m_v[3] == 0 ? m_v[3] : a.m_v[3];
+	alignas(16) f32 r[4];
+	r[0] = vShouldBeZero.m_v.x == 0 ? m_v.x : a.m_v.x;
+	r[1] = vShouldBeZero.m_v.y == 0 ? m_v.y : a.m_v.y;
+	r[2] = vShouldBeZero.m_v.z == 0 ? m_v.z : a.m_v.z;
+	r[3] = vShouldBeZero.m_v.w == 0 ? m_v.w : a.m_v.w;
 	return r;
 }
 
@@ -454,9 +432,9 @@ inline vecT<N> vecT<N>::LoadA(const f32* p)
 	vecT<N> v;
 	uint i = 0;
 	for (; i < N; ++i)
-		v.m_v[i] = p[i];
+		v.Ptr()[i] = p[i];
 	for (; i < 4; ++i)
-		v.m_v[i] = 0;
+		v.Ptr()[i] = 0;
 	return v;
 }
 template<uint N>
@@ -477,11 +455,11 @@ template<uint N>
 inline void StoreA(f32* p, const vecT<N>& v)
 {
 	for (uint i = 0; i < N; ++i)
-		p[i] = v.m_v[i];
+		p[i] = v.Get(i);
 }
 
 template<uint N>
-inline void StoreU(f32* p, const vecT<N>& v) const
+inline void StoreU(f32* p, const vecT<N>& v)
 {
 	StoreA(p, v);
 }
@@ -496,16 +474,16 @@ template<uint N>
 inline bool IsNearEqual(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
-	const vecmask vMask = CmpLe(Abs(a - b), tol);
+	const mask32x4 vMask = CmpLe(Abs(a - b), tol);
 	const uint uMask = (1 << N) - 1;
 	return (vMask.ToIntMask() & uMask) == uMask;
 }
 
 template<uint N>
-inline vecmask IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
+inline mask32x4 IsNearEqualV(const vecT<N>& a, const vecT<N>& b, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
-	const vecmask vMask = CmpLe(Abs(a - b), tol);
+	const mask32x4 vMask = CmpLe(Abs(a - b), tol);
 	return vMask;
 }
 
@@ -513,29 +491,29 @@ template<uint N>
 inline bool IsNearZero(const vecT<N>& a, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
-	const vecmask vMask = CmpLe(Abs(a), tol);
+	const mask32x4 vMask = CmpLe(Abs(a), tol);
 	const uint uMask = (1 << N) - 1;
 	return (vMask.ToIntMask() & uMask) == uMask;
 }
 
 template<uint N>
-inline vecmask IsNearZeroV(const vecT<N>& a, const vecT<N>& tol)
+inline mask32x4 IsNearZeroV(const vecT<N>& a, const vecT<N>& tol)
 {
 	const vecT<N> vAbs = Abs(a);
 	return CmpLe(vAbs, tol);
 }
 
 template<uint N>
-inline bool vecT<N>::IsNan(const vecT<N>& v) 
+inline bool IsNan(const vecT<N>& v) 
 {
-	bool r = (v.m_v[0] != v.m_v[0]);
+	bool r = (v.m_v.x != v.m_v.x);
 	for (uint i = 1; i < N; ++i)
-		r |= (v.m_v[i] != v.m_v[i]);
+		r |= IsNan(v.Get(i));
 	return r;
 }
 
 template<uint N>
-inline vecmask IsNanV(const vecT<N>& v)
+inline mask32x4 IsNanV(const vecT<N>& v)
 {
 	return CmpEq(v, v);
 }
@@ -543,187 +521,56 @@ inline vecmask IsNanV(const vecT<N>& v)
 template<uint N>
 inline bool IsInf(const vecT<N>& v)
 {
-	bool r = IsInfinite(v.m_v[0]);
+	bool r = IsInfinite(v.m_v.x);
 	for (uint i = 1; i < N; ++i)
-		r |= (IsInfinite(v.m_v[i]));
+		r |= (IsInfinite(v.Get(i)));
 	return r;
 }
 
 template<uint N>
-inline vecmask vecT<N>::IsInfV(const vecT<N>& v)
+inline mask32x4 IsInfV(const vecT<N>& v)
 {
-	return CmpEq(vecT<N>::Infinity() ^ *reinterpret_cast<const vecmask*>(&v), vecT<N>::Zero());
+	return CmpEq(vecT<N>::Infinity() ^ *reinterpret_cast<const mask32x4*>(&v), vecT<N>::Zero());
 }
 
 template<uint N>
-inline bool vecT<N>::IsFinite(const vecT<N>& v) const
+inline bool IsFinite(const vecT<N>& v)
 {
-	bool r = (m_v[0] - m_v[0] == 0);
+	bool r = (v.m_v.x - v.m_v.x == 0);
 	for (uint i = 1; i < N; ++i)
-		r &= (m_v[i] - m_v[i] == 0);
+		r &= IsFinite(v.Get(i));
 	return r;
 }
 
 template<uint N>
-inline vecmask IsFiniteV(const vecT<N>& v)
+inline mask32x4 IsFiniteV(const vecT<N>& v)
 {
 	return (v - v).CmpEq(vecT<N>::Zero());
 }
 
 template<uint N>
-inline bool IsOutrageous(const vecT<N>& v)
+inline bool IsNonFinite(const vecT<N>& v)
 {
-	bool r = (v.m_v[0] - v.m_v[0] != 0);
+	bool r = (v.m_v.x - v.m_v.x != 0);
 	for (uint i = 1; i < N; ++i)
-		r |= (v.m_v[i] - v.m_v[i] != 0);
+		r |= IsNonFinite(v.Get(i));
 	return r;
 }
 
 template<uint N>
-inline vecmask IsOutrageousV(const vecT<N>& v)
+inline mask32x4 IsNonFiniteV(const vecT<N>& v)
 {
 	return CmpNe(v - v, vecT<N>::Zero());
 }
 
 template<uint N>
-inline vecT<N> Normalize(const vecT<N>& v)
-{
-	return Normalize<4>(v);
-}
-
-template<uint N>
-template<uint R>
-FFTL_FORCEINLINE vecT<N> Normalize(const vecT<N>& v)
-{
-	const f32 len = Length(v);
-
-	FFTL_MATH_ASSERT(len != 0);
-
-	const f32 invlen = newLen / len;
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? m_v[3] * invlen : 0.f;
-	return r;
-}
-
-template<uint N>
-inline vecT<N> Normalize(const vecT<N>& v, f32& out_fLen)
-{
-	return Normalize<4>(v, out_fLen);
-}
-
-template<uint N>
-template<uint R>
-inline vecT<N> Normalize(const vecT<N>& v, f32& out_fLen)
-{
-	const f32 len = Length(v);
-	out_fLen = len;
-
-	FFTL_MATH_ASSERT(len != 0);
-
-	const f32 invlen = newLen / len;
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? m_v[3] * invlen : 0.f;
-	return r;
-}
-
-
-template<uint N>
-inline vecT<N> NormalizeSafe(const vecT<N>& v)
-{
-	return NormalizeSafe<4>(v);
-}
-
-template<uint N>
-template<uint R>
-inline vecT<N> NormalizeSafe(const vecT<N>& v)
-{
-	const f32 len = Length(v);
-	if (len == 0)
-		return *this;
-	const f32 invlen = newLen / len;
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? m_v[3] * invlen : 0.f;
-	return r;
-}
-
-template<uint N>
-inline vecT<N> NormalizeSafe(const vecT<N>& v, f32& out_fLen)
-{
-	return NormalizeSafe<4>(v, out_fLen);
-}
-
-template<uint N>
-template<uint R>
-inline vecT<N> NormalizeSafe(const vecT<N>& v, f32& out_fLen)
-{
-	const f32 len = Length(v);
-	out_fLen = len;
-	if (len == 0)
-		return *this;
-	const f32 invlen = newLen / len;
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? v,m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? v,m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? v,m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? v,m_v[3] * invlen : 0.f;
-	return r;
-}
-
-template<uint N>
-inline vecT<N> NormalizeFast(const vecT<N>& v)
-{
-	return NormalizeFast<4>(v);
-}
-
-template<uint N>
-template<uint R>
-inline vecT<N> NormalizeFast(const vecT<N>& v)
-{
-	const f32 invlen = 1 / Sqrt(Length_sq(v));
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? v.m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? v.m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? v.m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? v.m_v[3] * invlen : 0.f;
-	return r;
-}
-
-template<uint N>
-inline vecT<N> NormalizeFastSafe(const vecT<N>& v)
-{
-	return NormalizeFastSafe<4>(v);
-}
-
-template<uint N>
-template<uint R>
-inline vecT<N> NormalizeFastSafe(const vecT<N>& v)
-{
-	const f32 invlen = 1 / Sqrt(Length_sq(v));
-	f32 alignas(16) r[4];
-	r[0] = R > 0 ? m_v[0] * invlen : 0.f;
-	r[1] = R > 1 ? m_v[1] * invlen : 0.f;
-	r[2] = R > 2 ? m_v[2] * invlen : 0.f;
-	r[3] = R > 3 ? m_v[3] * invlen : 0.f;
-	return ZeroNonFinite(r);
-}
-
-template<uint N>
 inline vecT<N> ZeroNegative(const vecT<N>& v)
 {
-	f32 alignas(16) r[4];
-	r[0] = m_v[0] <= 0 ? m_v[0] : 0;
-	r[1] = m_v[1] <= 0 ? m_v[1] : 0;
-	r[2] = m_v[2] <= 0 ? m_v[2] : 0;
-	r[3] = m_v[3] <= 0 ? m_v[3] : 0;
+	Vec4f r;
+	r.x = v.m_v.x >= 0 ? v.m_v.x : 0;
+	r.y = v.m_v.y >= 0 ? v.m_v.y : 0;
+	r.z = v.m_v.z >= 0 ? v.m_v.z : 0;
+	r.w = v.m_v.w >= 0 ? v.m_v.w : 0;
 	return r;
 }
 
@@ -835,10 +682,10 @@ FFTL_FORCEINLINE vecT<N> Permute(const vecT<N>& v)
 		"Template parameters need to be in range");
 
 	vecT<N> r;
-	r.m_v[0] = v.m_v[T0];
-	r.m_v[1] = v.m_v[T1];
-	r.m_v[2] = v.m_v[T2];
-	r.m_v[3] = v.m_v[T3];
+	r.m_v.x = v.Get(T0);
+	r.m_v.y = v.Get(T1);
+	r.m_v.z = v.Get(T2);
+	r.m_v.w = v.Get(T3);
 	return r;
 }
 
@@ -857,10 +704,10 @@ FFTL_FORCEINLINE vecT<N> Permute(const vecT<N>& a, const vecT<N>& b)
 		"Template inputs need to be shuffle enumerations a/b 0-3");
 
 	vecT<N> r;
-	r.m_v[0] = T0 > 3 ? b.m_v[T0 & 3] : a.m_v[T0];
-	r.m_v[1] = T1 > 3 ? b.m_v[T1 & 3] : a.m_v[T1];
-	r.m_v[2] = T2 > 3 ? b.m_v[T2 & 3] : a.m_v[T2];
-	r.m_v[3] = T3 > 3 ? b.m_v[T3 & 3] : a.m_v[T3];
+	r.m_v.x = T0 > 3 ? b.Get(T0 & 3) : a.Get(T0);
+	r.m_v.y = T1 > 3 ? b.Get(T1 & 3) : a.Get(T1);
+	r.m_v.z = T2 > 3 ? b.Get(T2 & 3) : a.Get(T2);
+	r.m_v.w = T3 > 3 ? b.Get(T3 & 3) : a.Get(T3);
 	return r;
 }
 
@@ -877,9 +724,9 @@ template<uint N>
 inline f32 Min(const vecT<N>& v)
 {
 	static_assert(N <= 4 && N >= 2, "Not implemented");
-	f32 r = v.m_v[0];
+	f32 r = v.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r = Min(r, v.m_v[i]);
+		r = Min(r, v.Get(i));
 	return r;
 }
 
@@ -887,9 +734,9 @@ template<uint N>
 inline f32 Max(const vecT<N>& v)
 {
 	static_assert(N <= 4 && N >= 2, "Not implemented");
-	f32 r = v.m_v[0];
+	f32 r = v.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r = Max(r, v.m_v[i]);
+		r = Max(r, v.Get(i));
 	return r;
 }
 
@@ -897,9 +744,9 @@ template<uint N>
 inline f32 HSum(const vecT<N>& v)
 {
 	static_assert(N <= 4 && N >= 2, "Not implemented");
-	f32 r = v.m_v[0];
+	f32 r = v.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r = r + v.m_v[i];
+		r = r + v.Get(i);
 	return r;
 }
 
@@ -914,9 +761,9 @@ template<uint N>
 inline f32 Dot(const vecT<N>& a, const vecT<N>& b)
 {
 	static_assert(N <= 4 && N >= 2, "Not implemented");
-	f32 r = a.m_v[0] * b.m_v[0];
+	f32 r = a.m_v.x * b.m_v.x;
 	for (uint i = 1; i < N; ++i)
-		r = r + a.m_v[i] * b.m_v[i];
+		r = r + a.Get(i) * b.Get(i);
 	return r;
 }
 
@@ -935,251 +782,6 @@ inline vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 	for (int i = 0; i < R; ++i)
 		vr.Ptr()[i] = r;
 	return vr;
-}
-
-//	Utility functions
-template<bool bX, bool bY, bool bZ, bool bW, uint N>
-inline vecT<N> Blend(const vecT<N>& a, const vecT<N>& b)
-{
-	return vecT<N>(bX ? b.GetX() : a.GetX(), bY ? b.GetY() : a.GetY(), bZ ? b.GetZ() : a.GetZ(), bW ? b.GetW() : a.GetW());
-}
-
-template<uint N>
-FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b, const vecmask& msk)
-{
-	return vecT<N>(msk.Get(0) ? b.GetX() : a.GetX(), msk.Get(1) ? b.GetY() : a.GetY(), msk.Get(2) ? b.GetZ() : a.GetZ(), msk.Get(3) ? b.GetW() : a.GetW());
-}
-
-
-
-
-
-
-
-inline constexpr vecmask::vecmask(const vecmask& v)
-	: m_v{ v.m_v }
-{
-}
-
-FFTL_FORCEINLINE vecmask& vecmask::operator=(const vecmask& v)
-{
-	m_v[0] = v.m_v[0];
-	m_v[1] = v.m_v[1];
-	m_v[2] = v.m_v[2];
-	m_v[3] = v.m_v[3];
-	return *this;
-}
-
-FFTL_FORCEINLINE vecmask vecmask::operator|(const vecmask& b) const
-{
-	vecmask r;
-	r.m_v[0] = m_v[0] | b.m_v[0];
-	r.m_v[1] = m_v[1] | b.m_v[1];
-	r.m_v[2] = m_v[2] | b.m_v[2];
-	r.m_v[3] = m_v[3] | b.m_v[3];
-	return r;
-}
-FFTL_FORCEINLINE vecmask vecmask::operator&(const vecmask& b) const
-{
-	vecmask r;
-	r.m_v[0] = m_v[0] & b.m_v[0];
-	r.m_v[1] = m_v[1] & b.m_v[1];
-	r.m_v[2] = m_v[2] & b.m_v[2];
-	r.m_v[3] = m_v[3] & b.m_v[3];
-	return r;
-}
-FFTL_FORCEINLINE vecmask vecmask::operator^(const vecmask& b) const
-{
-	vecmask r;
-	r.m_v[0] = m_v[0] ^ b.m_v[0];
-	r.m_v[1] = m_v[1] ^ b.m_v[1];
-	r.m_v[2] = m_v[2] ^ b.m_v[2];
-	r.m_v[3] = m_v[3] ^ b.m_v[3];
-	return r;
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator|(const vecT<N>& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(b.Ptr());
-	r.m_v[0] = m_v[0] | p[0];
-	r.m_v[1] = m_v[1] | p[1];
-	r.m_v[2] = m_v[2] | p[2];
-	r.m_v[3] = m_v[3] | p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator&(const vecT<N>& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(b.Ptr());
-	r.m_v[0] = m_v[0] & p[0];
-	r.m_v[1] = m_v[1] & p[1];
-	r.m_v[2] = m_v[2] & p[2];
-	r.m_v[3] = m_v[3] & p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecmask::operator^(const vecT<N>& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(b.Ptr());
-	r.m_v[0] = m_v[0] ^ p[0];
-	r.m_v[1] = m_v[1] ^ p[1];
-	r.m_v[2] = m_v[2] ^ p[2];
-	r.m_v[3] = m_v[3] ^ p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecmask& a, const vecT<N>& b)
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(b.Ptr());
-	r.m_v[0] = a.m_v[0] & ~p[0];
-	r.m_v[1] = a.m_v[1] & ~p[1];
-	r.m_v[2] = a.m_v[2] & ~p[2];
-	r.m_v[3] = a.m_v[3] & ~p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> AndNot(const vecT<N>& a, const vecmask& b)
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(a.Ptr());
-	r.m_v[0] =  p[0] & ~b.m_v[0];
-	r.m_v[1] =  p[1] & ~b.m_v[1];
-	r.m_v[2] =  p[2] & ~b.m_v[2];
-	r.m_v[3] =  p[3] & ~b.m_v[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecmask AndNot(const vecmask& a, const vecmask& b)
-{
-	vecmask r;
-	r.m_v[0] =  a.m_v[0] & ~b.m_v[0];
-	r.m_v[1] =  a.m_v[1] & ~b.m_v[1];
-	r.m_v[2] =  a.m_v[2] & ~b.m_v[2];
-	r.m_v[3] =  a.m_v[3] & ~b.m_v[3];
-	return r;
-}
-
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator|(const vecmask& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(this->Ptr());
-	r.m_v[0] = b.m_v[0] | p[0];
-	r.m_v[1] = b.m_v[1] | p[1];
-	r.m_v[2] = b.m_v[2] | p[2];
-	r.m_v[3] = b.m_v[3] | p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator&(const vecmask& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(this->Ptr());
-	r.m_v[0] = b.m_v[0] & p[0];
-	r.m_v[1] = b.m_v[1] & p[1];
-	r.m_v[2] = b.m_v[2] & p[2];
-	r.m_v[3] = b.m_v[3] & p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-template<uint N> FFTL_FORCEINLINE vecT<N> vecT<N>::operator^(const vecmask& b) const
-{
-	vecmask r;
-	const u32* p = reinterpret_cast<const u32*>(this->Ptr());
-	r.m_v[0] = b.m_v[0] ^ p[0];
-	r.m_v[1] = b.m_v[1] ^ p[1];
-	r.m_v[2] = b.m_v[2] ^ p[2];
-	r.m_v[3] = b.m_v[3] ^ p[3];
-	return *reinterpret_cast<const vecT<N>*>(&r);
-}
-
-template<uint N> FFTL_FORCEINLINE vecmask CmpEq(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] == b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] == b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] == b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] == b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpNe(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] != b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] != b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] != b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] != b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLt(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] < b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] < b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] < b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] < b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpLe(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] <= b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] <= b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] <= b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] <= b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGt(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] > b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] > b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] > b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] > b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-template<uint N> FFTL_FORCEINLINE vecmask CmpGe(const vecT<N>& a, const vecT<N>& b)
-{
-	vecmask r;
-	r.m_v[0] = a.m_v[0] >= b.m_v[0] ? 0xffffffff : 0;
-	r.m_v[1] = a.m_v[1] >= b.m_v[1] ? 0xffffffff : 0;
-	r.m_v[2] = a.m_v[2] >= b.m_v[2] ? 0xffffffff : 0;
-	r.m_v[3] = a.m_v[3] >= b.m_v[3] ? 0xffffffff : 0;
-	return r;
-}
-
-FFTL_FORCEINLINE int vecmask::ToIntMask() const
-{
-	return static_cast<int>( ((m_v[0] >> 31) << 0) | ((m_v[1] >> 31) << 1) | ((m_v[2] >> 31) << 2) | ((m_v[3] >> 31) << 3) );
-}
-
-template<s32 x, s32 y, s32 z, s32 w>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromInts()
-{
-	vecmask r;
-	r.m_v[0] = static_cast<u32>(x);
-	r.m_v[1] = static_cast<u32>(y);
-	r.m_v[2] = static_cast<u32>(z);
-	r.m_v[3] = static_cast<u32>(w);
-	return r;
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::GenMaskFromBools()
-{
-	vecmask r;
-	r.m_v[0] = bX ? 0xffffffff : 0;
-	r.m_v[1] = bY ? 0xffffffff : 0;
-	r.m_v[2] = bZ ? 0xffffffff : 0;
-	r.m_v[3] = bW ? 0xffffffff : 0;
-	return r;
-}
-
-template<bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE vecmask vecmask::PropagateInt(int i)
-{
-	vecmask r;
-	r.m_v[0] = bX ? i : 0;
-	r.m_v[1] = bY ? i : 0;
-	r.m_v[2] = bZ ? i : 0;
-	r.m_v[3] = bW ? i : 0;
-	return r;
 }
 
 

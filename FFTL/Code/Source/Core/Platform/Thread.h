@@ -40,7 +40,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	else
 #		include <processthreadsapi.h>
 #	endif
-#elif (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 #	include <pthread.h>
 #	include <sys/_defines/_sce_ok.h>
 #elif defined(_POSIX_VERSION)
@@ -86,7 +86,7 @@ constexpr ThreadPriority operator-(ThreadPriority t, int i);
 #if defined(_MSC_VER)
 typedef DWORD				ThreadId;
 typedef HANDLE				ThreadHandle;
-#elif (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 typedef uint				ThreadId;
 typedef ScePthread			ThreadHandle;
 #elif defined(_POSIX_VERSION)
@@ -239,7 +239,7 @@ private:
 #include "Thread.inl"
 #if defined(_MSC_VER)
 #	include "Windows/Thread_Windows.inl"
-#elif (defined(__ORBIS__) || defined(__PROSPERO__)) && !defined(FFTL_THREAD_USE_POSIX)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 #	include "Orbis/Thread_Orbis.inl"
 #elif defined(_POSIX_VERSION)
 #	include "Posix/Thread_Posix.inl"

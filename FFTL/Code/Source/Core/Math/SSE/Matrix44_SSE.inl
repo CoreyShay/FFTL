@@ -94,7 +94,7 @@ inline bool mat44::IsFinite() const
 	const __m128 r = _mm_and_ps(r0, r1);
 	return _mm_movemask_ps(r) == 15;
 }
-inline bool mat44::IsOutrageous() const
+inline bool mat44::IsNonFinite() const
 {
 	const __m128 vZero = _mm_setzero_ps();
 
@@ -181,7 +181,7 @@ inline void mat44::Invert()
 	det = _mm_add_ps(_mm_shuffle_ps(det, det, 0x4E), det);
 	det = _mm_add_ps(_mm_shuffle_ps(det, det, 0xB1), det);
 	tmp1 = _mm_cmpeq_ps( _mm_add_ps(det, vOne), vOne ); // if (abs(det) < FLT_EPSILON) det = 1.f;
-	det = sse_blend(det, vOne, tmp1);
+	det = sse_blend(det, tmp1, vOne);
 //	tmp1 = _mm_rcp_ps(det);
 //	det = _mm_sub_ps(_mm_add_ps(tmp1, tmp1), _mm_mul_ps(det, _mm_mul_ps(tmp1, tmp1)));
 	det = _mm_div_ps(vOne, det);
