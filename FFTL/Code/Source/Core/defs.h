@@ -40,21 +40,30 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	error "C compilers not supported."
 #endif
 
-#if (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#if (__cplusplus >= 202002L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
+#	define FFTL_CPP_VERSION 20
+#elif (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #	define FFTL_CPP_VERSION 17
 #else
 #	error "C++17 compiler or greater required."
 #endif
 
+//	CPU Architecture
+#if defined(_M_IX86) || defined(__i386__)
+#	define FFTL_ARCHITECTURE_X86 1
+#endif
+#if defined(_M_X64) || defined(_M_AMD64) || defined(__x86_64__) || defined(__amd64__)
+#	if !defined(FFTL_ARCHITECTURE_X86)
+#		define FFTL_ARCHITECTURE_X86 1
+#	endif
+#	define FFTL_ARCHITECTURE_X64 1
+#endif
+#if defined(_M_ARM) || defined(__ARM) || defined(__ARM__) || defined(__arm) || defined(__arm__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#	define FFTL_ARCHITECTURE_ARM 1
+#endif
 
-#if (FFTL_CPP_VERSION >= 17)
-#	define FFTL_IF_CONSTEXPR if constexpr
-#	define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
-#	define FFTL_NODISCARD [[nodiscard]]
-#else
-#	define FFTL_IF_CONSTEXPR if
-#	define FFTL_SWITCH_FALLTHROUGH
-#	define FFTL_NODISCARD
+#if !defined(FFTL_ARCHITECTURE_X86) && !defined(FFTL_ARCHITECTURE_ARM)
+#	error "FFTL Unsupported CPU architechure."
 #endif
 
 #if defined(__powerpc__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_XENON)
@@ -131,7 +140,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_PLATFORM_ORBIS 1
 #elif defined(__PROSPERO__)
 #	define FFTL_PLATFORM_PROSPERO 1
-#elif defined(_DURANGO)
+#elif defined(_DURANGO) || defined(_GAMING_XBOX_XBOXONE)
 #	define FFTL_PLATFORM_DURANGO 1
 #elif defined(_SCARLETT) || defined(_GAMING_XBOX_SCARLETT)
 #	define FFTL_PLATFORM_SCARLETT 1
@@ -196,9 +205,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_CPU_INFO_KNOWN_TO_COMPILER 1
 #endif
 
-#if defined(FFTL_SSE) && ((defined(_MSC_VER) && _MSC_VER >= 1700) || defined(__clang__) && !defined(__ANDROID__) && !defined(FFTL_PLATFORM_PROSPERO))
+#if defined(FFTL_SSE) && (defined(_MSC_VER) && _MSC_VER >= 1700)
 #	define FFTL_VECTORCALL __vectorcall
-#elif 0//defined(FFTL_SSE) && defined(__GNUC__)   __attribute__((sseregparm)) doesn't seem to be recognized
+#elif 0 //defined(FFTL_SSE) && defined(__GNUC__)   //__attribute__((sseregparm)) doesn't seem to be recognized
 #	define FFTL_VECTORCALL __attribute__((sseregparm))
 #else
 #	define FFTL_VECTORCALL
@@ -254,15 +263,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_SIMD_I32x4_ONLY(__stuff__)
 #endif
 
-#if defined(FFTL_BUILD_DEBUG)
+#if !defined(FFTL_ENABLE_ASSERT) && (defined(FFTL_BUILD_DEBUG) || defined(DEBUG) || defined(_DEBUG))
 #	define FFTL_ENABLE_ASSERT 1
-#	if !defined(FFTL_ENABLE_PROFILING)
-#		define FFTL_ENABLE_PROFILING 1
-#	endif
-#elif defined(FFTL_BUILD_RELEASE)
-#	if !defined(FFTL_ENABLE_PROFILING)
-#		define FFTL_ENABLE_PROFILING 1 // To be removed
-#	endif
+#endif
+
+#if !defined(FFTL_ENABLE_PROFILING) && (defined(FFTL_BUILD_DEBUG) || defined(DEBUG) || defined(_DEBUG) || defined(FFTL_BUILD_PROFILE) || defined(PROFILE) || defined(_PROFILE))
+#	define FFTL_ENABLE_PROFILING 1
+#endif
+
+//	Make sure to include Platform/Timer.h
+#if defined(FFTL_ENABLE_PROFILING)
+#	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__) TimerScope<typename std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE_PAUSE(__name__, __pTimer__) TimerPauseScope<typename std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
+#else
+#	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE_Pause(__name__, __pTimer__)
 #endif
 
 
@@ -347,8 +362,31 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_COND_INLINE FFTL_NOINLINE
 #endif
 
-#define FFTL_UNLIKELY(___expr) ___expr
+//	Likely / unlikely attributes introduced Visual Studio 16.6
+#if FFTL_CPP_VERSION >= 20 || (defined(_MSC_VER) && _MSC_VER >= 1926)
+#	define FFTL_LIKELY [[likely]]
+#	define FFTL_UNLIKELY [[unlikely]]
+#else
+#	define FFTL_LIKELY
+#	define FFTL_UNLIKELY
+#endif
 
+#if FFTL_CPP_VERSION >= 20 || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
+#	define FFTL_IS_CONSTANT_EVALUATED (std::is_constant_evaluated())
+#elif defined(__clang__)
+#	if __has_builtin(__builtin_is_constant_evaluated)
+#		define FFTL_IS_CONSTANT_EVALUATED __builtin_is_constant_evaluated()
+#	endif
+#endif
+#if !defined(FFTL_IS_CONSTANT_EVALUATED)
+#	define FFTL_IS_CONSTANT_EVALUATED false
+#endif
+
+#if FFTL_CPP_VERSION >= 20 || defined(__cpp_consteval) || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
+#	define FFTL_CONSTEVAL consteval
+#else
+#	define FFTL_CONSTEVAL constexpr
+#endif
 
 #if defined(_MSC_VER)
 #	pragma warning(disable : 4251) // 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
@@ -360,8 +398,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 namespace FFTL
 {
-
-
 typedef uint8_t			u8;
 typedef int8_t			s8;
 typedef uint16_t		u16;
@@ -384,8 +420,6 @@ typedef wchar_t			tchar;
 typedef char			tchar;
 #	define FFTL_T(x)	x
 #endif
-
-
 } // namespace FFTL
 
 

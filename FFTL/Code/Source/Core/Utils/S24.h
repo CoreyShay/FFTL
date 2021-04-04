@@ -7,7 +7,7 @@ namespace FFTL
 {
 
 
-struct FFTL_NODISCARD s24
+struct [[nodiscard]] s24
 {
 	s24();
 	constexpr s24(int r);

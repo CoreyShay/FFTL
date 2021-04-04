@@ -39,6 +39,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include <cstdio>
 #endif
 
+#include <stdarg.h>
+
 namespace FFTL
 {
 #if defined(FFTL_PLATFORM_ANDROID)

@@ -53,11 +53,11 @@ public:
 #endif //platform
 
 #if defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
-	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
-	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
+	[[nodiscard]] HandleType GetHandle() const { return m_Handle; }
+	[[nodiscard]] HandleType GetHandle() { return m_Handle; }
 #else
-	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
-	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
+	[[nodiscard]] HandleType GetHandle() const { return m_Handle; }
+	[[nodiscard]] HandleType GetHandle() { return m_Handle; }
 #endif
 
 private:
@@ -70,7 +70,7 @@ private:
 // Event is all we really need in this case because otherwise we'd just use a semaphore with a single token.
 
 inline ThreadEvent::ThreadEvent(const char* pszName)
-	: m_Handle( ::CreateEvent(nullptr, FALSE, FALSE, pszName != nullptr ? pszName : "ThreadEvent") )
+	: m_Handle( ::CreateEventA(nullptr, FALSE, FALSE, pszName != nullptr ? pszName : "ThreadEvent") )
 {
 	FFTL_ASSERT_MSG(m_Handle, "ThreadEvent() : CreateEvent failed!");
 }

@@ -152,7 +152,7 @@ FFTL_FORCEINLINE Vec4f V4fAnd(Vec4f_In a, Vec4f_In b)
 }
 FFTL_FORCEINLINE Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b)
 {
-	return vreinterpretq_f32_u32( vbicq_u32(vreinterpretq_u32_f32(b), vreinterpretq_u32_f32(a)) );
+	return vreinterpretq_f32_u32( vbicq_u32(vreinterpretq_u32_f32(a), vreinterpretq_u32_f32(b)) );
 }
 FFTL_FORCEINLINE Vec4f V4fOr(Vec4f_In a, Vec4f_In b)
 {
@@ -492,6 +492,169 @@ FFTL_FORCEINLINE Vec4f V4fPermute<6, 2, 7, 3>(Vec4f_In a, Vec4f_In b)
 	return V4fMergeZW(b, a);
 }
 
+FFTL_FORCEINLINE Vec4f V4fSin(Vec4f_In r)
+{
+	const float32x4_t F1111 = vdupq_n_f32(1.f);
+	const float32x4_t f4OverPi = vdupq_n_f32(4 / PI_32);
+	const float32x4_t fPiOverTwo = vdupq_n_f32(PI_32 / 2);
+	const int32x4_t I1111 = vdupq_n_s32(1);
+	const int32x4_t signMask = vdupq_n_s32(0x80000000);
+
+	const float32x4_t s_sinCosCoeff2 = vdupq_n_f32(-0.5f);
+	const float32x4_t s_sinCosCoeff3 = vdupq_n_f32(-1.66666667E-1f);
+	const float32x4_t s_sinCosCoeff4 = vdupq_n_f32(4.16666667E-2f);
+	const float32x4_t s_sinCosCoeff5 = vdupq_n_f32(8.33333333E-3f);
+	const float32x4_t s_sinCosCoeff6 = vdupq_n_f32(-1.38888889E-3f);
+	const float32x4_t s_sinCosCoeff7 = vdupq_n_f32(-1.98412698E-4f);
+	const float32x4_t s_sinCosCoeff8 = vdupq_n_f32(2.48015873E-5f);
+
+	int32x4_t sinSignBit, polyMask, quarters;
+	quarters = vcvtq_s32_f32(V4fAddMul(F1111, r, f4OverPi));
+	quarters = vshrq_n_s32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = vshlq_n_s32(quarters, 30);
+	sinSignBit = vandq_s32(sinSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = vandq_s32(quarters, I1111);
+	polyMask = vceqq_s32(polyMask, I1111);
+
+	const float32x4_t x = vsubq_s32(r, vmulq_f32(vcvtq_f32_s32(quarters), fPiOverTwo));
+	const float32x4_t xx = vmulq_f32(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	float32x4_t y1 = s_sinCosCoeff8;
+	y1 = V4fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V4fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	float32x4_t y2 = s_sinCosCoeff7;
+	y2 = V4fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V4fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = vmulq_f32(y2, xx);
+	y2 = V4fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	float32x4_t vSin = neon_blend(vreinterpretq_u32_s32(polyMask), y1, y2);
+
+	// Set the sign bit and store the result
+	return veorq_s32(vreinterpretq_s32_f32(vSin), sinSignBit);
+}
+FFTL_FORCEINLINE Vec4f V4fCos(Vec4f_In r)
+{
+	const float32x4_t F1111 = vdupq_n_f32(1.f);
+	const float32x4_t f4OverPi = vdupq_n_f32(4 / PI_32);
+	const float32x4_t fPiOverTwo = vdupq_n_f32(PI_32 / 2);
+	const int32x4_t I1111 = vdupq_n_s32(1);
+	const int32x4_t signMask = vdupq_n_s32(0x80000000);
+
+	const float32x4_t s_sinCosCoeff2 = vdupq_n_f32(-0.5f);
+	const float32x4_t s_sinCosCoeff3 = vdupq_n_f32(-1.66666667E-1f);
+	const float32x4_t s_sinCosCoeff4 = vdupq_n_f32(4.16666667E-2f);
+	const float32x4_t s_sinCosCoeff5 = vdupq_n_f32(8.33333333E-3f);
+	const float32x4_t s_sinCosCoeff6 = vdupq_n_f32(-1.38888889E-3f);
+	const float32x4_t s_sinCosCoeff7 = vdupq_n_f32(-1.98412698E-4f);
+	const float32x4_t s_sinCosCoeff8 = vdupq_n_f32(2.48015873E-5f);
+
+	int32x4_t cosSignBit, polyMask, quarters;
+	quarters = vcvtq_s32_f32(V4fAddMul(F1111, r, f4OverPi));
+	quarters = vshrq_n_s32(quarters, 1);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = vaddq_s32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = vshlq_n_s32(cosSignBit, 30);
+	cosSignBit = vandq_s32(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = vandq_s32(quarters, I1111);
+	polyMask = vceqq_s32(polyMask, I1111);
+
+	const float32x4_t x = vsubq_s32(r, vmulq_f32(vcvtq_f32_s32(quarters), fPiOverTwo));
+	const float32x4_t xx = vmulq_f32(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	float32x4_t y1 = s_sinCosCoeff8;
+	y1 = V4fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V4fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	float32x4_t y2 = s_sinCosCoeff7;
+	y2 = V4fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V4fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = vmulq_f32(y2, xx);
+	y2 = V4fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	float32x4_t vCos = neon_blend(vreinterpretq_u32_s32(polyMask), y2, y1);
+
+	// Set the sign bit and store the result
+	return veorq_s32(vreinterpretq_s32_f32(vCos), cosSignBit);
+}
+FFTL_FORCEINLINE void V4fSinCos(Vec4f_In r, Vec4f& s, Vec4f& c)
+{
+	const float32x4_t F1111 = vdupq_n_f32(1.f);
+	const float32x4_t f4OverPi = vdupq_n_f32(4 / PI_32);
+	const float32x4_t fPiOverTwo = vdupq_n_f32(PI_32 / 2);
+	const int32x4_t I1111 = vdupq_n_s32(1);
+	const int32x4_t signMask = vdupq_n_s32(0x80000000);
+
+	const float32x4_t s_sinCosCoeff2 = vdupq_n_f32(-0.5f);
+	const float32x4_t s_sinCosCoeff3 = vdupq_n_f32(-1.66666667E-1f);
+	const float32x4_t s_sinCosCoeff4 = vdupq_n_f32(4.16666667E-2f);
+	const float32x4_t s_sinCosCoeff5 = vdupq_n_f32(8.33333333E-3f);
+	const float32x4_t s_sinCosCoeff6 = vdupq_n_f32(-1.38888889E-3f);
+	const float32x4_t s_sinCosCoeff7 = vdupq_n_f32(-1.98412698E-4f);
+	const float32x4_t s_sinCosCoeff8 = vdupq_n_f32(2.48015873E-5f);
+
+	int32x4_t sinSignBit, cosSignBit, polyMask, quarters;
+	quarters = vcvtq_s32_f32(V4fAddMul(F1111, r, f4OverPi));
+	quarters = vshrq_n_s32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = vshlq_n_s32(quarters, 30);
+	sinSignBit = vandq_s32(sinSignBit, signMask);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = vaddq_s32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = vshlq_n_s32(cosSignBit, 30);
+	cosSignBit = vandq_s32(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = vandq_s32(quarters, I1111);
+	polyMask = vceqq_s32(polyMask, I1111);
+
+	const float32x4_t x = vsubq_s32(r, vmulq_f32(vcvtq_f32_s32(quarters), fPiOverTwo));
+	const float32x4_t xx = vmulq_f32(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	float32x4_t y1 = s_sinCosCoeff8;
+	y1 = V4fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V4fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V4fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	float32x4_t y2 = s_sinCosCoeff7;
+	y2 = V4fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V4fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = vmulq_f32(y2, xx);
+	y2 = V4fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	float32x4_t vSin = neon_blend(vreinterpretq_u32_s32(polyMask), y1, y2);
+	float32x4_t vCos = neon_blend(vreinterpretq_u32_s32(polyMask), y2, y1);
+
+	// Set the sign bit and store the result
+	s = veorq_s32(vreinterpretq_s32_f32(vSin), sinSignBit);
+	c = veorq_s32(vreinterpretq_s32_f32(vCos), cosSignBit);
+}
+
+
 
 
 FFTL_FORCEINLINE Vec4u V4uAdd(Vec4u_In a, Vec4u_In b)
@@ -630,6 +793,12 @@ FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<0, 0, 0, 0>(int)
 	return vdupq_n_u32(0);
 }
 
+template<s32 i>
+FFTL_FORCEINLINE mask32x4 GenMaskFromInt()
+{
+	return vdupq_n_u32(static_cast<u32>(i));
+}
+
 
 template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator|(const T& b) const
 {
@@ -644,11 +813,15 @@ template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator^(const T& b
 	return T(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
 
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x4& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const T& b)
 {
 	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x4& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const mask32x4& a, const T& b)
+{
+	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
+}
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const mask32x4& b)
 {
 	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
@@ -670,27 +843,27 @@ FFTL_FORCEINLINE f32_4 f32_4::operator^(const mask32x4& b) const
 	return f32_4(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
 
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpEq(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpEq(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vceqq_f32(a.m_v, b.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpNe(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpNe(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vmvnq_u32(vceqq_f32(a.m_v, b.m_v)));
 }
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpLt(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpLt(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vcltq_f32(a.m_v, b.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpLe(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpLe(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vcleq_f32(a.m_v, b.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpGt(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpGt(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vcgtq_f32(a.m_v, b.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE mask32x4 CmpGe(const T& a, const T& b)
+FFTL_FORCEINLINE mask32x4 CmpGe(f32_4_In a, f32_4_In b)
 {
 	return mask32x4(vcgeq_f32(a.m_v, b.m_v));
 }

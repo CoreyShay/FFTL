@@ -161,7 +161,7 @@ FFTL_FORCEINLINE Vec8f V8fAnd(Vec8f_In a, Vec8f_In b)
 }
 FFTL_FORCEINLINE Vec8f V8fAndNot(Vec8f_In a, Vec8f_In b)
 {
-	return _mm256_andnot_ps(a, b);
+	return _mm256_andnot_ps(b, a);
 }
 FFTL_FORCEINLINE Vec8f V8fOr(Vec8f_In a, Vec8f_In b)
 {
@@ -375,6 +375,18 @@ FFTL_FORCEINLINE mask32x8 mask32x8::PropagateInt<0, 0, 0, 0, 0, 0, 0, 0>(int)
 	return mask32x8(_mm256_setzero_ps());
 }
 
+template<s32 i>
+FFTL_FORCEINLINE mask32x8 mask32x8::GenMaskFromInt()
+{
+	return mask32x8(_mm256_castsi256_ps(_mm256_set1_epi32(i)));
+}
+template<>
+FFTL_FORCEINLINE mask32x8 mask32x8::GenMaskFromInt<0>()
+{
+	return mask32x8(_mm256_setzero_ps());
+}
+
+
 FFTL_FORCEINLINE mask32x8 mask32x8::operator|(const mask32x8& b) const
 {
 	return mask32x8(_mm256_or_ps(m_v, b.m_v));
@@ -400,11 +412,15 @@ template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator^(const T& b
 	return T(_mm256_xor_ps(m_v, b.m_v));
 }
 
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x8& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const T& b)
 {
 	return T(_mm256_andnot_ps(b.m_v, a.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x8& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const mask32x8& a, const T& b)
+{
+	return T(_mm256_andnot_ps(b.m_v, a.m_v));
+}
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const mask32x8& b)
 {
 	return T(_mm256_andnot_ps(b.m_v, a.m_v));
 }
@@ -469,6 +485,184 @@ template<typename T>
 FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
 {
 	return T{ _mm256_blendv_ps(b, a, msk) };
+}
+
+inline Vec8f V8fSin(Vec8f_In r)
+{
+#if defined(FFTL_AVX2) && (defined(FFTL_FMA3) || defined(FFTL_FMA4))
+	const __m256 F1111 = _mm256_set1_ps(1.f);
+	const __m256 f4OverPi = _mm256_set1_ps(4 / PI_32);
+	const __m256 fPiOverTwo = _mm256_set1_ps(PI_32 / 2);
+	const __m256i I1111 = _mm256_set1_epi32(1);
+	const __m256i signMask = _mm256_set1_epi32(0x80000000);
+
+	const __m256 s_sinCosCoeff2 = _mm256_set1_ps(-0.5f);
+	const __m256 s_sinCosCoeff3 = _mm256_set1_ps(-1.66666667E-1f);
+	const __m256 s_sinCosCoeff4 = _mm256_set1_ps(4.16666667E-2f);
+	const __m256 s_sinCosCoeff5 = _mm256_set1_ps(8.33333333E-3f);
+	const __m256 s_sinCosCoeff6 = _mm256_set1_ps(-1.38888889E-3f);
+	const __m256 s_sinCosCoeff7 = _mm256_set1_ps(-1.98412698E-4f);
+	const __m256 s_sinCosCoeff8 = _mm256_set1_ps(2.48015873E-5f);
+
+	__m256i sinSignBit, polyMask, quarters;
+	quarters = _mm256_cvttps_epi32(V8fAddMul(F1111, r, f4OverPi));
+	quarters = _mm256_srai_epi32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = _mm256_slli_epi32(quarters, 30);
+	sinSignBit = _mm256_and_si256(sinSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm256_and_si256(quarters, I1111);
+	polyMask = _mm256_cmpeq_epi32(polyMask, I1111);
+
+	const __m256 x = _mm256_sub_ps(r, _mm256_mul_ps(_mm256_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m256 xx = _mm256_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m256 y1 = s_sinCosCoeff8;
+	y1 = V8fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V8fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m256 y2 = s_sinCosCoeff7;
+	y2 = V8fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V8fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = _mm256_mul_ps(y2, xx);
+	y2 = V8fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	const __m256 vSin = _mm256_blendv_ps(y2, y1, _mm256_castsi256_ps(polyMask));
+
+	// Set the sign bit and store the result
+	return _mm256_xor_ps(vSin, _mm256_castsi256_ps(sinSignBit));
+#else
+	return V8fSet(V4fSin(V8fAsV4f(r)), V4fCos(V8fGet4567(r)));
+#endif
+}
+inline Vec8f V8fCos(Vec8f_In r)
+{
+#if defined(FFTL_AVX2) && (defined(FFTL_FMA3) || defined(FFTL_FMA4))
+	const __m256 F1111 = _mm256_set1_ps(1.f);
+	const __m256 f4OverPi = _mm256_set1_ps(4 / PI_32);
+	const __m256 fPiOverTwo = _mm256_set1_ps(PI_32 / 2);
+	const __m256i I1111 = _mm256_set1_epi32(1);
+	const __m256i signMask = _mm256_set1_epi32(0x80000000);
+
+	const __m256 s_sinCosCoeff2 = _mm256_set1_ps(-0.5f);
+	const __m256 s_sinCosCoeff3 = _mm256_set1_ps(-1.66666667E-1f);
+	const __m256 s_sinCosCoeff4 = _mm256_set1_ps(4.16666667E-2f);
+	const __m256 s_sinCosCoeff5 = _mm256_set1_ps(8.33333333E-3f);
+	const __m256 s_sinCosCoeff6 = _mm256_set1_ps(-1.38888889E-3f);
+	const __m256 s_sinCosCoeff7 = _mm256_set1_ps(-1.98412698E-4f);
+	const __m256 s_sinCosCoeff8 = _mm256_set1_ps(2.48015873E-5f);
+
+	__m256i cosSignBit, polyMask, quarters;
+	quarters = _mm256_cvttps_epi32(V8fAddMul(F1111, r, f4OverPi));
+	quarters = _mm256_srai_epi32(quarters, 1);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = _mm256_add_epi32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = _mm256_slli_epi32(cosSignBit, 30);
+	cosSignBit = _mm256_and_si256(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm256_and_si256(quarters, I1111);
+	polyMask = _mm256_cmpeq_epi32(polyMask, I1111);
+
+	const __m256 x = _mm256_sub_ps(r, _mm256_mul_ps(_mm256_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m256 xx = _mm256_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m256 y1 = s_sinCosCoeff8;
+	y1 = V8fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V8fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m256 y2 = s_sinCosCoeff7;
+	y2 = V8fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V8fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = _mm256_mul_ps(y2, xx);
+	y2 = V8fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	const __m256 vCos = _mm256_blendv_ps(y1, y2, _mm256_castsi256_ps(polyMask));
+
+	// Set the sign bit and store the result
+	return _mm256_xor_ps(vCos, _mm256_castsi256_ps(cosSignBit));
+#else
+	return V8fSet(V4fCos(V8fAsV4f(r)), V4fCos(V8fGet4567(r)));
+#endif
+}
+inline void V8fSinCos(Vec8f_In r, Vec8f& s, Vec8f& c)
+{
+#if defined(FFTL_AVX2) && (defined(FFTL_FMA3) || defined(FFTL_FMA4))
+	const __m256 F1111 = _mm256_set1_ps(1.f);
+	const __m256 f4OverPi = _mm256_set1_ps(4 / PI_32);
+	const __m256 fPiOverTwo = _mm256_set1_ps(PI_32 / 2);
+	const __m256i I1111 = _mm256_set1_epi32(1);
+	const __m256i signMask = _mm256_set1_epi32(0x80000000);
+
+	const __m256 s_sinCosCoeff2 = _mm256_set1_ps(-0.5f);
+	const __m256 s_sinCosCoeff3 = _mm256_set1_ps(-1.66666667E-1f);
+	const __m256 s_sinCosCoeff4 = _mm256_set1_ps(4.16666667E-2f);
+	const __m256 s_sinCosCoeff5 = _mm256_set1_ps(8.33333333E-3f);
+	const __m256 s_sinCosCoeff6 = _mm256_set1_ps(-1.38888889E-3f);
+	const __m256 s_sinCosCoeff7 = _mm256_set1_ps(-1.98412698E-4f);
+	const __m256 s_sinCosCoeff8 = _mm256_set1_ps(2.48015873E-5f);
+
+	__m256i sinSignBit, cosSignBit, polyMask, quarters;
+	quarters = _mm256_cvttps_epi32(V8fAddMul(F1111, r, f4OverPi));
+	quarters = _mm256_srai_epi32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = _mm256_slli_epi32(quarters, 30);
+	sinSignBit = _mm256_and_si256(sinSignBit, signMask);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = _mm256_add_epi32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = _mm256_slli_epi32(cosSignBit, 30);
+	cosSignBit = _mm256_and_si256(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm256_and_si256(quarters, I1111);
+	polyMask = _mm256_cmpeq_epi32(polyMask, I1111);
+
+	const __m256 x = _mm256_sub_ps(r, _mm256_mul_ps(_mm256_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m256 xx = _mm256_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m256 y1 = s_sinCosCoeff8;
+	y1 = V8fAddMul(s_sinCosCoeff6, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff4, y1, xx);
+	y1 = V8fAddMul(s_sinCosCoeff2, y1, xx);
+	y1 = V8fAddMul(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m256 y2 = s_sinCosCoeff7;
+	y2 = V8fAddMul(s_sinCosCoeff5, y2, xx);
+	y2 = V8fAddMul(s_sinCosCoeff3, y2, xx);
+	y2 = _mm256_mul_ps(y2, xx);
+	y2 = V8fAddMul(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	const __m256 vSin = _mm256_blendv_ps(y2, y1, _mm256_castsi256_ps(polyMask));
+	const __m256 vCos = _mm256_blendv_ps(y1, y2, _mm256_castsi256_ps(polyMask));
+
+	// Set the sign bit and store the result
+	s = _mm256_xor_ps(vSin, _mm256_castsi256_ps(sinSignBit));
+	c = _mm256_xor_ps(vCos, _mm256_castsi256_ps(cosSignBit));
+#else
+	Vec4f s0, c0, s1, c1;
+	V4fSinCos(V8fAsV4f(r), s0, c0);
+	V4fSinCos(V8fGet4567(r), s1, c1);
+	s = V8fSet(s0, s1);
+	c = V8fSet(c0, c1);
+#endif
 }
 
 

@@ -72,7 +72,7 @@ FFTL::ListNode<T, __nodeName__ ## __memberNameTag__> __nodeName__
 
 //	You create these, and manually add them to the ListDouble class
 template <typename T, typename Tag>
-class FFTL_NODISCARD ListNode
+class [[nodiscard]] ListNode
 {
 public:
 	ListNode()

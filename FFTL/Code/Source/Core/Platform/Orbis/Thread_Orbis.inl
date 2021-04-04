@@ -59,9 +59,6 @@ inline void FreeThreadHandle(ThreadHandle h)
 	(void)h;
 }
 
-
-
-
 inline void SetThreadName(ThreadHandle handle, const char* pszName)
 {
 	FFTL_VERIFY_EQ(SCE_OK, ::scePthreadRename(handle, pszName));
@@ -110,6 +107,16 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 
 	//	The thread id is actually the first data member behind the handle pointer.
 	return *reinterpret_cast<ThreadId*>(handle);
+}
+
+inline void TerminateThread(ThreadId id)
+{
+	FFTL_ASSERT_MSG(0, "[TerminateThread(ThreadId)] Not supported on this platform");
+	(void)id;
+}
+inline void TerminateThread(ThreadHandle handle)
+{
+	FFTL_VERIFY_EQ(SCE_OK, ::pthread_cancel(handle));
 }
 
 
