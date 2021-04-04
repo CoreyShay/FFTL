@@ -58,8 +58,6 @@ inline void FreeThreadHandle(ThreadHandle h)
 	FFTL_VERIFY_EQ( TRUE, ::CloseHandle(h) );
 }
 
-
-
 inline void SetThreadName(ThreadHandle handle, const char* pszName)
 {
 	typedef struct tagTHREADNAME_INFO
@@ -146,6 +144,18 @@ inline void UnpauseThread(ThreadId id)
 inline void UnpauseThread(ThreadHandle handle)
 {
 	FFTL_VERIFY_NEQ(-1, ::ResumeThread(handle) );
+}
+
+inline void TerminateThread(ThreadId id)
+{
+	ThreadHandle handle = ::OpenThread(THREAD_TERMINATE, FALSE, id);
+	FFTL_ASSERT(handle);
+	FFTL_VERIFY_NEQ(-1, ::TerminateThread(handle, 0));
+	FFTL_VERIFY_EQ(TRUE, ::CloseHandle(handle));
+}
+inline void TerminateThread(ThreadHandle handle)
+{
+	FFTL_VERIFY_NEQ(-1, ::TerminateThread(handle, 0));
 }
 
 

@@ -29,12 +29,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "CpuInfo.h"
+#pragma once
 
 #if defined(_MSC_VER)
 #	include <intrin.h>
 #endif
 
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable : 4793) //warning C4793 : 'FFTL::CpuInfo::DetectArchitectureSupport' : function compiled as native :
+#endif
 
 namespace FFTL
 {
@@ -43,9 +47,6 @@ namespace FFTL
 //	Some platforms need no initialization at all because everything is known to the compiler.
 #if !defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
 
-
-CpuInfo::ArchFlags CpuInfo::s_archFlags = CpuInfo::ArchFlags::DEFAULT;
-CpuInfo::ExtFlags CpuInfo::s_extFlags = CpuInfo::ExtFlags::DEFAULT;
 
 #if defined(__GNUC__) && defined(FFTL_SSE)
 FFTL_FORCEINLINE void __cpuid(int regs[4], int i)
@@ -68,14 +69,14 @@ FFTL_FORCEINLINE u64 _xgetbv(uint)
 #define _XCR_XFEATURE_ENABLED_MASK 0
 #endif
 
-void CpuInfo::Init()
+inline void CpuInfo::Init()
 {
 	s_archFlags = DetectArchitectureSupport();
 	s_extFlags = DetectExtensionSupport();
 }
 
 #if !(defined(FFTL_PLATFORM_PLAYSTATION) || defined(FFTL_PLATFORM_XBOX)) && defined(FFTL_SSE)
-CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
+inline CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 {
 	//	https://en.wikipedia.org/wiki/CPUID
 
@@ -135,7 +136,7 @@ CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 
 	return retFlags;
 }
-CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
+inline CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
 {
 	ExtFlags retFlags = ExtFlags::DEFAULT;
 
@@ -155,7 +156,7 @@ CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
 }
 #endif
 
-ReturnCode CpuInfo::SetArchitectureEnabled(Architecture platform, bool bEnable)
+inline ReturnCode CpuInfo::SetArchitectureEnabled(Architecture platform, bool bEnable)
 {
 	const ArchFlags platFlag = ToFlag(platform);
 
@@ -176,7 +177,7 @@ ReturnCode CpuInfo::SetArchitectureEnabled(Architecture platform, bool bEnable)
 	return ReturnCode::OK;
 }
 
-ReturnCode CpuInfo::SetExtensionEnabled(Extension ext, bool bEnable)
+inline ReturnCode CpuInfo::SetExtensionEnabled(Extension ext, bool bEnable)
 {
 	const ExtFlags extFlag = ToFlag(ext);
 
@@ -202,5 +203,9 @@ ReturnCode CpuInfo::SetExtensionEnabled(Extension ext, bool bEnable)
 
 
 }
+
+#if defined(_MSC_VER)
+#	pragma warning(pop)
+#endif
 
 

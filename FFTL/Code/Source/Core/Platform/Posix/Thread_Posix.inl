@@ -58,8 +58,6 @@ inline void FreeThreadHandle(ThreadHandle h)
 	(void)h;
 }
 
-
-
 inline void SetThreadName(ThreadHandle handle, const char* pszName)
 {
 #if !defined(FFTL_PLATFORM_PLAYSTATION) && (!defined(__ANDROID_API__) || __ANDROID_API__ >= 9)
@@ -129,6 +127,23 @@ inline ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_
 		*outThreadHandle = id;
 
 	return id;
+}
+
+inline void TerminateThread(ThreadId id)
+{
+#if defined(FFTL_PLATFORM_ANDROID)
+	FFTL_VERIFY_EQ(0, ::pthread_kill(id, SIGUSR1));
+#else
+	FFTL_VERIFY_EQ(0, ::pthread_cancel(id));
+#endif
+}
+inline void TerminateThread(ThreadHandle handle)
+{
+#if defined(FFTL_PLATFORM_ANDROID)
+	FFTL_VERIFY_EQ(0, ::pthread_kill(handle.GetId(), SIGUSR1));
+#else
+	FFTL_VERIFY_EQ(0, ::pthread_cancel(handle.GetId()));
+#endif
 }
 
 

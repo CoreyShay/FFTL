@@ -147,7 +147,7 @@ inline Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b)
 {
 	const u32* pA = reinterpret_cast<const u32*>(&a);
 	const u32* pB = reinterpret_cast<const u32*>(&b);
-	const u32 r[4] = { ~pA[0] & pB[0], ~pA[1] & pB[1], ~pA[2] & pB[2], ~pA[3] & pB[3] };
+	const u32 r[4] = { pA[0] & ~pB[0], pA[1] & ~pB[1], pA[2] & ~pB[2], pA[3] & ~pB[3] };
 	return *reinterpret_cast<const Vec4f*>(&r);
 }
 inline Vec4f V4fOr(Vec4f_In a, Vec4f_In b)
@@ -371,6 +371,22 @@ inline Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 	return r;
 }
 
+inline Vec4f V4fSin(Vec4f_In r)
+{
+	return Vec4f{ Sin(r.x), Sin(r.y), Sin(r.z), Sin(r.w) };
+}
+inline Vec4f V4fCos(Vec4f_In r)
+{
+	return Vec4f{ Cos(r.x), Cos(r.y), Cos(r.z), Cos(r.w) };
+}
+inline void V4fSinCos(Vec4f_In r, Vec4f& s, Vec4f& c)
+{
+	SinCos(r.x, s.x, c.x);
+	SinCos(r.y, s.y, c.y);
+	SinCos(r.z, s.z, c.z);
+	SinCos(r.w, s.w, c.w);
+}
+
 
 
 
@@ -565,10 +581,21 @@ template<typename T, typename> inline T mask32x4::operator^(const T& b) const
 	r.m_v[3] = m_v[3] ^ p[3];
 	return *reinterpret_cast<const T*>(&r);
 }
+template<typename T, typename> inline T AndNot(const T& a, const T& b)
+{
+	mask32x4 r;
+	const u32* p0 = reinterpret_cast<const u32*>(&a);
+	const u32* p1 = reinterpret_cast<const u32*>(&b);
+	r.m_v[0] = p0[0] & ~p[0];
+	r.m_v[1] = p0[1] & ~p[1];
+	r.m_v[2] = p0[2] & ~p[2];
+	r.m_v[3] = p0[3] & ~p[3];
+	return *reinterpret_cast<const T*>(&r);
+}
 template<typename T, typename> inline T AndNot(const mask32x4& a, const T& b)
 {
 	mask32x4 r;
-	const u32* p = reinterpret_cast<const u32*>(b.Ptr());
+	const u32* p = reinterpret_cast<const u32*>(&b);
 	r.m_v[0] = a.m_v[0] & ~p[0];
 	r.m_v[1] = a.m_v[1] & ~p[1];
 	r.m_v[2] = a.m_v[2] & ~p[2];
@@ -578,7 +605,7 @@ template<typename T, typename> inline T AndNot(const mask32x4& a, const T& b)
 template<typename T, typename> inline T AndNot(const T& a, const mask32x4& b)
 {
 	mask32x4 r;
-	const u32* p = reinterpret_cast<const u32*>(a.Ptr());
+	const u32* p = reinterpret_cast<const u32*>(&a);
 	r.m_v[0] =  p[0] & ~b.m_v[0];
 	r.m_v[1] =  p[1] & ~b.m_v[1];
 	r.m_v[2] =  p[2] & ~b.m_v[2];
@@ -734,6 +761,17 @@ inline mask32x4 mask32x4::PropagateInt(int i)
 	r.m_v[1] = bY ? i : 0;
 	r.m_v[2] = bZ ? i : 0;
 	r.m_v[3] = bW ? i : 0;
+	return r;
+}
+
+template<s32 i>
+inline mask32x4	GenMaskFromInt()
+{
+	mask32x4 r;
+	r.m_v[0] = static_cast<u32>(i);
+	r.m_v[1] = static_cast<u32>(i);
+	r.m_v[2] = static_cast<u32>(i);
+	r.m_v[3] = static_cast<u32>(i);
 	return r;
 }
 

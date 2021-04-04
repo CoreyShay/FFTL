@@ -104,14 +104,14 @@ public:
 	ThreadHandle() {}
 	ThreadHandle(ThreadId id) : m_ID(id) {}
 
-	FFTL_NODISCARD ThreadId GetId() const { return m_ID; }
+	[[nodiscard]] ThreadId GetId() const { return m_ID; }
 	ThreadHandle& operator=(ThreadId id) { m_ID = id; return *this; }
-	FFTL_NODISCARD bool operator==(ThreadId id) const { return m_ID == id; }
-	FFTL_NODISCARD bool operator!=(ThreadId id) const { return m_ID != id; }
-	FFTL_NODISCARD bool operator>(ThreadId id) const { return m_ID > id; }
-	FFTL_NODISCARD bool operator<(ThreadId id) const { return m_ID < id; }
-	FFTL_NODISCARD bool operator>=(ThreadId id) const { return m_ID >= id; }
-	FFTL_NODISCARD bool operator<=(ThreadId id) const { return m_ID <= id; }
+	[[nodiscard]] bool operator==(ThreadId id) const { return m_ID == id; }
+	[[nodiscard]] bool operator!=(ThreadId id) const { return m_ID != id; }
+	[[nodiscard]] bool operator>(ThreadId id) const { return m_ID > id; }
+	[[nodiscard]] bool operator<(ThreadId id) const { return m_ID < id; }
+	[[nodiscard]] bool operator>=(ThreadId id) const { return m_ID >= id; }
+	[[nodiscard]] bool operator<=(ThreadId id) const { return m_ID <= id; }
 private:
 	ThreadId m_ID;
 };
@@ -125,10 +125,10 @@ private:
 
 
 //	Gets the thread id of the thread of the calling function.
-FFTL_NODISCARD ThreadId GetThreadIdCurrent();
+[[nodiscard]] ThreadId GetThreadIdCurrent();
 
 //	Gets the thread handle of the thread of the calling function.
-FFTL_NODISCARD ThreadHandle GetThreadHandleCurrent();
+[[nodiscard]] ThreadHandle GetThreadHandleCurrent();
 
 //	Sets the name of a thread. All platforms.
 void SetThreadName(ThreadHandle handle, const char* pszName);
@@ -146,6 +146,10 @@ void PauseThread(ThreadHandle handle);
 void UnpauseThread(ThreadId id);
 void UnpauseThread(ThreadHandle handle);
 
+//	Terminates a thread's execution, usually for debug purposes. Only works on MS compilers as of now.
+void TerminateThread(ThreadId id);
+void TerminateThread(ThreadHandle handle);
+
 
 #if defined(_MSC_VER)
 #	pragma warning(push)
@@ -159,7 +163,7 @@ public:
 	virtual ~ThreadOwner() = default;
 	typedef ThreadResult(ThreadOwner::*RunFunction)();
 	template <typename T>
-	FFTL_NODISCARD static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
+	[[nodiscard]] static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
 };
 #if defined(_MSC_VER)
 #	pragma warning(pop)
@@ -175,11 +179,11 @@ public:
 	void Pause();
 	void Unpause();
 
-	FFTL_NODISCARD ThreadHandle GetThreadHandle() const;
-	FFTL_NODISCARD ThreadId GetThreadId() const;
-	FFTL_NODISCARD ThreadResult GetRunResult();
-	FFTL_NODISCARD bool GetIsRunning() const;
-	FFTL_NODISCARD bool GetIsFlaggedForStop() const;
+	[[nodiscard]] ThreadHandle GetThreadHandle() const;
+	[[nodiscard]] ThreadId GetThreadId() const;
+	[[nodiscard]] ThreadResult GetRunResult();
+	[[nodiscard]] bool GetIsRunning() const;
+	[[nodiscard]] bool GetIsFlaggedForStop() const;
 
 protected:
 	ThreadHandle					m_Handle = 0;
@@ -202,6 +206,7 @@ public:
 
 	void Start(ThreadOwner* pOwner, const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
 	void Stop(bool bWaitForDone = true);
+	void Terminate(); // Forces quit. Unsafe.
 
 private:
 	void Run();
@@ -222,6 +227,7 @@ public:
 
 	void Start(const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
 	void Stop(bool bWaitForDone = true);
+	void Terminate(); // Forces quit. Unsafe.
 
 private:
 	void Run();

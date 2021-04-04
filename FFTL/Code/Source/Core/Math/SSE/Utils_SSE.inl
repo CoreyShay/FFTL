@@ -465,11 +465,11 @@ FFTL_FORCEINLINE __m128 sse_constRtp()
 template<u32 x, u32 y, u32 z, u32 w>
 FFTL_FORCEINLINE __m128 sse_constRtp()
 {
-	FFTL_IF_CONSTEXPR (x == y && x == z && x == w)
+	if constexpr (x == y && x == z && x == w)
 	{
 		return sse_constRtp<x>();
 	}
-	else FFTL_IF_CONSTEXPR (y == 0 && z == 0 && w == 0)
+	else if constexpr (y == 0 && z == 0 && w == 0)
 	{
 		return _mm_castsi128_ps( _mm_cvtsi32_si128(x) );
 	}
@@ -580,86 +580,13 @@ FFTL_FORCEINLINE void sse_transpose3x4(__m128& io_a, __m128& io_b, __m128& io_c,
 {
 	const __m128 tmp0 = V4fPermute<0, 1, 4, 5>(io_a, io_b);
 	const __m128 tmp2 = V4fPermute<2, 3, 6, 7>(io_a, io_b);
-	const __m128 tmp1 = V4fPermute< 0, 1, 0, 1>(io_c);//2nd half will be garbage but not needed
-	const __m128 tmp3 = V4fPermute< 2, 3, 2, 3>(io_c);//2nd half will be garbage but not needed
+	const __m128 tmp1 = V4fPermute<0, 1, 0, 1>(io_c);//2nd half will be garbage but not needed
+	const __m128 tmp3 = V4fPermute<2, 3, 2, 3>(io_c);//2nd half will be garbage but not needed
 
 	io_a = V4fPermute<0, 2, 4, 6>(tmp0, tmp1);
 	io_b = V4fPermute<1, 3, 5, 7>(tmp0, tmp1);
 	io_c = V4fPermute<0, 2, 4, 6>(tmp2, tmp3);
 	ot_d = V4fPermute<1, 3, 5, 7>(tmp2, tmp3);
-}
-
-
-
-inline void sse_SinCos(const __m128& rads, __m128& s, __m128& c)
-{
-	const __m128 F1111 = _mm_set1_ps(1.f);
-	const __m128 f4OverPi = _mm_set_ps1(4 / PI_32);
-	const __m128 fPiOverTwo = _mm_set_ps1(PI_32 / 2);
-	const __m128i I1111 = _mm_set1_epi32(1);
-	const __m128i signMask = _mm_set1_epi32(0x80000000);
-
-	const __m128 s_sinCosCoeff2 = _mm_set1_ps(-0.5f);
-	const __m128 s_sinCosCoeff3 = _mm_set1_ps(-1.66666667E-1f);
-	const __m128 s_sinCosCoeff4 = _mm_set1_ps(4.16666667E-2f);
-	const __m128 s_sinCosCoeff5 = _mm_set1_ps(8.33333333E-3f);
-	const __m128 s_sinCosCoeff6 = _mm_set1_ps(-1.38888889E-3f);
-	const __m128 s_sinCosCoeff7 = _mm_set1_ps(-1.98412698E-4f);
-	const __m128 s_sinCosCoeff8 = _mm_set1_ps(2.48015873E-5f);
-
-	__m128 x = rads;
-
-	__m128i sinSignBit, cosSignBit, polyMask;
-	{
-		__m128i quarters = _mm_cvttps_epi32(sse_AddMul_ps(F1111, rads, f4OverPi));
-		quarters = _mm_srai_epi32(quarters, 1);
-
-		// Get the sign bit for sine, which alternates for every whole multiple of pi
-		sinSignBit = _mm_slli_epi32(quarters, 30);
-		sinSignBit = _mm_and_si128(sinSignBit, signMask);
-
-		// Cos sign bit (offset by pi/2 from sine)
-		cosSignBit = _mm_add_epi32(quarters, I1111); // pi/2 == 1 quarter circle
-		cosSignBit = _mm_slli_epi32(cosSignBit, 30);
-		cosSignBit = _mm_and_si128(cosSignBit, signMask);
-
-		// The poly mask is used to evaluate each polynomial only over its intended domain
-		polyMask = _mm_and_si128(quarters, I1111);
-		polyMask = _mm_cmpeq_epi32(polyMask, I1111);
-
-		x = _mm_sub_ps(x, _mm_mul_ps(_mm_cvtepi32_ps(quarters), fPiOverTwo));
-	}
-
-	__m128 xx = _mm_mul_ps(x, x);
-
-	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
-	__m128 y1 = s_sinCosCoeff8;
-	y1 = sse_AddMul_ps(s_sinCosCoeff6, y1, xx);
-	y1 = sse_AddMul_ps(s_sinCosCoeff4, y1, xx);
-	y1 = sse_AddMul_ps(s_sinCosCoeff2, y1, xx);
-	y1 = sse_AddMul_ps(F1111, y1, xx);
-
-	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
-	__m128 y2 = s_sinCosCoeff7;
-	y2 = sse_AddMul_ps(s_sinCosCoeff5, y2, xx);
-	y2 = sse_AddMul_ps(s_sinCosCoeff3, y2, xx);
-	y2 = _mm_mul_ps(y2, xx);
-	y2 = sse_AddMul_ps(x, x, y2);
-
-	{
-		// Use the poly mask to merge the polynomial results
-#if defined(FFTL_SSE4)
-		__m128 sin = _mm_blendv_ps(y2, y1, _mm_castsi128_ps(polyMask));
-		__m128 cos = _mm_blendv_ps(y1, y2, _mm_castsi128_ps(polyMask));
-#else
-		__m128 temp = _mm_and_ps(_mm_xor_ps(y1, y2), _mm_castsi128_ps(polyMask));
-		__m128 sin = _mm_xor_ps(y2, temp);
-		__m128 cos = _mm_xor_ps(y1, temp);
-#endif
-		// Set the sign bit and store the result
-		s = _mm_xor_ps(sin, _mm_castsi128_ps(sinSignBit));
-		c = _mm_xor_ps(cos, _mm_castsi128_ps(cosSignBit));
-	}
 }
 
 

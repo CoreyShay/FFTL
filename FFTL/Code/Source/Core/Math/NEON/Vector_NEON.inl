@@ -202,13 +202,13 @@ FFTL_FORCEINLINE vecT<M> ZeroElements(const vecT<M>& v)
 
 	return __builtin_shufflevector(v.m_v, vdupq_n_f32(0), i0, i1, i2, i3);
 #else
-	FFTL_IF_CONSTEXPR (bX)
+	if constexpr (bX)
 		return vsetq_lane_f32(0, v.m_v, 0);
-	FFTL_IF_CONSTEXPR (bY)
+	if constexpr (bY)
 		return vsetq_lane_f32(0, v.m_v, 1);
-	FFTL_IF_CONSTEXPR (bZ)
+	if constexpr (bZ)
 		return vsetq_lane_f32(0, v.m_v, 2);
-	FFTL_IF_CONSTEXPR (bW)
+	if constexpr (bW)
 		return vsetq_lane_f32(0, v.m_v, 3);
 #endif
 }
@@ -349,10 +349,10 @@ FFTL_FORCEINLINE bool vecT<1>::operator!=(const vecT<1>& b) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Add(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		float32x4_t v = vdupq_n_f32(f);
-		FFTL_IF_CONSTEXPR (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
+		if constexpr (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
 			v = __builtin_shufflevector(v, vdupq_n_f32(0), !!bX, !!bY, !!bZ, !!bW);
 		return vaddq_f32(m_v, v);
 	}
@@ -361,10 +361,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Add(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Sub(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		float32x4_t v = vdupq_n_f32(f);
-		FFTL_IF_CONSTEXPR (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
+		if constexpr (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
 			v = __builtin_shufflevector(v, vdupq_n_f32(0), !!bX, !!bY, !!bZ, !!bW);
 		return vsubq_f32(m_v, v);
 	}
@@ -373,23 +373,23 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Sub(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Mul(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		float32x4_t v = vdupq_n_f32(f);
-		FFTL_IF_CONSTEXPR (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
+		if constexpr (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
 			v = __builtin_shufflevector(v, vdupq_n_f32(0), !!bX, !!bY, !!bZ, !!bW);
 		v = vmulq_f32(m_v, v);
-		return __builtin_shufflevector(m_v, v, bX?B0:A0, bY?B1:A1, bZ?B2:A2, bW?B3:A3);
+		return __builtin_shufflevector(m_v, v, bX ? B0 : A0, bY ? B1 : A1, bZ ? B2 : A2, bW ? B3 : A3);
 	}
 	return m_v;
 }
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Div(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		float32x4_t v = vdupq_n_f32(f);
-		FFTL_IF_CONSTEXPR (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
+		if constexpr (!bX || !bY || !bZ || !bW)	// Permute only needed if we don't do the whole row
 			v = __builtin_shufflevector(v, vdupq_n_f32(0), !!bX, !!bY, !!bZ, !!bW);
 		v = neon_divide_ps(m_v, v);
 		return __builtin_shufflevector(m_v, v, bX ? B0 : A0, bY ? B1 : A1, bZ ? B2 : A2, bW ? B3 : A3);
@@ -399,10 +399,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Div(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Negate() const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		float32x4_t v = vnegq_f32(m_v);
-		return __builtin_shufflevector(m_v, v, bX?B0:A0, bY?B1:A1, bZ?B2:A2, bW?B3:A3);
+		return __builtin_shufflevector(m_v, v, bX ? B0 : A0, bY ? B1 : A1, bZ ? B2 : A2, bW ? B3 : A3);
 	}
 	return m_v;
 }

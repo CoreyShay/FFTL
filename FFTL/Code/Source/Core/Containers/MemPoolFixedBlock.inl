@@ -28,11 +28,11 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 */
-#include "_pch_Core.h"
 
-#include "MemPoolFixedBlock.h"
-#include "Platform/Alloc.h"
-#include "Utils/StdFunctions.h"
+#pragma once
+
+#include "../Platform/Alloc.h"
+#include "../Utils/StdFunctions.h"
 
 
 
@@ -40,36 +40,17 @@ namespace FFTL
 {
 
 
-// Default constructor
-FixedBlockMemPool::FixedBlockMemPool()
- 
-{
-}
-
-// Detailed constructor
-FixedBlockMemPool::FixedBlockMemPool(void* pPool, uint maxCount, uint allocSize)
-: m_Pool(nullptr)
-, m_NumUsedEntries(0)
-#if defined(FFTL_ENABLE_PROFILING)
-, m_HighwaterMarkEntries(0)
-#endif
-, m_bPoolOwned(false)
+// Detailed constructors
+inline FixedBlockMemPool::FixedBlockMemPool(void* pPool, uint maxCount, uint allocSize)
 {
 	Init(pPool, maxCount, allocSize);
 }
-
-FixedBlockMemPool::FixedBlockMemPool(uint maxCount, uint allocSize, uint alignment)
-: m_Pool(nullptr)
-, m_NumUsedEntries(0)
-#if defined(FFTL_ENABLE_PROFILING)
-, m_HighwaterMarkEntries(0)
-#endif
-, m_bPoolOwned(false)
+inline FixedBlockMemPool::FixedBlockMemPool(uint maxCount, uint allocSize, uint alignment)
 {
 	Init(maxCount, allocSize, alignment);
 }
 
-void FixedBlockMemPool::Init(void* pPool, size_t maxCount, size_t allocSize)
+inline void FixedBlockMemPool::Init(void* pPool, size_type maxCount, size_type allocSize)
 {
 	FFTL_ASSERT(m_Pool == nullptr);
 	FFTL_ASSERT(pPool);
@@ -77,11 +58,11 @@ void FixedBlockMemPool::Init(void* pPool, size_t maxCount, size_t allocSize)
 	_MaxCount = safestatic_cast<decltype(_MaxCount)>(maxCount);
 	_AllocSize = safestatic_cast<decltype(_AllocSize)>(allocSize);
 
-	m_Pool = (byte*)pPool;
-	m_FreeIndexStack = (size_type*)GetEntry(maxCount);
+	m_Pool = static_cast<byte*>(pPool);
+	m_FreeIndexStack = static_cast<size_type*>(GetEntry(maxCount));
 
 	//	Sequence the indices
-	for (auto i = 0; i < _MaxCount; ++i)
+	for (size_type i = 0; i < _MaxCount; ++i)
 	{
 		m_FreeIndexStack[i] = safestatic_cast<size_type>(i);
 	}
@@ -92,7 +73,7 @@ void FixedBlockMemPool::Init(void* pPool, size_t maxCount, size_t allocSize)
 #endif
 }
 
-void FixedBlockMemPool::Init(uint maxCount, size_t allocSize, size_t alignment)
+inline void FixedBlockMemPool::Init(uint maxCount, size_type allocSize, size_type alignment)
 {
 	allocSize = AlignForward(alignment, allocSize);
 	void* pPool = Alloc(allocSize*maxCount + maxCount*sizeof(*m_FreeIndexStack), alignment);
@@ -100,7 +81,7 @@ void FixedBlockMemPool::Init(uint maxCount, size_t allocSize, size_t alignment)
 	m_bPoolOwned = true;
 }
 
-void FixedBlockMemPool::Shutdown()
+inline void FixedBlockMemPool::Shutdown()
 {
 	if ((m_Pool != nullptr) && m_bPoolOwned)
 		Free(m_Pool);
@@ -109,14 +90,14 @@ void FixedBlockMemPool::Shutdown()
 	m_bPoolOwned = false;
 }
 
-FixedBlockMemPool::~FixedBlockMemPool()
+inline FixedBlockMemPool::~FixedBlockMemPool()
 {
 	Shutdown();
 }
 
 // PURPOSE: Gets a pointer to the next free memory space.
 // RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-void* FixedBlockMemPool::AllocateObject()
+inline void* FixedBlockMemPool::AllocateObject()
 {
 	size_type usedCount = m_NumUsedEntries;
 	if (usedCount != _MaxCount)
@@ -124,7 +105,7 @@ void* FixedBlockMemPool::AllocateObject()
 		FFTL_ASSERT(usedCount < _MaxCount);
 		FFTL_ASSERT(m_FreeIndexStack[usedCount] < _MaxCount);
 		void* pType = GetEntry(m_FreeIndexStack[usedCount]);
-		m_FreeIndexStack[usedCount] = 0xffff; // Mark this one as used for debug purposes
+		m_FreeIndexStack[usedCount] = INDEX_USED_SIGNATURE; // Mark this one as used for debug purposes
 		m_NumUsedEntries = ++usedCount;
 #if defined(FFTL_ENABLE_PROFILING)
 		m_HighwaterMarkEntries = Max(m_HighwaterMarkEntries, usedCount);
@@ -140,7 +121,7 @@ void* FixedBlockMemPool::AllocateObject()
 // NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 //			an instance more than once, or a pointer to an object outside the bounds of our array,
 //			although there are some assertions to warn you if you might be.
-void FixedBlockMemPool::FreeObject(void* pInstance)
+inline void FixedBlockMemPool::FreeObject(void* pInstance)
 {
 	FFTL_ASSERT(pInstance <= GetEntry(_MaxCount - 1));
 	FFTL_ASSERT(pInstance >= GetEntry(0));
@@ -149,7 +130,7 @@ void FixedBlockMemPool::FreeObject(void* pInstance)
 	if (usedCount != 0)
 	{
 		--usedCount;
-		FFTL_ASSERT(m_FreeIndexStack[usedCount] == 0xffff);
+		FFTL_ASSERT(m_FreeIndexStack[usedCount] == INDEX_USED_SIGNATURE);
 		m_FreeIndexStack[usedCount] = GetObjectIndex(pInstance);
 		m_NumUsedEntries = usedCount;
 #if defined(FFTL_ENABLE_PROFILING)
@@ -164,7 +145,7 @@ void FixedBlockMemPool::FreeObject(void* pInstance)
 
 
 // Detailed constructor
-FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(void* pPool, uint maxCount, uint allocSize)
+inline FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(void* pPool, uint maxCount, uint allocSize)
 {
 	m_Pool = nullptr;
 	m_NumUsedEntries = 0;
@@ -177,7 +158,7 @@ FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(void* pPool, uint max
 }
 
 // Detailed constructor
-FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(uint maxCount, uint allocSize, uint alignment)
+inline FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(uint maxCount, uint allocSize, uint alignment)
 {
 	m_Pool = nullptr;
 	m_NumUsedEntries = 0;
@@ -189,10 +170,10 @@ FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(uint maxCount, uint a
 	Init(maxCount, allocSize, alignment);
 }
 
-void FixedBlockMemPool_ThreadSafe::Init(void* pPool, uint maxCount, uint allocSize)
+inline void FixedBlockMemPool_ThreadSafe::Init(void* pPool, uint maxCount, uint allocSize)
 {
 	_Mybase::Init(pPool, maxCount, allocSize);
-#if SL_FIXEDBLOCKPOOL_MUTEX_FREE
+#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
 	m_HeadIndex = 0;
 	m_TailIndex = 0;
 #if defined(FFTL_ENABLE_PROFILING)
@@ -201,10 +182,10 @@ void FixedBlockMemPool_ThreadSafe::Init(void* pPool, uint maxCount, uint allocSi
 #endif
 }
 
-void FixedBlockMemPool_ThreadSafe::Init(uint maxCount, uint allocSize, uint alignment)
+inline void FixedBlockMemPool_ThreadSafe::Init(uint maxCount, uint allocSize, uint alignment)
 {
 	_Mybase::Init(maxCount, allocSize, alignment);
-#if SL_FIXEDBLOCKPOOL_MUTEX_FREE
+#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
 	m_HeadIndex = 0;
 	m_TailIndex = 0;
 #if defined(FFTL_ENABLE_PROFILING)
@@ -215,35 +196,35 @@ void FixedBlockMemPool_ThreadSafe::Init(uint maxCount, uint allocSize, uint alig
 
 // PURPOSE: Gets a pointer to the next free memory space.
 // RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-void* FixedBlockMemPool_ThreadSafe::AllocateObject()
+inline void* FixedBlockMemPool_ThreadSafe::AllocateObject()
 {
-#if !SL_FIXEDBLOCKPOOL_MUTEX_FREE
+#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
 	MutexScopedLock lock(&m_Mutex);
 	return _Mybase::AllocateObject();
 #else
-	const size_type usedCount = slAtomicFetchInc(&this->m_NumUsedEntries);
+	const size_type usedCount = AtomicIncrement(&this->m_NumUsedEntries) + 1;
 	if (usedCount < _MaxCount)
 	{
 #if defined(FFTL_ENABLE_PROFILING)
-		slCompareExchange(&this->m_HighwaterMarkEntries, usedCount, usedCount + 1);
-		slAtomicInc(&this->m_TotalAllocs);
-#endif // !_PRODUCTION
+		AtomicCompareExchange(&this->m_HighwaterMarkEntries, usedCount, usedCount + 1);
+		AtomicIncrement(&this->m_TotalAllocs);
+#endif // defined(FFTL_ENABLE_PROFILING)
 
 	_RESTART_ADD:
 		//	Increment the head index of the queue
-		const size_type stackIndex = slAtomicFetchInc(&this->m_HeadIndex) & (_MaxCount - 1);
+		const size_type stackIndex = (AtomicIncrement(&this->m_HeadIndex) + 1) & (_MaxCount - 1);
 
 		//	Mark this one as used and signal FreeObject to continue if it was waiting on this index
 		volatile size_type* pOldEntryIndex = this->m_FreeIndexStack + stackIndex;
 
 		//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
 		// around us, we can just retry getting the stack index.
-		const size_type entryIndex = slXchg(pOldEntryIndex, 0xffff);
-		if (slUNLIKELY(entryIndex == 0xffff))
+		const size_type entryIndex = AtomicExchange(pOldEntryIndex, INDEX_USED_SIGNATURE);
+		if (entryIndex == INDEX_USED_SIGNATURE) FFTL_UNLIKELY
 		{
 #if defined(FFTL_ENABLE_PROFILING)
-			slAtomicInc(&this->m_CollisionCount);
-#endif // !_PRODUCTION
+			AtomicIncrement(&this->m_CollisionCount);
+#endif // defined(FFTL_ENABLE_PROFILING)
 			goto _RESTART_ADD;
 		}
 
@@ -252,7 +233,8 @@ void* FixedBlockMemPool_ThreadSafe::AllocateObject()
 		void* pType = this->GetEntry(entryIndex);
 		return pType;
 	}
-	slAtomicDec(&this->m_NumUsedEntries);
+
+	AtomicDecrement(&this->m_NumUsedEntries);
 	return nullptr;
 #endif
 }
@@ -262,9 +244,9 @@ void* FixedBlockMemPool_ThreadSafe::AllocateObject()
 // NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 //			an instance more than once, or a pointer to an object outside the bounds of our array,
 //			although there are some assertions to warn you if you might be.
-void FixedBlockMemPool_ThreadSafe::FreeObject(void* pInstance)
+inline void FixedBlockMemPool_ThreadSafe::FreeObject(void* pInstance)
 {
-#if !SL_FIXEDBLOCKPOOL_MUTEX_FREE
+#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
 	MutexScopedLock lock(&m_Mutex);
 	_Mybase::FreeObject(pInstance);
 #else
@@ -276,29 +258,29 @@ void FixedBlockMemPool_ThreadSafe::FreeObject(void* pInstance)
 	FFTL_ASSERT(pInstance >= this->GetEntry(0));
 
 #if defined(FFTL_ENABLE_PROFILING)
-	slAtomicInc(&this->m_TotalFrees);
-#endif // !_PRODUCTION
+	AtomicIncrement(&this->m_TotalFrees);
+#endif // defined(FFTL_ENABLE_PROFILING)
 
 _RESTART_ADD:
 	//	Increment the tail index of the queue
-	const size_type stackIndex = slAtomicFetchInc(&this->m_TailIndex) & (_MaxCount - 1);
+	const size_type stackIndex = (AtomicIncrement(&this->m_TailIndex) + 1) & (_MaxCount - 1);
 	const size_type blockIndex = GetObjectIndex(pInstance);
 	volatile size_type* pEntryIndex = this->m_FreeIndexStack + stackIndex;
 
 	//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
 	// around us, we can just retry getting the stack index.
-	if (slUNLIKELY(!slCompareAndSwap(pEntryIndex, 0xffff, blockIndex)))
+	if (!AtomicCompareExchange(pEntryIndex, INDEX_USED_SIGNATURE, blockIndex)) FFTL_UNLIKELY
 	{
 #if defined(FFTL_ENABLE_PROFILING)
-		slAtomicInc(&this->m_CollisionCount);
-#endif // !_PRODUCTION
+		AtomicIncrement(&this->m_CollisionCount);
+#endif // defined(FFTL_ENABLE_PROFILING)
 		goto _RESTART_ADD;
 	}
 
 	//	Decrement the used entries atomically
-	const size_type usedCount = slAtomicFetchDec(&this->m_NumUsedEntries);
+	const size_type usedCount = AtomicDecrement(&this->m_NumUsedEntries);
 	FFTL_ASSERT(usedCount != 0);
-	slUNREF(usedCount);
+	(void)usedCount;
 #endif
 }
 

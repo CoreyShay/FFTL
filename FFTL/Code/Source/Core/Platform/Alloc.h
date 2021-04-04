@@ -13,7 +13,7 @@ namespace FFTL
 {
 
 
-FFTL_NODISCARD inline void* Alloc(size_t size, size_t alignment)
+[[nodiscard]] inline void* Alloc(size_t size, size_t alignment)
 {
 	FFTL_ASSERT(size > 0);
 #if defined(_MSC_VER)
@@ -31,7 +31,7 @@ FFTL_NODISCARD inline void* Alloc(size_t size, size_t alignment)
 }
 
 template<typename T>
-FFTL_NODISCARD inline T* Alloc(size_t count, size_t alignment = alignof(T))
+[[nodiscard]] inline T* Alloc(size_t count, size_t alignment = alignof(T))
 {
 	return static_cast<T*>(Alloc(sizeof(T) * count, alignment));
 }

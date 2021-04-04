@@ -36,17 +36,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.cpp">
-      <Filter>Containers</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.cpp">
-      <Filter>Platform</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.cpp">
-      <Filter>Platform</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\ReturnCodes.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\Array.h">
@@ -261,6 +250,12 @@
     </None>
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.inl">
       <Filter>Math\NEON</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.inl">
+      <Filter>Platform</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.inl">
+      <Filter>Containers</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

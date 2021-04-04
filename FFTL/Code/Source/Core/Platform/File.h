@@ -36,10 +36,10 @@ public:
 	template <typename T>
 	size_t WriteObj(const T* pBuffer);
 
-	FFTL_NODISCARD size_t GetSize() const { return m_Size; }
-	FFTL_NODISCARD size_t GetPos() const { return m_Pos; }
-	FFTL_NODISCARD bool GetIsOpen() const { return m_pFile != nullptr; }
-	FFTL_NODISCARD bool GetIsEnd() const { return m_Pos >= m_Size; }
+	[[nodiscard]] size_t GetSize() const { return m_Size; }
+	[[nodiscard]] size_t GetPos() const { return m_Pos; }
+	[[nodiscard]] bool GetIsOpen() const { return m_pFile != nullptr; }
+	[[nodiscard]] bool GetIsEnd() const { return m_Pos >= m_Size; }
 
 protected:
 	FILE*	m_pFile = nullptr;

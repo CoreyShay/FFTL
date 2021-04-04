@@ -52,7 +52,7 @@ namespace FFTL
 {
 
 
-class FFTL_NODISCARD Mutex
+class [[nodiscard]] Mutex
 {
 #if defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
 public:
@@ -80,7 +80,7 @@ public:
 	{
 		FFTL_VERIFY_EQ( SCE_OK, scePthreadMutexUnlock(&m_mutex) );
 	}
-	FFTL_NODISCARD ThreadId GetOwningThread() const
+	[[nodiscard]] ThreadId GetOwningThread() const
 	{
 		//	The owned thread id really is the first part of the data behind the pointer.
 		return *reinterpret_cast<const ThreadId*>(m_mutex);
@@ -119,7 +119,7 @@ public:
 	{
 		pthread_mutex_unlock(&m_mutex);
 	}
-	FFTL_NODISCARD ThreadId GetOwningThread() const
+	[[nodiscard]] ThreadId GetOwningThread() const
 	{
 		//	TODO
 		FFTL_ASSERT_MSG(0, "Don't call this. It doesn't work yet.");
@@ -177,7 +177,7 @@ public:
 #endif
 		LeaveCriticalSection(&m_cs);
 	}
-	FFTL_NODISCARD ThreadId GetOwningThread() const
+	[[nodiscard]] ThreadId GetOwningThread() const
 	{
 		return ::GetThreadId(m_cs.OwningThread);
 	}
@@ -193,7 +193,7 @@ private:
 
 public:
 
-	FFTL_NODISCARD bool GetIsLockedByThisThread() const
+	[[nodiscard]] bool GetIsLockedByThisThread() const
 	{
 		return GetOwningThread() == GetThreadIdCurrent();
 	}

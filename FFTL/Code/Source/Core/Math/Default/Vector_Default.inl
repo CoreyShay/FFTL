@@ -217,10 +217,10 @@ template<bool bX, bool bY, bool bZ, bool bW, uint M>
 inline vecT<M> ZeroElements(const vecT<M>& v)
 {
 	auto r = v.m_v;
-	FFTL_IF_CONSTEXPR (bX) r.x = 0;
-	FFTL_IF_CONSTEXPR (bY) r.y = 0;
-	FFTL_IF_CONSTEXPR (bZ) r.z = 0;
-	FFTL_IF_CONSTEXPR (bW) r.w = 0;
+	if constexpr (bX) r.x = 0;
+	if constexpr (bY) r.y = 0;
+	if constexpr (bZ) r.z = 0;
+	if constexpr (bW) r.w = 0;
 	return r;
 }
 
@@ -336,40 +336,40 @@ template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Add(f32 f) const
 {
 	auto r = m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] += f;
-	FFTL_IF_CONSTEXPR (bY) r[1] += f;
-	FFTL_IF_CONSTEXPR (bZ) r[2] += f;
-	FFTL_IF_CONSTEXPR (bW) r[3] += f;
+	if constexpr (bX) r[0] += f;
+	if constexpr (bY) r[1] += f;
+	if constexpr (bZ) r[2] += f;
+	if constexpr (bW) r[3] += f;
 	return r;
 }
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Sub(f32 f) const
 {
 	auto r = m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] -= f;
-	FFTL_IF_CONSTEXPR (bY) r[1] -= f;
-	FFTL_IF_CONSTEXPR (bZ) r[2] -= f;
-	FFTL_IF_CONSTEXPR (bW) r[3] -= f;
+	if constexpr (bX) r[0] -= f;
+	if constexpr (bY) r[1] -= f;
+	if constexpr (bZ) r[2] -= f;
+	if constexpr (bW) r[3] -= f;
 	return r;
 }
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Mul(f32 f) const
 {
 	auto r = m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] *= f;
-	FFTL_IF_CONSTEXPR (bY) r[1] *= f;
-	FFTL_IF_CONSTEXPR (bZ) r[2] *= f;
-	FFTL_IF_CONSTEXPR (bW) r[3] *= f;
+	if constexpr (bX) r[0] *= f;
+	if constexpr (bY) r[1] *= f;
+	if constexpr (bZ) r[2] *= f;
+	if constexpr (bW) r[3] *= f;
 	return r;
 }
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Div(f32 f) const
 {
 	auto r = m_v;
-	FFTL_IF_CONSTEXPR (bX) r[0] += f;
-	FFTL_IF_CONSTEXPR (bY) r[1] += f;
-	FFTL_IF_CONSTEXPR (bZ) r[2] += f;
-	FFTL_IF_CONSTEXPR (bW) r[3] += f;
+	if constexpr (bX) r[0] += f;
+	if constexpr (bY) r[1] += f;
+	if constexpr (bZ) r[2] += f;
+	if constexpr (bW) r[3] += f;
 	return r;
 }
 
@@ -377,10 +377,10 @@ template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 inline vecT<N> vecT<N>::Negate() const
 {
 	auto r = *this;
-	FFTL_IF_CONSTEXPR (bX) r.Ptr()[0] = -m_v.x;
-	FFTL_IF_CONSTEXPR (bY) r.Ptr()[1] = -m_v.y;
-	FFTL_IF_CONSTEXPR (bZ) r.Ptr()[2] = -m_v.z;
-	FFTL_IF_CONSTEXPR (bW) r.Ptr()[3] = -m_v.w;
+	if constexpr (bX) r.Ptr()[0] = -m_v.x;
+	if constexpr (bY) r.Ptr()[1] = -m_v.y;
+	if constexpr (bZ) r.Ptr()[2] = -m_v.z;
+	if constexpr (bW) r.Ptr()[3] = -m_v.w;
 	return r;
 }
 

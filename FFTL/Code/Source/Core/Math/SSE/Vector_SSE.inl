@@ -311,10 +311,10 @@ FFTL_FORCEINLINE bool vecT<1>::operator!=(const vecT<1>& b) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Add(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		__m128 v = _mm_set_ss(f);
-		FFTL_IF_CONSTEXPR (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
+		if constexpr (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
 			v = V4fPermute<!bX, !bY, !bZ, !bW>(v);
 		return _mm_add_ps(m_v, v);
 	}
@@ -323,10 +323,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Add(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Sub(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		__m128 v = _mm_set_ss(f);
-		FFTL_IF_CONSTEXPR (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
+		if constexpr (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
 			v = V4fPermute<!bX, !bY, !bZ, !bW>(v);
 		return _mm_sub_ps(m_v, v);
 	}
@@ -335,10 +335,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Sub(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Mul(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		__m128 v = _mm_set_ss(f);
-		FFTL_IF_CONSTEXPR (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
+		if constexpr (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
 			v = V4fPermute<!bX, !bY, !bZ, !bW>(v);
 		v = _mm_mul_ps(m_v, v);
 		return V4fPermute<bX?B0:A0, bY?B1:A1, bZ?B2:A2, bW?B3:A3>(m_v, v);
@@ -348,10 +348,10 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Mul(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Div(f32 f) const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		__m128 v = _mm_set_ss(f);
-		FFTL_IF_CONSTEXPR (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
+		if constexpr (bY | bZ | bW)	// Permute only needed if we need to affect anything aside from X
 			v = V4fPermute<!bX, !bY, !bZ, !bW>(v);
 		v = _mm_div_ps(m_v, v);
 		return V4fPermute<bX?B0:A0, bY?B1:A1, bZ?B2:A2, bW?B3:A3>(m_v, v);
@@ -361,7 +361,7 @@ FFTL_FORCEINLINE vecT<N> vecT<N>::Div(f32 f) const
 template<uint N> template<bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE vecT<N> vecT<N>::Negate() const
 {
-	FFTL_IF_CONSTEXPR (bX | bY | bZ | bW)	// NOP if none are set
+	if constexpr (bX | bY | bZ | bW)	// NOP if none are set
 	{
 		__m128 v = sse_negate_ps(m_v);
 		return V4fPermute<bX?B0:A0, bY?B1:A1, bZ?B2:A2, bW?B3:A3>(m_v, v);
@@ -520,7 +520,7 @@ FFTL_FORCEINLINE bool IsNearZero(const vecT<N>& v, const vecT<N>& tol)
 {
 	static_assert(N <= 4 && N >= 1, "Not implemented");
 	const __m128 vAbs = sse_abs_ps(v.m_v);
-	FFTL_IF_CONSTEXPR (N == 4)
+	if constexpr (N == 4)
 		return _mm_movemask_ps(_mm_cmple_ps(vAbs, tol.m_v)) == 15;
 	else
 	{
@@ -617,7 +617,7 @@ template<>
 FFTL_FORCEINLINE bool IsFinite(const vecT<1>& v)
 {
 //	return (_mm_movemask_ps(_mm_cmpeq_ss(_mm_sub_ps(v.m_v, v.m_v), _mm_setzero_ps())) & 1) != 0;
-	const int il = _mm_cvtsi128_si32(_mm_castps_si128(v.m_v));
+	const int il = v.GetAsIntX();
 	return (il & 0x7f800000) != 0x7f800000;
 }
 
@@ -958,7 +958,7 @@ template<uint N>
 FFTL_FORCEINLINE f32 Dot(const vecT<N>& a, const vecT<N>& b)
 {
 #if defined(FFTL_VECTOR_USE_SSE4)
-	const __m128 r = _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1<<N)-1, 1));
+	const __m128 r = _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1 << N) - 1, 1));
 	return _mm_cvtss_f32(r);
 #else
 	return HSum(a * b);
@@ -969,7 +969,7 @@ template<uint N>
 FFTL_FORCEINLINE vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 {
 #if defined(FFTL_VECTOR_USE_SSE4)
-	return _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1<<N)-1, 15));
+	return _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1 << N) - 1, 15));
 #else
 	return HSumV(a * b);
 #endif
@@ -981,7 +981,7 @@ FFTL_FORCEINLINE vecT<N> DotV(const vecT<N>& a, const vecT<N>& b)
 #if defined(FFTL_VECTOR_USE_SSE4)
 	return _mm_dp_ps(a, b, FFTL_MM_DPPS_MASK_HELPER((1 << N) - 1, (1 << R) - 1));
 #else
-	FFTL_IF_CONSTEXPR (R == 4)
+	if constexpr (R == 4)
 		return HSumV(a * b);
 	else
 	{

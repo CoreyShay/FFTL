@@ -138,6 +138,22 @@ inline void ThreadMember::Stop(bool bWaitForDone)
 	}
 }
 
+inline void ThreadMember::Terminate()
+{
+	FFTL_ASSERT_MSG(GetIsRunning() && !m_bFlaggedForStop, "[ThreadMember::Terminate] Thread not running or flagged to stop. Not sure what could happen here...");
+	if (m_Handle != 0)
+	{
+		TerminateThread(m_Handle);
+		m_bIsRunning = false;
+		FreeThreadHandle(m_Handle);
+		m_pOwner = nullptr;
+		m_Handle = 0;
+#if !defined(FFTL_THREAD_HANDLE_IS_ID)
+		m_ID = 0;
+#endif
+	}
+}
+
 inline void ThreadMember::Run()
 {
 	m_bIsRunning = true;
@@ -186,6 +202,23 @@ inline void ThreadFunctor<T_Functor>::Stop(bool bWaitForDone)
 }
 
 template <typename T_Functor>
+inline void ThreadFunctor<T_Functor>::Terminate()
+{
+//	FFTL_ASSERT_MSG(GetIsRunning() && !m_bFlaggedForStop, "[ThreadMember::Terminate] Thread not running or flagged to stop. Not sure what could happen here...");
+	if (m_Handle != 0)
+	{
+		TerminateThread(m_Handle);
+		FreeThreadHandle(m_Handle);
+		m_Handle = 0;
+#if !defined(FFTL_THREAD_HANDLE_IS_ID)
+		m_ID = 0;
+#endif
+		m_bIsRunning = false;
+		m_bFlaggedForStop = false;
+	}
+}
+
+template <typename T_Functor>
 inline void ThreadFunctor<T_Functor>::Run()
 {
 	m_bIsRunning = true;
@@ -201,7 +234,6 @@ inline FFTL_THREAD_RETURNTYPE FFTL_THREAD_CALLCONV ThreadFunctor<T_Functor>::Int
 	pThread->Run();
 	return FFTL_THREAD_RETURNVALUE;
 }
-
 
 inline void ThreadSleep(uint ms)
 {

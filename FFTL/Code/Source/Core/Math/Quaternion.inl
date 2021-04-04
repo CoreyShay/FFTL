@@ -8,16 +8,10 @@ namespace FFTL
 // Constructors
 //
 
-FFTL_FORCEINLINE quat::quat()
-= default;
-
 FFTL_FORCEINLINE quat::quat(f32 x, f32 y, f32 z, f32 w)
 : m_v(x, y, z, w)
 {
 }
-FFTL_FORCEINLINE quat::quat(const quat& copy)
- 
-= default;
 FFTL_FORCEINLINE quat::quat(const vec3& axis, f32 angleRad)
 {
 	BuildFromAxisAngle(axis, angleRad);

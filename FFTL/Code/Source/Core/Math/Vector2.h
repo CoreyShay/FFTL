@@ -18,7 +18,7 @@ namespace FFTL
 //
 
 //	Maybe not a real thing, but this gets you a vector orthogonal to a
-FFTL_NODISCARD vec2 Cross(const vec2& a);
+[[nodiscard]] vec2 Cross(const vec2& a);
 
 
 

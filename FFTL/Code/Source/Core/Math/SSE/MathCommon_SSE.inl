@@ -93,22 +93,24 @@ FFTL_FORCEINLINE f64 Max(f32 a, f64 b)
 template<>
 FFTL_FORCEINLINE bool IsNan(f32 y)
 {
-	const __m128 v = _mm_set_ss(y);
 #if defined(FFTL_SSE) && __has_include(<immintrin.h>) && defined(_MSC_VER)
+	const __m128 v = _mm_set_ss(y);
 	return _mm_comi_ss(v, v, _CMP_NEQ_UQ) != 0;
 //	return _mm_comieq_ss(v, v) == 0;
 #else
-	return _mm_movemask_ps(_mm_cmpneq_ps(v, v)) != 0;
+	return std::isnan(y);
+//	return _mm_movemask_ps(_mm_cmpneq_ss(v, v)) != 0;
 #endif
 }
 template<>
 FFTL_FORCEINLINE bool IsNan(f64 y)
 {
-	const __m128d v = _mm_set_sd(y);
 #if defined(FFTL_SSE2) && __has_include(<immintrin.h>) && defined(_MSC_VER)
+	const __m128d v = _mm_set_sd(y);
 	return _mm_comi_sd(v, v, _CMP_NEQ_UQ) != 0;
 #else
-	return _mm_movemask_pd(_mm_cmpneq_pd(v, v)) != 0;
+	return std::isnan(y);
+//	return _mm_movemask_pd( _mm_cmpneq_sd( v, v ) ) != 0;
 #endif
 }
 
@@ -231,7 +233,7 @@ FFTL_FORCEINLINE Vec4f V4fAnd(Vec4f_In a, Vec4f_In b)
 }
 FFTL_FORCEINLINE Vec4f V4fAndNot(Vec4f_In a, Vec4f_In b)
 {
-	return _mm_andnot_ps(a, b);
+	return _mm_andnot_ps(b, a);
 }
 FFTL_FORCEINLINE Vec4f V4fOr(Vec4f_In a, Vec4f_In b)
 {
@@ -443,47 +445,47 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 	constexpr uint shufW = (T3 == 0 || T3 == 1 || T3 == 2 || T3 == 3) ? 0 : 1;
 
 	//	Catch when we only need values from either a or b.
-	FFTL_IF_CONSTEXPR ((T0 < 4) && (T1 < 4) && (T2 < 4) && (T3 < 4))
+	if constexpr (T0 < 4 && T1 < 4 && T2 < 4 && T3 < 4)
 	{
 		return _mm_shuffle_ps(a, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
 	}
-	else FFTL_IF_CONSTEXPR ((T0 > 3) && (T1 > 3) && (T2 > 3) && (T3 > 3))
+	else if constexpr (T0 > 3 && T1 > 3 && T2 > 3 && T3 > 3)
 	{
 		return _mm_shuffle_ps(b, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)));
 	}
 	//	Catch the easy SSE condition when _X and _Y come from a different vector than _Z and _W.
 	// Uses only 1 SSE shuffle instruction.
-	else FFTL_IF_CONSTEXPR (shufX == shufY && shufZ == shufW)
+	else if constexpr (shufX == shufY && shufZ == shufW)
 	{
-		FFTL_IF_CONSTEXPR (shufX == 0)	//	_X and _Y from v1. _Z and _W from v2.
+		if constexpr (shufX == 0)	//	_X and _Y from v1. _Z and _W from v2.
 			return _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		else			//	_X and _Y from v2. _Z and _W from v1.
 			return _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 	}
 #if defined(FFTL_SSE4)
 	//	If we have SSE4, we can use the blend instruction as long as we don't need reordering
-	else FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
+	else if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
 	{
 		return _mm_blend_ps(a, b, (shufX<<0) | (shufY<<1) | (shufZ<<2) | (shufW<<3));
 	}
 #endif
 	//	Next 4 cases, when we need 2 32 bit words from each vector, but it can't be handled with a single SSE instruction, so we use 2.
-	else FFTL_IF_CONSTEXPR (shufX==0 && shufY==1 && shufZ==0 && shufW==1)
+	else if constexpr (shufX == 0 && shufY == 1 && shufZ == 0 && shufW == 1)
 	{
 		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3)) );
 		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(0,2,1,3) );
 	}
-	else FFTL_IF_CONSTEXPR (shufX==0 && shufY==1 && shufZ==1 && shufW==0)
+	else if constexpr (shufX == 0 && shufY == 1 && shufZ == 1 && shufW == 0)
 	{
 		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0),FFTL_PERMUTEMASK( T3), FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2)) );
 		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(0,2,3,1) );
 	}
-	else FFTL_IF_CONSTEXPR (shufX==1 && shufY==0 && shufZ==0 && shufW==1)
+	else if constexpr (shufX == 1 && shufY == 0 && shufZ == 0 && shufW == 1)
 	{
 		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T3)) );
 		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(2,0,1,3) );
 	}
-	else FFTL_IF_CONSTEXPR (shufX==1 && shufY==0 && shufZ==1 && shufW==0)
+	else if constexpr (shufX == 1 && shufY == 0 && shufZ == 1 && shufW == 0)
 	{
 		const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T1), FFTL_PERMUTEMASK(T3), FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T2)) );
 		return _mm_shuffle_ps( t, t, FFTL_MM_SHUFFLE_XYZW(2,0,3,1) );
@@ -491,35 +493,35 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 
 
 	//	Next 2 cases, when we need 3 32 bit words from one vector, and 1 word from the other, we use 2 instructions.
-	else FFTL_IF_CONSTEXPR (
-		(shufX==0 && shufY==1 && shufZ==1 && shufW==1)	||
-		(shufX==1 && shufY==0 && shufZ==1 && shufW==1)	||
-		(shufX==1 && shufY==1 && shufZ==0 && shufW==1)	||
-		(shufX==1 && shufY==1 && shufZ==1 && shufW==0)	)
+	else if constexpr (
+		(shufX == 0 && shufY == 1 && shufZ == 1 && shufW == 1)	||
+		(shufX == 1 && shufY == 0 && shufZ == 1 && shufW == 1)	||
+		(shufX == 1 && shufY == 1 && shufZ == 0 && shufW == 1)	||
+		(shufX == 1 && shufY == 1 && shufZ == 1 && shufW == 0)	)
 	{
 		//	When we need one word from a
-		FFTL_IF_CONSTEXPR (shufX==0)
+		if constexpr (shufX == 0)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
 			return _mm_shuffle_ps( t, b, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
-		else FFTL_IF_CONSTEXPR (shufY == 0)
+		else if constexpr (shufY == 0)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
 			return _mm_shuffle_ps( t, b, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
-		else FFTL_IF_CONSTEXPR (shufZ == 0)
+		else if constexpr (shufZ == 0)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
@@ -528,42 +530,42 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 		else // shufW==0
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
 				return _mm_insert_ps(b, a, FFTL_MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
 			return _mm_shuffle_ps( b, t, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), FFTL_PERMUTEMASK(T1), 0, 2) );
 		}
 	}
-	else FFTL_IF_CONSTEXPR (
-		(shufX==1 && shufY==0 && shufZ==0 && shufW==0)	||
-		(shufX==0 && shufY==1 && shufZ==0 && shufW==0)	||
-		(shufX==0 && shufY==0 && shufZ==1 && shufW==0)	||
-		(shufX==0 && shufY==0 && shufZ==0 && shufW==1)	)
+	else if constexpr (
+		(shufX == 1 && shufY == 0 && shufZ == 0 && shufW == 0)	||
+		(shufX == 0 && shufY == 1 && shufZ == 0 && shufW == 0)	||
+		(shufX == 0 && shufY == 0 && shufZ == 1 && shufW == 0)	||
+		(shufX == 0 && shufY == 0 && shufZ == 0 && shufW == 1)	)
 	{
 		//	When we need one word from b
-		FFTL_IF_CONSTEXPR (shufX == 1)
+		if constexpr (shufX == 1)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(0, FFTL_PERMUTEMASK(T0), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
 			return _mm_shuffle_ps( t, a, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
-		else FFTL_IF_CONSTEXPR (shufY == 1)
+		else if constexpr (shufY == 1)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T2) == 2 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(1, FFTL_PERMUTEMASK(T1), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T0), 3, FFTL_PERMUTEMASK(T1), 3) );
 			return _mm_shuffle_ps( t, a, FFTL_MM_SHUFFLE_XYZW(0, 2, FFTL_PERMUTEMASK(T2), FFTL_PERMUTEMASK(T3)) );
 		}
-		else FFTL_IF_CONSTEXPR (shufZ == 1)
+		else if constexpr (shufZ == 1)
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T3) == 3)
 				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(2, FFTL_PERMUTEMASK(T2), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( b, a, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
@@ -572,7 +574,7 @@ FFTL_FORCEINLINE Vec4f V4fPermute(Vec4f_In a, Vec4f_In b)
 		else // shufW==1
 		{
 #if defined(FFTL_SSE4)
-			FFTL_IF_CONSTEXPR (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
+			if constexpr (FFTL_PERMUTEMASK(T0) == 0 && FFTL_PERMUTEMASK(T1) == 1 && FFTL_PERMUTEMASK(T2) == 2)
 				return _mm_insert_ps(a, b, FFTL_MM_INSERTPS_MASK_HELPER(3, FFTL_PERMUTEMASK(T3), 0, 0, 0, 0));
 #endif
 			const __m128 t = _mm_shuffle_ps( a, b, FFTL_MM_SHUFFLE_XYZW(FFTL_PERMUTEMASK(T2), 3, FFTL_PERMUTEMASK(T3), 3) );
@@ -651,6 +653,173 @@ template<>
 FFTL_FORCEINLINE Vec4f V4fPermute<6, 7, 2, 3>(Vec4f_In a, Vec4f_In b)
 {
 	return _mm_movehl_ps(a, b);
+}
+
+inline Vec4f V4fSin(Vec4f_In r)
+{
+	const __m128 F1111 = _mm_set1_ps(1.f);
+	const __m128 f4OverPi = _mm_set1_ps(4 / PI_32);
+	const __m128 fPiOverTwo = _mm_set1_ps(PI_32 / 2);
+	const __m128i I1111 = _mm_set1_epi32(1);
+	const __m128i signMask = _mm_set1_epi32(0x80000000);
+
+	const __m128 s_sinCosCoeff2 = _mm_set1_ps(-0.5f);
+	const __m128 s_sinCosCoeff3 = _mm_set1_ps(-1.66666667E-1f);
+	const __m128 s_sinCosCoeff4 = _mm_set1_ps(4.16666667E-2f);
+	const __m128 s_sinCosCoeff5 = _mm_set1_ps(8.33333333E-3f);
+	const __m128 s_sinCosCoeff6 = _mm_set1_ps(-1.38888889E-3f);
+	const __m128 s_sinCosCoeff7 = _mm_set1_ps(-1.98412698E-4f);
+	const __m128 s_sinCosCoeff8 = _mm_set1_ps(2.48015873E-5f);
+
+	__m128i sinSignBit, polyMask, quarters;
+	quarters = _mm_cvttps_epi32(sse_AddMul_ps(F1111, r, f4OverPi));
+	quarters = _mm_srai_epi32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = _mm_slli_epi32(quarters, 30);
+	sinSignBit = _mm_and_si128(sinSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm_and_si128(quarters, I1111);
+	polyMask = _mm_cmpeq_epi32(polyMask, I1111);
+
+	const __m128 x = _mm_sub_ps(r, _mm_mul_ps(_mm_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m128 xx = _mm_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m128 y1 = s_sinCosCoeff8;
+	y1 = sse_AddMul_ps(s_sinCosCoeff6, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff4, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff2, y1, xx);
+	y1 = sse_AddMul_ps(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m128 y2 = s_sinCosCoeff7;
+	y2 = sse_AddMul_ps(s_sinCosCoeff5, y2, xx);
+	y2 = sse_AddMul_ps(s_sinCosCoeff3, y2, xx);
+	y2 = _mm_mul_ps(y2, xx);
+	y2 = sse_AddMul_ps(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	const __m128 vSin = sse_blend(_mm_castsi128_ps(polyMask), y1, y2);
+
+	// Set the sign bit and store the result
+	return _mm_xor_ps(vSin, _mm_castsi128_ps(sinSignBit));
+}
+inline Vec4f V4fCos(Vec4f_In r)
+{
+	const __m128 F1111 = _mm_set1_ps(1.f);
+	const __m128 f4OverPi = _mm_set1_ps(4 / PI_32);
+	const __m128 fPiOverTwo = _mm_set1_ps(PI_32 / 2);
+	const __m128i I1111 = _mm_set1_epi32(1);
+	const __m128i signMask = _mm_set1_epi32(0x80000000);
+
+	const __m128 s_sinCosCoeff2 = _mm_set1_ps(-0.5f);
+	const __m128 s_sinCosCoeff3 = _mm_set1_ps(-1.66666667E-1f);
+	const __m128 s_sinCosCoeff4 = _mm_set1_ps(4.16666667E-2f);
+	const __m128 s_sinCosCoeff5 = _mm_set1_ps(8.33333333E-3f);
+	const __m128 s_sinCosCoeff6 = _mm_set1_ps(-1.38888889E-3f);
+	const __m128 s_sinCosCoeff7 = _mm_set1_ps(-1.98412698E-4f);
+	const __m128 s_sinCosCoeff8 = _mm_set1_ps(2.48015873E-5f);
+
+	__m128i cosSignBit, polyMask, quarters;
+	quarters = _mm_cvttps_epi32(sse_AddMul_ps(F1111, r, f4OverPi));
+	quarters = _mm_srai_epi32(quarters, 1);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = _mm_add_epi32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = _mm_slli_epi32(cosSignBit, 30);
+	cosSignBit = _mm_and_si128(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm_and_si128(quarters, I1111);
+	polyMask = _mm_cmpeq_epi32(polyMask, I1111);
+
+	const __m128 x = _mm_sub_ps(r, _mm_mul_ps(_mm_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m128 xx = _mm_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m128 y1 = s_sinCosCoeff8;
+	y1 = sse_AddMul_ps(s_sinCosCoeff6, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff4, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff2, y1, xx);
+	y1 = sse_AddMul_ps(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m128 y2 = s_sinCosCoeff7;
+	y2 = sse_AddMul_ps(s_sinCosCoeff5, y2, xx);
+	y2 = sse_AddMul_ps(s_sinCosCoeff3, y2, xx);
+	y2 = _mm_mul_ps(y2, xx);
+	y2 = sse_AddMul_ps(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+	const __m128 rCos = sse_blend(_mm_castsi128_ps(polyMask), y2, y1);
+
+	// Set the sign bit and store the result
+	return _mm_xor_ps(rCos, _mm_castsi128_ps(cosSignBit));
+}
+inline void V4fSinCos(Vec4f_In r, Vec4f& s, Vec4f& c)
+{
+	const __m128 F1111 = _mm_set1_ps(1.f);
+	const __m128 f4OverPi = _mm_set1_ps(4 / PI_32);
+	const __m128 fPiOverTwo = _mm_set1_ps(PI_32 / 2);
+	const __m128i I1111 = _mm_set1_epi32(1);
+	const __m128i signMask = _mm_set1_epi32(0x80000000);
+
+	const __m128 s_sinCosCoeff2 = _mm_set1_ps(-0.5f);
+	const __m128 s_sinCosCoeff3 = _mm_set1_ps(-1.66666667E-1f);
+	const __m128 s_sinCosCoeff4 = _mm_set1_ps(4.16666667E-2f);
+	const __m128 s_sinCosCoeff5 = _mm_set1_ps(8.33333333E-3f);
+	const __m128 s_sinCosCoeff6 = _mm_set1_ps(-1.38888889E-3f);
+	const __m128 s_sinCosCoeff7 = _mm_set1_ps(-1.98412698E-4f);
+	const __m128 s_sinCosCoeff8 = _mm_set1_ps(2.48015873E-5f);
+
+	__m128i sinSignBit, cosSignBit, polyMask, quarters;
+	quarters = _mm_cvttps_epi32(sse_AddMul_ps(F1111, r, f4OverPi));
+	quarters = _mm_srai_epi32(quarters, 1);
+
+	// Get the sign bit for sine, which alternates for every whole multiple of pi
+	sinSignBit = _mm_slli_epi32(quarters, 30);
+	sinSignBit = _mm_and_si128(sinSignBit, signMask);
+
+	// Cos sign bit (offset by pi/2 from sine)
+	cosSignBit = _mm_add_epi32(quarters, I1111); // pi/2 == 1 quarter circle
+	cosSignBit = _mm_slli_epi32(cosSignBit, 30);
+	cosSignBit = _mm_and_si128(cosSignBit, signMask);
+
+	// The poly mask is used to evaluate each polynomial only over its intended domain
+	polyMask = _mm_and_si128(quarters, I1111);
+	polyMask = _mm_cmpeq_epi32(polyMask, I1111);
+
+	const __m128 x = _mm_sub_ps(r, _mm_mul_ps(_mm_cvtepi32_ps(quarters), fPiOverTwo));
+	const __m128 xx = _mm_mul_ps(x, x);
+
+	// Evaluate the even polynomial for the upper part of the curve (((c8 x^2 + c6) x^2 + c4) x^2 + c2) x^2 + 1
+	__m128 y1 = s_sinCosCoeff8;
+	y1 = sse_AddMul_ps(s_sinCosCoeff6, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff4, y1, xx);
+	y1 = sse_AddMul_ps(s_sinCosCoeff2, y1, xx);
+	y1 = sse_AddMul_ps(F1111, y1, xx);
+
+	// Evaluate the odd polynomial for the lower part of the curve ((c7 x^2 + c5) x^2 + c3) x^3 + x
+	__m128 y2 = s_sinCosCoeff7;
+	y2 = sse_AddMul_ps(s_sinCosCoeff5, y2, xx);
+	y2 = sse_AddMul_ps(s_sinCosCoeff3, y2, xx);
+	y2 = _mm_mul_ps(y2, xx);
+	y2 = sse_AddMul_ps(x, x, y2);
+
+	// Use the poly mask to merge the polynomial results
+#if defined(FFTL_SSE4)
+	const __m128 vSin = _mm_blendv_ps(y2, y1, _mm_castsi128_ps(polyMask));
+	const __m128 vCos = _mm_blendv_ps(y1, y2, _mm_castsi128_ps(polyMask));
+#else
+	const __m128 temp = _mm_and_ps(_mm_xor_ps(y1, y2), _mm_castsi128_ps(polyMask));
+	const __m128 vSin = _mm_xor_ps(y2, temp);
+	const __m128 vCos = _mm_xor_ps(y1, temp);
+#endif
+	// Set the sign bit and store the result
+	s = _mm_xor_ps(vSin, _mm_castsi128_ps(sinSignBit));
+	c = _mm_xor_ps(vCos, _mm_castsi128_ps(cosSignBit));
 }
 
 
@@ -844,6 +1013,17 @@ FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<0, 0, 0, 0>(int)
 	return mask32x4(_mm_setzero_ps());
 }
 
+template<s32 i>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromInt()
+{
+	return mask32x4(_mm_castsi128_ps(_mm_set1_epi32(i)));
+}
+template<>
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromInt<0>()
+{
+	return mask32x4(_mm_setzero_ps());
+}
+
 
 FFTL_FORCEINLINE mask32x4 mask32x4::operator|(const mask32x4& b) const
 {
@@ -870,11 +1050,15 @@ template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator^(const T& b
 	return T(_mm_xor_ps(m_v, b.m_v));
 }
 
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const mask32x4& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const T& b)
 {
 	return T(_mm_andnot_ps(b.m_v, a.m_v));
 }
-template<typename T, typename> FFTL_FORCEINLINE T AndNot(const T& a, const mask32x4& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const mask32x4& a, const T& b)
+{
+	return T(_mm_andnot_ps(b.m_v, a.m_v));
+}
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const mask32x4& b)
 {
 	return T(_mm_andnot_ps(b.m_v, a.m_v));
 }

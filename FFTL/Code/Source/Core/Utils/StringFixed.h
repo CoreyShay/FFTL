@@ -38,8 +38,8 @@ public:
 		return *this;
 	}
 
-	FFTL_NODISCARD operator const char*() const { return this->data(); }
-	FFTL_NODISCARD operator char*() { return this->data(); }
+	[[nodiscard]] operator const char*() const { return this->data(); }
+	[[nodiscard]] operator char*() { return this->data(); }
 };
 
 #if defined(FFTL_WCHAR)
@@ -87,8 +87,8 @@ public:
 		return *this;
 	}
 
-	FFTL_NODISCARD operator const wchar_t*() const { return this->data(); }
-	FFTL_NODISCARD operator wchar_t*() { return this->data(); }
+	[[nodiscard]] operator const wchar_t*() const { return this->data(); }
+	[[nodiscard]] operator wchar_t*() { return this->data(); }
 };
 
 template <uint N>
@@ -98,8 +98,83 @@ template <uint N>
 using TStringFixed = StringFixed<N>;
 #endif
 
+
+template<size_t _BufferCount>
+inline int StringFormatV(char(&_Buffer)[_BufferCount], const char* _Format, va_list _ArgList)
+{
+#if defined(_MSC_VER)
+	return vsprintf_s(_Buffer, _Format, _ArgList);
+#else
+	return vsnprintf(_Buffer, _BufferCount, _Format, _ArgList);
+#endif
+}
+inline int StringFormatV(char* _Buffer, size_t _BufferCount, const char* _Format, va_list _ArgList)
+{
+#if defined(_MSC_VER)
+	return vsprintf_s(_Buffer, _BufferCount, _Format, _ArgList);
+#else
+	return vsnprintf(_Buffer, _BufferCount, _Format, _ArgList);
+#endif
+}
+template<size_t _BufferCount>
+inline int StringFormat(char(&_Buffer)[_BufferCount], const char* _Format, ...)
+{
+	va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int ret = StringFormatV(_Buffer, _Format, _ArgList);
+	va_end(_ArgList);
+	return ret;
+}
+inline int StringFormat(char* _Buffer, size_t _BufferCount, const char* _Format, ...)
+{
+	va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int ret = StringFormatV(_Buffer, _BufferCount, _Format, _ArgList);
+	va_end(_ArgList);
+	return ret;
+}
+
+#if defined(FFTL_WCHAR)
+
+template<size_t _BufferCount>
+inline int StringFormatV(wchar_t(&_Buffer)[_BufferCount], const wchar_t* _Format, va_list _ArgList)
+{
+#if defined(_MSC_VER)
+	return vswprintf_s(_Buffer, _Format, _ArgList);
+#else
+	return _vsnwprintf(_Buffer, _BufferCount, _Format, _ArgList);
+#endif
+}
+inline int StringFormatV(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _Format, va_list _ArgList)
+{
+#if defined(_MSC_VER)
+	return vswprintf_s(_Buffer, _BufferCount, _Format, _ArgList);
+#else
+	return _vsnwprintf(_Buffer, _BufferCount, _Format, _ArgList);
+#endif
+}
+template<size_t _BufferCount>
+inline int StringFormat(wchar_t(&_Buffer)[_BufferCount], const wchar_t* _Format, ...)
+{
+	va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int ret = StringFormatV(_Buffer, _Format, _ArgList);
+	va_end(_ArgList);
+	return ret;
+}
+inline int StringFormat(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _Format, ...)
+{
+	va_list _ArgList;
+	va_start(_ArgList, _Format);
+	int ret = StringFormatV(_Buffer, _BufferCount, _Format, _ArgList);
+	va_end(_ArgList);
+	return ret;
+}
+
+#endif // if defined(FFTL_WCHAR)
+
 /// default values recommended by http://isthe.com/chongo/tech/comp/fnv/
-FFTL_NODISCARD constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
+[[nodiscard]] constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
 {
 	//	Use 64 bit integers to prevent Warning C4307 '+': integral constant overflow with constant evaluated string literals
 	constexpr u64 PRIME = 0x01000193; //   16777619
@@ -107,7 +182,7 @@ FFTL_NODISCARD constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
 }
 
 /// hash a C-style string
-FFTL_NODISCARD constexpr u32 StringHash(const char* text, u32 uHash)
+[[nodiscard]] constexpr u32 StringHash(const char* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -120,14 +195,14 @@ FFTL_NODISCARD constexpr u32 StringHash(const char* text, u32 uHash)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-FFTL_NODISCARD constexpr u32 StringHash(const char* text)
+[[nodiscard]] constexpr u32 StringHash(const char* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);
 }
 
 #if defined(FFTL_WCHAR)
-FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text, u32 uHash)
+[[nodiscard]] constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -140,7 +215,7 @@ FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text)
+[[nodiscard]] constexpr u32 StringHash(const wchar_t* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);

@@ -65,6 +65,17 @@ FFTL_FORCEINLINE vecT<4>::vecT(const vecT<3>& xyz, f32 w)
 }
 
 template<uint N>
+FFTL_FORCEINLINE vecT<N> AndNot(const vecT<N>& a, const mask32x4& b)
+{
+	return vecT<N>{ AndNot(static_cast<const f32_4&>(a), b) };
+}
+template<uint N>
+FFTL_FORCEINLINE vecT<N> AndNot(const mask32x4& a, const vecT<N>& b)
+{
+	return vecT<N>{ AndNot(a, static_cast<const f32_4&>(b)) };
+}
+
+template<uint N>
 FFTL_FORCEINLINE vecT<N> vecT<N>::AddX(f32 f) const
 {
 	return Add<1, 0, 0, 0>(f);
@@ -481,36 +492,47 @@ FFTL_FORCEINLINE vecT<N> Blend(const mask32x4& msk, const vecT<N>& a, const vecT
 	return vecT<N>(Blend<f32_4>(msk, a, b));
 }
 
-template<uint M>
-FFTL_FORCEINLINE vecT<M> Sin(const vecT<M>& y)
+template<uint N>
+FFTL_FORCEINLINE vecT<N> Sin(const vecT<N>& r)
 {
-	vecT<M> s, c;
-	SinCos(y, s, c);
-	return s;
-}
-
-template<uint M>
-FFTL_FORCEINLINE vecT<M> Cos(const vecT<M>& y)
-{
-	vecT<M> s, c;
-	SinCos(y, s, c);
-	return c;
-}
-
-template<uint M>
-inline void SinCos(const vecT<M>& a, vecT<M>& s, vecT<M>& c)
-{
-#if defined(FFTL_SSE)
-	sse_SinCos(a.m_v, s.m_v, c.m_v);
-#elif defined(FFTL_ARM_NEON)
-	neon_SinCos(a.m_v, s.m_v, c.m_v);
+#if defined(FFTL_SIMD_F32x4) && defined(FFTL_SIMD_I32x4)
+	return vecT<N>(V4fSin(r.GetNative()));
 #else
-	for (uint i = 0; i < M; ++i)
+	vecT<N> y;
+	for (uint i = 0; i < N; ++i)
 	{
-		s.Ptr()[i] = Sin(a.Ptr()[i]);
-		c.Ptr()[i] = Cos(a.Ptr()[i]);
+		y.Ptr()[i] = Sin(r.Ptr()[i]);
 	}
-//	SinCos(a.m_v, s.m_v, c.m_v);
+	return r;
+#endif
+}
+
+template<uint N>
+FFTL_FORCEINLINE vecT<N> Cos(const vecT<N>& r)
+{
+#if defined(FFTL_SIMD_F32x4) && defined(FFTL_SIMD_I32x4)
+	return vecT<N>(V4fCos(r.GetNative()));
+#else
+	vecT<N> y;
+	for (uint i = 0; i < N; ++i)
+	{
+		y.Ptr()[i] = Cos(r.Ptr()[i]);
+	}
+	return y;
+#endif
+}
+
+template<uint N>
+FFTL_FORCEINLINE void SinCos(const vecT<N>& r, vecT<N>& s, vecT<N>& c)
+{
+#if defined(FFTL_SIMD_F32x4) && defined(FFTL_SIMD_I32x4)
+	V4fSinCos(r.GetNative(), s.GetNative(), c.GetNative());
+#else
+	for (uint i = 0; i < N; ++i)
+	{
+		s.Ptr()[i] = Sin(r.Ptr()[i]);
+		c.Ptr()[i] = Cos(r.Ptr()[i]);
+	}
 #endif
 }
 
