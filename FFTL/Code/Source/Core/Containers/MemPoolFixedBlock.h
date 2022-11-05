@@ -33,10 +33,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "../Platform/Atomic.h"
 #include "../Platform/Mutex.h"
-#include "../Utils/Casts.h"
+#include "../Utils/MetaProgramming.h"
 
 //	This totally works, but surprisingly, it appears that using mutexes performs slightly better, regardless of contention.
-//#define FFTL_FIXEDBLOCKPOOL_ATOMIC 1
+#define FFTL_FIXEDBLOCKPOOL_ATOMIC 1
 
 
 namespace FFTL
@@ -50,7 +50,7 @@ template <class _BaseType, uint _MaxCount, uint _AllocSize = sizeof(_BaseType)>
 class FixedBlockMemPoolStatic
 {
 public:
-	using size_type = typename std::conditional<_MaxCount <= 256, u8, typename std::conditional<_MaxCount <= 65536, u16, u32>::type>::type; // Ensures size_type is the smallest possible unsigned integer type
+	using size_type = typename std::conditional<_MaxCount < 256, u8, typename std::conditional<_MaxCount < 65536, u16, u32>::type>::type; // Ensures size_type is the smallest possible unsigned integer type
 	static constexpr size_type INDEX_USED_SIGNATURE = static_cast<size_type>(~0);
 
 	// Default constructor
@@ -67,14 +67,14 @@ public:
 
 #if defined(FFTL_ENABLE_PROFILING)
 		//	0xad will be the audio signature
-		memset(m_Pool, 0xad, _AllocSize * _MaxCount);
+		MemSet(m_Pool, 0xad, _AllocSize * _MaxCount);
 #endif
 	}
 
 	// PURPOSE: Gets a pointer to the next free memory space.
 	// RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-	template <class _InheritedType> 
-	[[nodiscard]] _InheritedType* AllocateObject()
+	template <class _InheritedType, typename... E>
+	FFTL_NODISCARD _InheritedType* Construct(E&& ...constructArgs)
 	{
 		static_assert(_AllocSize >= static_cast<uint>(sizeof(_InheritedType)), "_AllocSize must be at least as large as the inherited type");
 
@@ -90,34 +90,40 @@ public:
 			m_HighwaterMarkEntries = Max(m_HighwaterMarkEntries, usedCount);
 			m_TotalAllocs++;
 #endif
+			//	Call the constructor
+			::new (pType) _InheritedType(std::forward<E>(constructArgs)...);
+
 			return pType;
 		}
 		return nullptr;
 	}
 
-	//	These versions don't require template arguments
-	[[nodiscard]] _BaseType* AllocateObject() { return AllocateObject<_BaseType>(); }
+	template <typename... E>
+	FFTL_NODISCARD _BaseType* Construct(E&& ...constructArgs) { return Construct<_BaseType>(std::forward<E>(constructArgs)...); }
 
 	// PURPOSE: Marks the allocated space at the pointer location as free.
 	//			Does not call the object destructor.
 	// NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 	//			an instance more than once, or a pointer to an object outside the bounds of our array,
 	//			although there are some assertions to warn you if you might be.
-	template <class _InheritedType> void FreeObject(_InheritedType* pInstance)
+	template <class _InheritedType> void Free(_InheritedType* pInstance)
 	{
-		FFTL_ASSERT(pInstance <= GetEntry(_MaxCount - 1));
-		FFTL_ASSERT(pInstance >= GetEntry(0));
+		FFTL_ASSERT(IsContainedPointer(pInstance));
+
+		//	Call the destructor
+		pInstance->~_InheritedType();
+
 		size_type usedCount = m_NumUsedEntries;
 		FFTL_ASSERT(usedCount != 0);
 		if (usedCount != 0)
 		{
 			--usedCount;
 			FFTL_ASSERT(m_FreeIndexStack[usedCount] == INDEX_USED_SIGNATURE);
-			m_FreeIndexStack[usedCount] = GetObjectIndex(pInstance);
+			m_FreeIndexStack[usedCount] = GetIndex(pInstance);
 			m_NumUsedEntries = usedCount;
 #if defined(FFTL_ENABLE_PROFILING)
 			//	0xad will be the audio signature
-			memset(pInstance, 0xad, _AllocSize);
+			MemSet(pInstance, 0xad, _AllocSize);
 			m_TotalFrees++;
 #endif
 		}
@@ -127,47 +133,47 @@ public:
 	// Note that this only performs a range check to see if this is within
 	// our heap, because if this pointer has already been freed, it will still
 	// return true as long as it's within the heap bounds.
-	[[nodiscard]] bool IsContainedPointer(const void* pInstance) const
+	FFTL_NODISCARD bool IsContainedPointer(const void* pInstance) const
 	{
 		return ((const _BaseType*)pInstance >= GetEntry(0)) && ((const _BaseType*)pInstance <= GetEntry(_MaxCount - 1));
 	}
 
 	// RETURNS:	The index into the pool corresponding to the pointer location
-	[[nodiscard]] size_type GetObjectIndex(const _BaseType* pInstance) const
+	FFTL_NODISCARD size_type GetIndex(const _BaseType* pInstance) const
 	{
 		FFTL_ASSERT(IsContainedPointer(pInstance));
-		return size_type((tAllocStub*)pInstance - m_Pool);
+		return size_type((tAllocStub*)pInstance - m_Pool.data());
 	}
 
-	[[nodiscard]] static uint GetMaxCount()			{ return _MaxCount; }
-	[[nodiscard]] static uint GetHeapSize()			{ return _MaxCount*_AllocSize; }
-	[[nodiscard]] static uint GetAllocSize()		{ return _AllocSize; }
+	FFTL_NODISCARD static constexpr uint GetMaxCount()	{ return _MaxCount; }
+	FFTL_NODISCARD static constexpr uint GetHeapSize()	{ return _MaxCount*_AllocSize; }
+	FFTL_NODISCARD static constexpr uint GetAllocSize()	{ return _AllocSize; }
 
-	[[nodiscard]] bool GetIsFull() const			{ return m_NumUsedEntries == _MaxCount; }
-	[[nodiscard]] uint GetNumUsed() const			{ return m_NumUsedEntries; }
-	[[nodiscard]] uint GetNumAvailable() const		{ return _MaxCount - m_NumUsedEntries; }
-	[[nodiscard]] uint GetMemoryUsed() const		{ return m_NumUsedEntries*_AllocSize; }
-	[[nodiscard]] uint GetMemoryAvailable() const	{ return GetNumAvailable()*_AllocSize; }
+	FFTL_NODISCARD bool GetIsFull() const				{ return m_NumUsedEntries == _MaxCount; }
+	FFTL_NODISCARD uint GetNumUsed() const				{ return m_NumUsedEntries; }
+	FFTL_NODISCARD uint GetNumAvailable() const			{ return _MaxCount - m_NumUsedEntries; }
+	FFTL_NODISCARD uint GetMemoryUsed() const			{ return m_NumUsedEntries*_AllocSize; }
+	FFTL_NODISCARD uint GetMemoryAvailable() const		{ return GetNumAvailable()*_AllocSize; }
 
 #if defined(FFTL_ENABLE_PROFILING)
-	[[nodiscard]] size_type		GetHighwaterMarkEntries() const	{ return m_HighwaterMarkEntries; }
-	[[nodiscard]] u32			GetTotalAllocs() const			{ return m_TotalAllocs; }
-	[[nodiscard]] u32			GetTotalFrees() const			{ return m_TotalFrees; }
+	FFTL_NODISCARD size_type	GetHighwaterMarkEntries() const		{ return m_HighwaterMarkEntries; }
+	FFTL_NODISCARD u32			GetTotalAllocs() const				{ return m_TotalAllocs; }
+	FFTL_NODISCARD u32			GetTotalFrees() const				{ return m_TotalFrees; }
 #endif // defined(FFTL_ENABLE_PROFILING)
 
 protected:
+	FFTL_NODISCARD _BaseType*		GetEntry(uint i) { return reinterpret_cast<_BaseType*>(&m_Pool[i]); }
+	FFTL_NODISCARD const _BaseType*	GetEntry(uint i) const { return reinterpret_cast<const _BaseType*>(&m_Pool[i]); }
+
 	struct alignas(_BaseType) tAllocStub { byte m_Bytes[_AllocSize]; };
 
-	[[nodiscard]] _BaseType*		GetEntry(uint i)		{ return reinterpret_cast<_BaseType*>(&m_Pool[i]); }
-	[[nodiscard]] const _BaseType*	GetEntry(uint i) const	{ return reinterpret_cast<const _BaseType*>(&m_Pool[i]); }
-
-	tAllocStub						m_Pool[_MaxCount];
-	size_type						m_FreeIndexStack[_MaxCount];
-	size_type						m_NumUsedEntries = 0;
+	FixedArray<tAllocStub, _MaxCount>	m_Pool;
+	size_type							m_FreeIndexStack[_MaxCount];
+	size_type							m_NumUsedEntries = 0;
 #if defined(FFTL_ENABLE_PROFILING)
-	size_type						m_HighwaterMarkEntries = 0;
-	u32								m_TotalAllocs = 0;
-	u32								m_TotalFrees = 0;
+	size_type							m_HighwaterMarkEntries = 0;
+	u32									m_TotalAllocs = 0;
+	u32									m_TotalFrees = 0;
 #endif
 };
 
@@ -185,60 +191,71 @@ public:
 	FixedBlockMemPoolStatic_ThreadSafe()
 		: _Mybase()
 	{
-#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if FFTL_FIXEDBLOCKPOOL_ATOMIC
 		static_assert((_MaxCount & (_MaxCount - 1)) == 0, "_MaxCount must be a power of 2 for this lock-free method to work");
 #endif
 	}
 
 	// PURPOSE: Gets a pointer to the next free memory space.
 	// RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-	template <class _InheritedType>
-	[[nodiscard]] _InheritedType* AllocateObject()
+	template <class _InheritedType, typename... E>
+	FFTL_NODISCARD _InheritedType* Construct(E&& ...constructArgs)
 	{
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 		MutexScopedLock lock(&m_Mutex);
-		return _Mybase::template AllocateObject<_InheritedType>();
+		return _Mybase::template Construct<_InheritedType>(std::forward<E>(constructArgs)...);
 #else
 		static_assert(_AllocSize >= static_cast<uint>(sizeof(_InheritedType)), "_AllocSize must be at least as large as the inherited type");
 
-		const size_type usedCount = AtomicIncrementUnless<size_type>(&this->m_NumUsedEntries, _MaxCount) + 1;
-		if (usedCount != _MaxCount)
+		_InheritedType *pType = nullptr;
+
+		//	Increment the used count atomically but only if the pool isn't or has become full.
+		size_type usedCount = AtomicLoad(&this->m_NumUsedEntries);
+		do FFTL_UNLIKELY
 		{
-#if defined(FFTL_ENABLE_PROFILING)
-			AtomicCompareExchange<size_type>(&this->m_HighwaterMarkEntries, usedCount, usedCount + 1);
-			AtomicIncrement(&this->m_TotalAllocs);
-#endif // defined(FFTL_ENABLE_PROFILING)
-
-_RESTART_ADD:
-			//	Increment the head index of the queue
-			const size_type stackIndex = (AtomicIncrement(&this->m_HeadIndex) + 1) & (_MaxCount - 1);
-//			FFTL_ASSERT(stackIndex != (this->m_TailIndex & (_MaxCount - 1)) || usedCount == 0);
-
-			//	Mark this one as used and signal FreeObject to continue if it was waiting on this index
-			volatile size_type* pOldEntryIndex = this->m_FreeIndexStack + stackIndex;
-
-			//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
-			// around us, we can just retry getting the stack index.
-			const size_type entryIndex = AtomicExchange(pOldEntryIndex, INDEX_USED_SIGNATURE);
-			if (entryIndex == INDEX_USED_SIGNATURE) FFTL_UNLIKELY
+			FFTL_ASSERT(usedCount <= _MaxCount);
+			if (usedCount == _MaxCount) FFTL_UNLIKELY
 			{
-#if defined(FFTL_ENABLE_PROFILING)
-				AtomicIncrement(&this->m_CollisionCount);
-#endif // defined(FFTL_ENABLE_PROFILING)
-				goto _RESTART_ADD;
+				//	If the pool is full, return early
+				return pType;
 			}
+		} while (![&]()
+			{
+				const bool ret = AtomicCompareExchangeWeakRef<size_type>(&this->m_NumUsedEntries, usedCount + 1u, usedCount);
+#	if defined(FFTL_ENABLE_PROFILING)
+				if (!ret)
+					AtomicIncrement(&this->m_UsedCollisionCount);
+#	endif
+				return ret;
+			}());
 
-			FFTL_ASSERT(stackIndex < _MaxCount);
-			FFTL_ASSERT(entryIndex < _MaxCount);
-			_InheritedType* pType = static_cast<_InheritedType*>(this->GetEntry(entryIndex));
-			return pType;
+		//	Atomically mark this stack entry as used so that any concurrent free operation will spin before overwriting it.
+		size_type pointerIndex;
+		while ((pointerIndex = AtomicExchange(&this->m_FreeIndexStack[usedCount], INDEX_USED_SIGNATURE)) == INDEX_USED_SIGNATURE) FFTL_UNLIKELY
+		{
+#	if defined(FFTL_ENABLE_PROFILING)
+			AtomicIncrement(&this->m_EntryCollisionCount);
+#	endif
 		}
-		return nullptr;
+
+		pType = this->GetEntry(pointerIndex);
+
+#	if defined(FFTL_ENABLE_PROFILING)
+		for (size_type highWaterMark = AtomicLoad(&this->m_HighwaterMarkEntries); highWaterMark < usedCount + 1u && AtomicCompareExchangeWeakRef<size_type>(&this->m_HighwaterMarkEntries, usedCount + 1u, highWaterMark);)
+		{
+		}
+		AtomicIncrement(&this->m_TotalAllocs);
+#	endif
+
+		//	Call the constructor
+		::new (pType) _InheritedType(std::forward<E>(constructArgs)...);
+
+		return pType;
 #endif
 	}
 
-	//	These versions don't require template arguments
-	[[nodiscard]] _BaseType* AllocateObject() { return AllocateObject<_BaseType>(); }
+	template <typename... E>
+	FFTL_NODISCARD _BaseType* Construct(E&& ...constructArgs) { return Construct<_BaseType>(std::forward<E>(constructArgs)...); }
 
 	// PURPOSE: Marks the allocated space at the pointer location as free.
 	//			Does not call the object destructor.
@@ -246,65 +263,65 @@ _RESTART_ADD:
 	//			an instance more than once, or a pointer to an object outside the bounds of our array,
 	//			although there are some assertions to warn you if you might be.
 	template <class _InheritedType>
-	void FreeObject(_InheritedType* pInstance)
+	void Free(_InheritedType* pInstance)
 	{
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 		MutexScopedLock lock(&m_Mutex);
-		_Mybase::FreeObject(pInstance);
+		_Mybase::Free(pInstance);
 #else
-#if defined(FFTL_ENABLE_PROFILING)
-		//	0xad will be the audio clearing signature
-		memset(pInstance, 0xad, _AllocSize);
-#endif
-		FFTL_ASSERT(static_cast<void*>(pInstance) <= static_cast<void*>(this->GetEntry(_MaxCount - 1)));
-		FFTL_ASSERT(static_cast<void*>(pInstance) >= static_cast<void*>(this->GetEntry(0)));
+		FFTL_ASSERT(this->IsContainedPointer(pInstance));
+		FFTL_ASSERT(AtomicLoad(&this->m_NumUsedEntries) > 0);
 
-#if defined(FFTL_ENABLE_PROFILING)
-		AtomicIncrement(&this->m_TotalFrees);
-#endif // defined(FFTL_ENABLE_PROFILING)
+		//	Call the destructor
+		pInstance->~_InheritedType();
 
-_RESTART_ADD:
-		//	Increment the tail index of the queue
-		const size_type stackIndex = (AtomicIncrement(&this->m_TailIndex) + 1) & (_MaxCount - 1);
-		const size_type blockIndex = this->GetObjectIndex(pInstance);
-		volatile size_type* pEntryIndex = this->m_FreeIndexStack + stackIndex;
-
-		//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
-		// around us, we can just retry getting the stack index.
-		if (AtomicCompareExchange(pEntryIndex, INDEX_USED_SIGNATURE, blockIndex) != blockIndex) FFTL_UNLIKELY
+		if constexpr (FFTL_USING_ASSERTS)
 		{
-#if defined(FFTL_ENABLE_PROFILING)
-			AtomicIncrement(&this->m_CollisionCount);
-#endif
-			goto _RESTART_ADD;
+			//	0xad will be the audio signature
+			MemSet(pInstance, 0xad, _AllocSize);
 		}
 
-		//	Decrement the used entries atomically
-		const size_type usedCount = AtomicDecrement(&this->m_NumUsedEntries);
-		FFTL_ASSERT(usedCount != 0);
-		(void)usedCount;
+		const size_type ptrIndex = this->GetIndex(pInstance);
+
+		//	Atomic decrement
+		const size_type usedCount = AtomicDecrement(&this->m_NumUsedEntries) - 1;
+
+		//	Catastrophic assert
+		FFTL_ASSERT(usedCount < _MaxCount);
+
+		//	Atomically spin if a concurrent allocate operation hasn't yet marked this stack entry as used.
+		while (AtomicCompareExchangeWeak(&this->m_FreeIndexStack[usedCount], ptrIndex, INDEX_USED_SIGNATURE) != INDEX_USED_SIGNATURE) FFTL_UNLIKELY
+		{
+#	if defined(FFTL_ENABLE_PROFILING)
+			AtomicIncrement(&this->m_EntryCollisionCount);
+#	endif
+		}
+
+#	if defined(FFTL_ENABLE_PROFILING)
+		AtomicIncrement(&this->m_TotalFrees);
+#	endif
+
 #endif
 	}
 
 
 #if defined(FFTL_ENABLE_PROFILING)
-#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
-	[[nodiscard]] u32							GetCollisionCount() const	{ return m_CollisionCount; }
-#else
-	[[nodiscard]] static u32					GetCollisionCount()			{ return 0; }
-#endif
+#	if FFTL_FIXEDBLOCKPOOL_ATOMIC
+	FFTL_NODISCARD u32					GetUsedCollisionCount() const	{ return m_UsedCollisionCount; }
+	FFTL_NODISCARD u32					GetEntryCollisionCount() const	{ return m_EntryCollisionCount; }
+#	else
+	FFTL_NODISCARD static constexpr u32	GetUsedCollisionCount()			{ return 0; }
+	FFTL_NODISCARD static constexpr u32	GetEntryCollisionCount()		{ return 0; }
+#	endif
 #endif // defined(FFTL_ENABLE_PROFILING)
 
 private:
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 	Mutex						m_Mutex;
-#else
-	size_type					m_HeadIndex = 0;
-	size_type					m_TailIndex = 0;
-#if defined(FFTL_ENABLE_PROFILING)
-	u32							m_CollisionCount = 0;
-#endif // defined(FFTL_ENABLE_PROFILING)
-#endif // !FFTL_FIXEDBLOCKPOOL_ATOMIC
+#elif defined(FFTL_ENABLE_PROFILING)
+	u32							m_UsedCollisionCount = 0;
+	u32							m_EntryCollisionCount = 0;
+#endif
 };
 
 
@@ -361,14 +378,14 @@ public:
 
 	// PURPOSE: Gets a pointer to the next free memory space.
 	// RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-	[[nodiscard]] void* AllocateObject();
+	FFTL_NODISCARD void* Allocate();
 
 	// PURPOSE: Marks the allocated space at the pointer location as free.
 	//			Does not call the object destructor.
 	// NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 	//			an instance more than once, or a pointer to an object outside the bounds of our array,
 	//			although there are some assertions to warn you if you might be.
-	void FreeObject(void* pInstance);
+	void Free(void* pInstance);
 
 	// RETURNS:	True if this is a valid heap pointer owned by this heap.
 	// Note that this only performs a range check to see if this is within
@@ -380,31 +397,31 @@ public:
 	}
 
 	// RETURNS:	The index into the pool corresponding to the pointer location
-	[[nodiscard]] size_type GetObjectIndex(const void* pInstance)
+	FFTL_NODISCARD size_type GetIndex(const void* pInstance)
 	{
 		FFTL_ASSERT(IsContainedPointer(pInstance));
 		return size_type( ((byte*)pInstance - m_Pool) / _AllocSize );
 	}
 
-	[[nodiscard]] size_type	GetMaxCount()					{ return _MaxCount; }
-	[[nodiscard]] size_type	GetHeapSize()					{ return _MaxCount * _AllocSize; }
-	[[nodiscard]] size_type	GetAllocSize()					{ return _AllocSize; }
+	FFTL_NODISCARD size_type	GetMaxCount()					{ return _MaxCount; }
+	FFTL_NODISCARD size_type	GetHeapSize()					{ return _MaxCount * _AllocSize; }
+	FFTL_NODISCARD size_type	GetAllocSize()					{ return _AllocSize; }
 
-	[[nodiscard]] bool		GetIsFull() const				{ return m_NumUsedEntries == _MaxCount; }
-	[[nodiscard]] size_type	GetNumUsed() const				{ return m_NumUsedEntries; }
-	[[nodiscard]] size_type	GetNumAvailable() const			{ return _MaxCount - m_NumUsedEntries; }
-	[[nodiscard]] uint		GetMemoryUsed() const			{ return m_NumUsedEntries * _AllocSize; }
-	[[nodiscard]] uint		GetMemoryAvailable() const		{ return GetNumAvailable() * _AllocSize; }
+	FFTL_NODISCARD bool			GetIsFull() const				{ return m_NumUsedEntries == _MaxCount; }
+	FFTL_NODISCARD size_type	GetNumUsed() const				{ return m_NumUsedEntries; }
+	FFTL_NODISCARD size_type	GetNumAvailable() const			{ return _MaxCount - m_NumUsedEntries; }
+	FFTL_NODISCARD uint			GetMemoryUsed() const			{ return m_NumUsedEntries * _AllocSize; }
+	FFTL_NODISCARD uint			GetMemoryAvailable() const		{ return GetNumAvailable() * _AllocSize; }
 
 #if defined(FFTL_ENABLE_PROFILING)
-	[[nodiscard]] size_type	GetHighwaterMarkEntries() const	{ return m_HighwaterMarkEntries; }
-	[[nodiscard]] u32		GetTotalAllocs() const			{ return m_TotalAllocs; }
-	[[nodiscard]] u32		GetTotalFrees() const			{ return m_TotalFrees; }
+	FFTL_NODISCARD size_type	GetHighwaterMarkEntries() const	{ return m_HighwaterMarkEntries; }
+	FFTL_NODISCARD u32			GetTotalAllocs() const			{ return m_TotalAllocs; }
+	FFTL_NODISCARD u32			GetTotalFrees() const			{ return m_TotalFrees; }
 #endif // defined(FFTL_ENABLE_PROFILING)
 
 protected:
-	[[nodiscard]] void*			GetEntry(size_type i)		{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i * _AllocSize]; }
-	[[nodiscard]] const void*	GetEntry(size_type i) const	{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i * _AllocSize]; }
+	FFTL_NODISCARD void*		GetEntry(size_type i)		{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i * _AllocSize]; }
+	FFTL_NODISCARD const void*	GetEntry(size_type i) const	{ FFTL_ASSERT(i < _MaxCount); return &m_Pool[i * _AllocSize]; }
 
 	byte*			m_Pool = nullptr;
 	size_type*		m_FreeIndexStack = nullptr;
@@ -421,7 +438,7 @@ protected:
 
 
 //	This version contains a mutex which it locks for allocations and frees.
-class [[nodiscard]] FixedBlockMemPool_ThreadSafe : public FixedBlockMemPool
+class FFTL_NODISCARD FixedBlockMemPool_ThreadSafe : public FixedBlockMemPool
 {
 public:
 	typedef FixedBlockMemPool_ThreadSafe _Myclass;
@@ -464,33 +481,32 @@ public:
 
 	// PURPOSE: Gets a pointer to the next free memory space.
 	// RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-	void* AllocateObject();
+	void* Allocate();
 
 	// PURPOSE: Marks the allocated space at the pointer location as free.
 	//			Does not call the object destructor.
 	// NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 	//			an instance more than once, or a pointer to an object outside the bounds of our array,
 	//			although there are some assertions to warn you if you might be.
-	void FreeObject(void* pInstance);
+	void Free(void* pInstance);
 
 #if defined(FFTL_ENABLE_PROFILING)
-#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
-	[[nodiscard]] u32	GetCollisionCount() const	{ return m_CollisionCount; }
-#else
-	[[nodiscard]] static u32	GetCollisionCount()	{ return 0; }
-#endif
+#	if FFTL_FIXEDBLOCKPOOL_ATOMIC
+	FFTL_NODISCARD u32					GetUsedCollisionCount() const	{ return m_UsedCollisionCount; }
+	FFTL_NODISCARD u32					GetEntryCollisionCount() const	{ return m_EntryCollisionCount; }
+#	else
+	FFTL_NODISCARD static constexpr u32	GetUsedCollisionCount()			{ return 0; }
+	FFTL_NODISCARD static constexpr u32	GetEntryCollisionCount()		{ return 0; }
+#	endif
 #endif // defined(FFTL_ENABLE_PROFILING)
 
 private:
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 	Mutex						m_Mutex;
-#else
-	size_type					m_HeadIndex = 0;
-	size_type					m_TailIndex = 0;
-#if defined(FFTL_ENABLE_PROFILING)
-	u32							m_CollisionCount = 0;
-#endif // defined(FFTL_ENABLE_PROFILING)
-#endif // !FFTL_FIXEDBLOCKPOOL_ATOMIC
+#elif defined(FFTL_ENABLE_PROFILING)
+	u32							m_UsedCollisionCount = 0;
+	u32							m_EntryCollisionCount = 0;
+#endif
 };
 
 
@@ -518,11 +534,11 @@ public:
 		}
 	}
 
-	[[nodiscard]] static uint GetMaxCount() { return _MaxCount; }
-	[[nodiscard]] uint GetNumUsedEntries() const { return m_NumUsedEntries; }
+	FFTL_NODISCARD static constexpr uint GetMaxCount() { return _MaxCount; }
+	FFTL_NODISCARD uint GetNumUsedEntries() const { return m_NumUsedEntries; }
 
 	// RETURN : the pointer to the next free entry, or nullptr if all are in use
-	[[nodiscard]] T* GetFreeInstance()
+	FFTL_NODISCARD T* GetFreeInstance()
 	{
 		if (m_NumUsedEntries != _MaxCount)
 		{
@@ -551,12 +567,12 @@ public:
 	}
 
 	// PURPOSE: Useful when you want to take control of the contained objects directly
-	[[nodiscard]] T& operator[](uint uIndex)
+	FFTL_NODISCARD T& operator[](uint uIndex)
 	{
 		FFTL_ASSERT(uIndex < m_NumUsedEntries);
 		return m_Pool[ m_FreeIndexStack[uIndex] ];
 	}
-	[[nodiscard]] const T& operator[](uint uIndex) const
+	FFTL_NODISCARD const T& operator[](uint uIndex) const
 	{
 		FFTL_ASSERT(uIndex < m_NumUsedEntries);
 		return m_Pool[m_FreeIndexStack[uIndex]];

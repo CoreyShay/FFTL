@@ -1,10 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug'">
-    <Import Project="Debug_Orbis.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release'">
-    <Import Project="Release_Orbis.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Common.props" />
   </ImportGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -12,7 +9,7 @@
       <ExtraWarnings>true</ExtraWarnings>
       <Warnings>MoreWarnings</Warnings>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DisableSpecificWarnings>invalid-offsetof</DisableSpecificWarnings>
+      <DisableSpecificWarnings>invalid-offsetof;bitwise-instead-of-logical</DisableSpecificWarnings>
       <FastMath>true</FastMath>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PreprocessorDefinitions>FFTL_ASSUME_SSE3=1;FFTL_ASSUME_SSE4=1;FFTL_ASSUME_AVX=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -20,6 +17,28 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>-lScePosix_stub_weak;-lSceSysmodule_stub_weak;-lSceAudioOut_stub_weak;-lSceAudio3d_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <LinkTimeOptimization>false</LinkTimeOptimization>
+      <OptimizationLevel>Level0</OptimizationLevel>
+      <NoStrictAliasing>false</NoStrictAliasing>
+      <UnrollLoops>false</UnrollLoops>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Profile'">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <OptimizationLevel>Level3</OptimizationLevel>
+      <NoStrictAliasing>true</NoStrictAliasing>
+      <UnrollLoops>true</UnrollLoops>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
+    </ClCompile>
+    <Link>
+      <DataStripping>StripFuncsAndData</DataStripping>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
 </Project>

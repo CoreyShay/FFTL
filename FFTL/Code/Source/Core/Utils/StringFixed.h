@@ -38,8 +38,8 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] operator const char*() const { return this->data(); }
-	[[nodiscard]] operator char*() { return this->data(); }
+	FFTL_NODISCARD operator const char*() const { return this->data(); }
+	FFTL_NODISCARD operator char*() { return this->data(); }
 };
 
 #if defined(FFTL_WCHAR)
@@ -87,8 +87,8 @@ public:
 		return *this;
 	}
 
-	[[nodiscard]] operator const wchar_t*() const { return this->data(); }
-	[[nodiscard]] operator wchar_t*() { return this->data(); }
+	FFTL_NODISCARD operator const wchar_t*() const { return this->data(); }
+	FFTL_NODISCARD operator wchar_t*() { return this->data(); }
 };
 
 template <uint N>
@@ -174,7 +174,7 @@ inline int StringFormat(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _F
 #endif // if defined(FFTL_WCHAR)
 
 /// default values recommended by http://isthe.com/chongo/tech/comp/fnv/
-[[nodiscard]] constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
+FFTL_NODISCARD constexpr u32 StringHash(uint oneChar, u32 hash = 0x01000193)
 {
 	//	Use 64 bit integers to prevent Warning C4307 '+': integral constant overflow with constant evaluated string literals
 	constexpr u64 PRIME = 0x01000193; //   16777619
@@ -182,7 +182,7 @@ inline int StringFormat(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _F
 }
 
 /// hash a C-style string
-[[nodiscard]] constexpr u32 StringHash(const char* text, u32 uHash)
+FFTL_NODISCARD constexpr u32 StringHash(const char* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -195,14 +195,14 @@ inline int StringFormat(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _F
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-[[nodiscard]] constexpr u32 StringHash(const char* text)
+FFTL_NODISCARD constexpr u32 StringHash(const char* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);
 }
 
 #if defined(FFTL_WCHAR)
-[[nodiscard]] constexpr u32 StringHash(const wchar_t* text, u32 uHash)
+FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text, u32 uHash)
 {
 	FFTL_ASSERT(text);
 
@@ -215,7 +215,7 @@ inline int StringFormat(wchar_t* _Buffer, size_t _BufferCount, const wchar_t* _F
 		uHash = StringHash(static_cast<uint>(*text++), uHash);
 	return uHash;
 }
-[[nodiscard]] constexpr u32 StringHash(const wchar_t* text)
+FFTL_NODISCARD constexpr u32 StringHash(const wchar_t* text)
 {
 	constexpr u32 uHash = 0x01000193;
 	return StringHash(text, uHash);

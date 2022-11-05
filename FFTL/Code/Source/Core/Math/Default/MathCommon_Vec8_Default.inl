@@ -461,27 +461,27 @@ FFTL_FORCEINLINE f32_8 f32_8::operator^(const mask32x8& b) const
 
 FFTL_FORCEINLINE mask32x8 CmpEq(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpEq(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpEq(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpEq(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpEq(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 FFTL_FORCEINLINE mask32x8 CmpNe(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpNe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpNe(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpNe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpNe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 FFTL_FORCEINLINE mask32x8 CmpLt(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpLt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLt(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpLt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLt(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 FFTL_FORCEINLINE mask32x8 CmpLe(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpLe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLe(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpLe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 FFTL_FORCEINLINE mask32x8 CmpGt(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpGt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGt(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpGt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGt(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 FFTL_FORCEINLINE mask32x8 CmpGe(f32_8_In a, f32_8_In b)
 {
-	return mask32x8{ CmpGe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGe(a.m_v.b, b.m_v.b) };
+	return mask32x8{ CmpGe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
 }
 
 template<typename T, bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>

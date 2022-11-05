@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define _FFTL_FFT_INL
 
 #include "../Platform/Log.h"
-#include "../Utils/Casts.h"
+#include "../Utils/MetaProgramming.h"
 #include "../Utils/StdFunctions.h"
 
 #ifdef _MSC_VER
@@ -148,7 +148,7 @@ constexpr FFT_TwiddlesContainer<TWIDDLE_TYPE, M, T>::FFT_TwiddlesContainer()
 template <uint M, typename T_BR>
 constexpr FFT_BitreverseContainer<M, T_BR>::FFT_BitreverseContainer()
 {
-	//	Pre-compute bit-reveral indices
+	//	Pre-compute bit-reversal indices
 	for (uint i = 0; i < N; ++i)
 	{
 		const T_BR n = safestatic_cast<T_BR>(i);
@@ -372,7 +372,7 @@ void FFT_Base<M, T, T_Twiddle>::WindowCoefficients::Compute(enFftWindowType wind
 	case kWindowBlackman:
 	{
 		for (uint n = 0; n < uWidth; ++n)
-			m_C[n] = T_Twiddle(0.42 - 0.50 * Cos(2.0*PI_64*n / (uWidth - 1)) + 0.08 * Cos(4.0 * PI_64 * n / (uWidth - 1)));
+			m_C[n] = T_Twiddle(0.42 - 0.50 * Cos(2.0 * PI_64 * n / (uWidth - 1)) + 0.08 * Cos(4.0 * PI_64 * n / (uWidth - 1)));
 	}
 	break;
 	case kWindowVorbis:
@@ -981,8 +981,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<T, N>&
 {
 	Transform_Stage0_BR(fInR, fInI, fOutR, fOutI);
 
-	//	Invoke the main transform function
-	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
+	//	Invoke the main transform functions for each stage
+	constexpr_for<1, M, +1>([&](auto STAGE)
+	{
+		Transform_Main_DIT<STAGE>(fOutR, fOutI);
+	});
 }
 
 template <uint M>
@@ -990,8 +993,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward(const FixedArray<cxT, N
 {
 	Transform_Stage0_BR(cxInput, fOutR, fOutI);
 
-	//	Invoke the main transform function
-	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
+	//	Invoke the main transform functions for each stage
+	constexpr_for<1, M, +1>([&](auto STAGE)
+	{
+		Transform_Main_DIT<STAGE>(fOutR, fOutI);
+	});
 }
 
 template <uint M>
@@ -999,8 +1005,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_1stHalf(const FixedArra
 {
 	Transform_Stage0_BR_1stHalf(cxInput, fOutR, fOutI);
 
-	//	Invoke the main transform function
-	Transform_Main_DIT<M - 1, 1>(fOutR, fOutI);
+	//	Invoke the main transform functions for each stage
+	constexpr_for<1, M, +1>([&](auto STAGE)
+	{
+		Transform_Main_DIT<STAGE>(fOutR, fOutI);
+	});
 }
 
 template <uint M>
@@ -1032,15 +1041,22 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>&
 template <uint M>
 FFTL_COND_INLINE void FFT<M, f32, f32>::TransformForward_InPlace_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
-	Transform_Main_DIF<0, M - 1>(fOutR, fOutI);
+	//	Invoke the main transform functions for each stage
+	constexpr_for<M - 1, -1, -1>([&](auto STAGE)
+	{
+		Transform_Main_DIF<STAGE>(fOutR, fOutI);
+	});
 }
 
 template <uint M>
 FFTL_COND_INLINE void FFT<M, f32, f32>::TransformInverse_InPlace_DIT(FixedArray<T, N>& fInOutR, FixedArray<T, N>& fInOutI)
 {
-	//	Invoke the main transform function
-	//	Swap the real and imaginary parts.
-	Transform_Main_DIT<M - 1, 0>(fInOutI, fInOutR);
+	//	Invoke the main transform functions for each stage.
+	// Swap the real and imaginary parts.
+	constexpr_for<0, M, +1>([&](auto STAGE)
+	{
+		Transform_Main_DIT<STAGE>(fInOutI, fInOutR);
+	});
 }
 
 template <uint M>
@@ -1193,15 +1209,9 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedA
 }
 
 template <uint M>
-template <uint STAGE_CURRENT, uint STAGE_BEGIN>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
+template <uint STAGE_CURRENT>
+void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI)
 {
-	//	Complete all the first stages first. This is effectively a template for loop.
-	if constexpr (STAGE_CURRENT > STAGE_BEGIN)
-	{
-		Transform_Main_DIT<STAGE_CURRENT - 1, STAGE_BEGIN>(fOutR, fOutI);
-	}
-
 	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
 	constexpr uint nStageExp_2 = nStageExp >> 1;
 
@@ -1346,15 +1356,9 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOu
 }
 
 template <uint M>
-template <uint STAGE_CURRENT, uint STAGE_BEGIN>
+template <uint STAGE_CURRENT>
 FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOutR, FixedArray<T, N>& fOutI) // forced inline to eliminate recursion
 {
-	//	Complete all the first stages first. This is effectively a template for loop.
-	if constexpr (STAGE_CURRENT < STAGE_BEGIN)
-	{
-		Transform_Main_DIF<STAGE_CURRENT + 1, STAGE_BEGIN>(fOutR, fOutI);
-	}
-
 	constexpr uint nStageExp = 1 << (STAGE_CURRENT + 1);
 	constexpr uint nStageExp_2 = nStageExp >> 1;
 
@@ -2296,18 +2300,18 @@ Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolver()
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArray_FD, size_t kernelArraySize)
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fOutput, const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArray_FD, size_t kernelArraySize)
 {
-	ConvolveInitial_FirstStage(fInOutput, pKernelArray_FD, kernelArraySize);
-	ConvolveInitial_LastStage(fInOutput);
+	ConvolveInitial_FirstStage(fInput, pKernelArray_FD, kernelArraySize);
+	ConvolveInitial_LastStage(fOutput);
 	ConvolveResumePartial(pKernelArray_FD, kernelArraySize, Max(kernelArraySize, m_LeftoverKernelCount));
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fInOutput, const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB)
+void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T, N>& fOutput, const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB)
 {
-	ConvolveInitial_FirstStage(fInOutput, pKernelArrayA_FD, kernelArraySizeA, fGainA, pKernelArrayB_FD, kernelArraySizeB, fGainB);
-	ConvolveInitial_LastStage(fInOutput);
+	ConvolveInitial_FirstStage(fInput, pKernelArrayA_FD, kernelArraySizeA, fGainA, pKernelArrayB_FD, kernelArraySizeB, fGainB);
+	ConvolveInitial_LastStage(fOutput);
 	ConvolveResumePartial(pKernelArrayA_FD, kernelArraySizeA, fGainA, pKernelArrayB_FD, kernelArraySizeB, fGainB, Max(Max(kernelArraySizeA, kernelArraySizeB), m_LeftoverKernelCount) );
 }
 
@@ -2315,6 +2319,8 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(FixedArray_Aligned32<T,
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveInitial_FirstStage(const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArray_FD, size_t kernelArraySize)
 {
+	FFTL_ASSERT_MSG(kernelArraySize <= T_MAX_KERNELS, "Hitting this assert means a likely crash later in ConvolveResumePartial.");
+
 	m_bConvolutionFrameComplete = false;
 	m_LeftoverKernelCount = safestatic_cast<u32>(Max(m_LeftoverKernelCount, kernelArraySize));
 
@@ -2360,6 +2366,9 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveInitial_FirstStage(const
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
 void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveInitial_FirstStage(const FixedArray_Aligned32<T, N>& fInput, const Kernel* pKernelArrayA_FD, size_t kernelArraySizeA, T fGainA, const Kernel* pKernelArrayB_FD, size_t kernelArraySizeB, T fGainB)
 {
+	FFTL_ASSERT_MSG(kernelArraySizeA <= T_MAX_KERNELS, "Hitting this assert means a likely crash later in ConvolveResumePartial.");
+	FFTL_ASSERT_MSG(kernelArraySizeB <= T_MAX_KERNELS, "Hitting this assert means a likely crash later in ConvolveResumePartial.");
+
 	const size_t maxNewKernelCount = Max(kernelArraySizeA, kernelArraySizeB);
 	const size_t minNewKernelCount = Min(kernelArraySizeA, kernelArraySizeB);
 
@@ -2974,9 +2983,9 @@ uint ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::InitKernel(T* pKernelOutput_FD,
 }
 
 template <uint M, size_t T_MAX_KERNELS, typename T, typename T_Twiddle>
-void ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(T* fInOutput, const T* pKernelArray_FD, size_t kernelArraySize)
+void ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(T* fOutput, const T* fInput, const T* pKernelArray_FD, size_t kernelArraySize)
 {
-	return BaseConvolver::Convolve(*reinterpret_cast<FixedArray_Aligned32<T, BaseConvolver::N>*>(fInOutput), reinterpret_cast<const typename BaseConvolver::Kernel*>(pKernelArray_FD), kernelArraySize);
+	return BaseConvolver::Convolve(*reinterpret_cast<FixedArray_Aligned32<T, BaseConvolver::N>*>(fOutput), *reinterpret_cast<const FixedArray_Aligned32<T, BaseConvolver::N>*>(fInput), reinterpret_cast<const typename BaseConvolver::Kernel*>(pKernelArray_FD), kernelArraySize);
 }
 
 
@@ -2984,7 +2993,7 @@ void ConvolverV<M, T_MAX_KERNELS, T, T_Twiddle>::Convolve(T* fInOutput, const T*
 
 
 template <typename T, uint T_N, uint T_KERNEL_LENGTH>
-void Convolver_Slow<T, T_N, T_KERNEL_LENGTH>::Convolve(const FixedArray<T, T_N>& fInput, FixedArray<T, T_N>& fOutput)
+void Convolver_Slow<T, T_N, T_KERNEL_LENGTH>::Convolve(FixedArray<T, T_N>& fOutput, const FixedArray<T, T_N> &fInput)
 {
 	memmove(&m_AccumulationBuffer, &m_AccumulationBuffer[T_N], sizeof(T)*T_KERNEL_LENGTH);
 	MemZero(&m_AccumulationBuffer[T_KERNEL_LENGTH], T_N);

@@ -1105,6 +1105,31 @@ FFTL_FORCEINLINE mask32x4 CmpGe(f32_4_In a, f32_4_In b)
 	return mask32x4(_mm_cmpge_ps(a.m_v, b.m_v));
 }
 
+FFTL_FORCEINLINE mask32x4 CmpEq(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmpeq_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpNe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmpneq_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpLt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmplt_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpLe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmple_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmpgt_ps(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(_mm_cmpge_ps(a.m_v, b.m_v));
+}
+
 template<typename T, bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
 {

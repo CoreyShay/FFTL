@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "Core\Core.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
 EndProject
@@ -24,16 +24,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FFTL_Test_Orbis", "FFTL_Test\Orbis\FFTL_Test_Orbis.vcxproj", "{483E139F-AAD9-4DE1-8873-1814F452769D}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		FFTL_Test\FFTL_Test.vcxitems*{0f04ae99-3065-4fc3-bd41-b6d703258a2c}*SharedItemsImports = 9
-		Core\Core.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
-		Core\Core.vcxitems*{483e139f-aad9-4de1-8873-1814f452769d}*SharedItemsImports = 4
-		FFTL_Test\FFTL_Test.vcxitems*{483e139f-aad9-4de1-8873-1814f452769d}*SharedItemsImports = 4
-		Core\Core.vcxitems*{5f43a53e-b7b5-4b05-aa1c-20bbf546e15c}*SharedItemsImports = 4
-		FFTL_Test\FFTL_Test.vcxitems*{5f43a53e-b7b5-4b05-aa1c-20bbf546e15c}*SharedItemsImports = 4
-		Core\Core.vcxitems*{ba91c664-4374-4a3a-8523-8fb83e27bf68}*SharedItemsImports = 4
-		FFTL_Test\FFTL_Test.vcxitems*{ba91c664-4374-4a3a-8523-8fb83e27bf68}*SharedItemsImports = 4
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
 		Debug|ARM64 = Debug|ARM64
@@ -135,5 +125,14 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {99740D4E-F06B-4A3D-B0CD-229F881EFD06}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		FFTL_Test\FFTL_Test.vcxitems*{0f04ae99-3065-4fc3-bd41-b6d703258a2c}*SharedItemsImports = 9
+		Core\Core.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		Core\Core.vcxitems*{483e139f-aad9-4de1-8873-1814f452769d}*SharedItemsImports = 4
+		FFTL_Test\FFTL_Test.vcxitems*{483e139f-aad9-4de1-8873-1814f452769d}*SharedItemsImports = 4
+		Core\Core.vcxitems*{5f43a53e-b7b5-4b05-aa1c-20bbf546e15c}*SharedItemsImports = 4
+		FFTL_Test\FFTL_Test.vcxitems*{5f43a53e-b7b5-4b05-aa1c-20bbf546e15c}*SharedItemsImports = 4
+		FFTL_Test\FFTL_Test.vcxitems*{ba91c664-4374-4a3a-8523-8fb83e27bf68}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal

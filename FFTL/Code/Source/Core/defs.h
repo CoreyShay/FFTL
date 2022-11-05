@@ -36,14 +36,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	include <unistd.h> // _POSIX_VERSION
 #endif
 
+#include <type_traits>
+
 #if !defined(__cplusplus)
 #	error "C compilers not supported."
 #endif
 
 #if (__cplusplus >= 202002L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
-#	define FFTL_CPP_VERSION 20
+#	define FFTL_CPP_VERSION 2020
 #elif (__cplusplus >= 201703L) || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-#	define FFTL_CPP_VERSION 17
+#	define FFTL_CPP_VERSION 2017
 #else
 #	error "C++17 compiler or greater required."
 #endif
@@ -58,7 +60,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	endif
 #	define FFTL_ARCHITECTURE_X64 1
 #endif
-#if defined(_M_ARM) || defined(__ARM) || defined(__ARM__) || defined(__arm) || defined(__arm__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#if defined(_M_ARM) || defined(__ARM) || defined(__ARM__) || defined(__arm) || defined(__arm__) || defined(__arm64) || defined(__arm64__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
 #	define FFTL_ARCHITECTURE_ARM 1
 #endif
 
@@ -277,12 +279,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_PROFILE_TIMERSCOPE_PAUSE(__name__, __pTimer__) TimerPauseScope<typename std::remove_pointer<decltype(__pTimer__)>::type> __name__(__pTimer__)
 #else
 #	define FFTL_PROFILE_TIMERSCOPE(__name__, __pTimer__)
-#	define FFTL_PROFILE_TIMERSCOPE_Pause(__name__, __pTimer__)
+#	define FFTL_PROFILE_TIMERSCOPE_PAUSE(__name__, __pTimer__)
 #endif
 
 
 #if defined(_MSC_VER) || defined(__ORBIS__) || defined(__PROSPERO__)
 #	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( __debugbreak(), 1) )
+#elif defined(__GNUC__)
+#	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( __builtin_trap(), 1) )
 #elif defined(_POSIX_VERSION)
 #	define FFTL_ASSERT_ALWAYS(___expr) (void)( (!!(___expr)) || ( raise(SIGTRAP), 1) )
 #else
@@ -305,11 +309,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_VERIFY(___expr) FFTL_VERIFY_ALWAYS(___expr)
 #	define FFTL_VERIFY_EQ(___cmp, ___expr) FFTL_VERIFY_EQ_ALWAYS(___cmp, ___expr)
 #	define FFTL_VERIFY_NEQ(___cmp, ___expr) FFTL_VERIFY_NEQ_ALWAYS(___cmp, ___expr)
+#	define FFTL_USING_ASSERTS 1
 #else
 #	define FFTL_ASSERT(___expr) ((void)0)
 #	define FFTL_VERIFY(___expr) ___expr
 #	define FFTL_VERIFY_EQ(___cmp, ___expr) ___expr
 #	define FFTL_VERIFY_NEQ(___cmp, ___expr) ___expr
+#	define FFTL_USING_ASSERTS 0
 
 #	if defined(_MSC_VER)
 #		undef FFTL_VERIFY
@@ -341,7 +347,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #elif defined(FFTL_PLATFORM_ANDROID)
 #	define FFTL_FORCEINLINE inline __attribute__((always_inline))
 #	define FFTL_NOINLINE __attribute((noinline))
-#	ifdef FFTL_DLL
+#	if defined(FFTL_DLL)
 #		define FFTL_DLLEXPORT __attribute__((visibility("default")))
 #	else
 #		define FFTL_DLLEXPORT
@@ -349,11 +355,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 #else
 #	define FFTL_FORCEINLINE inline __attribute__((always_inline))
 #	define FFTL_NOINLINE __noinline
-#	ifdef FFTL_DLL
+#	if defined(FFTL_DLL)
 #		define FFTL_DLLEXPORT __declspec(dllexport)
 #	else
 #		define FFTL_DLLEXPORT __declspec(dllimport)
 #	endif
+#endif
+
+#if defined(_MSC_VER)
+#	define FFTL_LOOP_VECTORIZE_DISABLE __pragma (loop(no_vector))
+#elif defined(__clang__)
+#	define FFTL_LOOP_VECTORIZE_DISABLE _Pragma("clang loop vectorize(disable) interleave(disable)")
+#else
+#	define FFTL_LOOP_VECTORIZE_DISABLE
 #endif
 
 #if defined(FFTL_FORCE_COND_INLINE)
@@ -362,8 +376,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_COND_INLINE FFTL_NOINLINE
 #endif
 
+#if defined(__clang__)
+#	define FFTL_HAS_BUILTIN(__x__) (__has_builtin(__x__))
+#else
+#	define FFTL_HAS_BUILTIN(__x__) (0)
+#endif
+
+#if defined(__has_cpp_attribute)
+#	define FFTL_HAS_CPP_ATTRIBUTE(__x__) (__has_cpp_attribute(__x__))
+#else
+#	define FFTL_HAS_CPP_ATTRIBUTE(__x__) (0)
+#endif
+
 //	Likely / unlikely attributes introduced Visual Studio 16.6
-#if FFTL_CPP_VERSION >= 20 || (defined(_MSC_VER) && _MSC_VER >= 1926)
+#if FFTL_CPP_VERSION >= 2020 || (FFTL_HAS_CPP_ATTRIBUTE(likely) && FFTL_HAS_CPP_ATTRIBUTE(unlikely)) || (defined(_MSC_VER) && _MSC_VER >= 1926) || defined(FFTL_PLATFORM_PLAYSTATION)
 #	define FFTL_LIKELY [[likely]]
 #	define FFTL_UNLIKELY [[unlikely]]
 #else
@@ -371,21 +397,30 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_UNLIKELY
 #endif
 
-#if FFTL_CPP_VERSION >= 20 || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
+#define FFTL_NODISCARD [[nodiscard]]
+#define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
+
+#if FFTL_HAS_BUILTIN(__builtin_is_constant_evaluated)
+#	define FFTL_IS_CONSTANT_EVALUATED __builtin_is_constant_evaluated()
+#elif FFTL_CPP_VERSION >= 2020 || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
 #	define FFTL_IS_CONSTANT_EVALUATED (std::is_constant_evaluated())
-#elif defined(__clang__)
-#	if __has_builtin(__builtin_is_constant_evaluated)
-#		define FFTL_IS_CONSTANT_EVALUATED __builtin_is_constant_evaluated()
-#	endif
 #endif
 #if !defined(FFTL_IS_CONSTANT_EVALUATED)
 #	define FFTL_IS_CONSTANT_EVALUATED false
 #endif
 
-#if FFTL_CPP_VERSION >= 20 || defined(__cpp_consteval) || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
+#if (FFTL_CPP_VERSION >= 2020) || defined(__cpp_consteval) || (defined(_MSVC_LANG) && _MSVC_LANG > 201703L)
 #	define FFTL_CONSTEVAL consteval
 #else
 #	define FFTL_CONSTEVAL constexpr
+#endif
+
+#if (FFTL_CPP_VERSION >= 2020) || (defined(_MSC_VER) && _MSC_VER >= 1927) || FFTL_HAS_BUILTIN(__builtin_bit_cast)
+#	define FFTL_HAS_CONSTEXPR_BIT_CAST 1
+#	define FFTL_BIT_CAST_CONSTEXPR constexpr
+#else
+#	define FFTL_HAS_CONSTEXPR_BIT_CAST 0
+#	define FFTL_BIT_CAST_CONSTEXPR
 #endif
 
 #if defined(_MSC_VER)

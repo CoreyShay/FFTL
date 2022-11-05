@@ -46,9 +46,40 @@ namespace FFTL
 
 
 template <typename T, size_t T_N>
-class [[nodiscard]] FixedArray
+class FFTL_NODISCARD FixedArray
 {
 public:
+
+	class riter
+	{
+	public:
+		FFTL_FORCEINLINE constexpr riter(T* p) : m_{ p } {}
+		FFTL_FORCEINLINE constexpr riter& operator++() { --m_; return *this; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr T& operator->() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr T& operator*() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const riter& lhs, const riter& rhs) { return lhs.m_ == rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const riter& lhs, const riter& rhs) { return lhs.m_ != rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const riter& lhs, const T* rhs) { return lhs.m_ == rhs; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const riter& lhs, const T* rhs) { return lhs.m_ != rhs; }
+	private:
+		T* m_;
+	};
+	class criter
+	{
+	public:
+		FFTL_FORCEINLINE constexpr criter(const T* p) : m_{ p } {}
+		FFTL_FORCEINLINE constexpr criter& operator++() { --m_; return *this; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T& operator->() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T& operator*() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const criter& lhs, const criter& rhs) { return lhs.m_ == rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const criter& lhs, const criter& rhs) { return lhs.m_ != rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const criter& lhs, const T* rhs) { return lhs.m_ == rhs; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const criter& lhs, const T* rhs) { return lhs.m_ != rhs; }
+	private:
+		const T* m_;
+	};
+
+
 	T m_data[T_N];
 
 	using _array_type = decltype(m_data);
@@ -56,42 +87,82 @@ public:
 
 	template <typename ...E> constexpr FixedArray(E&&...e) : m_data{ std::forward<E>(e)... } {}
 //	constexpr FixedArray(const T(&r)[T_N]);
-	[[nodiscard]] constexpr T& operator[](difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data()[n]; }
-	[[nodiscard]] constexpr const T& operator[](difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data()[n]; }
-	[[nodiscard]] constexpr T* operator+(difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data() + n; }
-	[[nodiscard]] constexpr const T* operator+(difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data() + n; }
+	FFTL_NODISCARD constexpr T& operator[](difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data()[n]; }
+	FFTL_NODISCARD constexpr const T& operator[](difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data()[n]; }
+	FFTL_NODISCARD constexpr T* operator+(difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data() + n; }
+	FFTL_NODISCARD constexpr const T* operator+(difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(T_N)); return data() + n; }
 
-	[[nodiscard]] constexpr static size_t size() { return T_N; }
-	[[nodiscard]] constexpr const T* begin() const { return data(); }
-	[[nodiscard]] constexpr const T* end() const { return data() + size(); }
-	[[nodiscard]] constexpr T* begin() { return data(); }
-	[[nodiscard]] constexpr T* end() { return data() + size(); }
+	FFTL_NODISCARD constexpr static size_t size() { return T_N; }
 
-	[[nodiscard]] constexpr const _array_type& data() const { return m_data; }
-	[[nodiscard]] constexpr _array_type& data() { return m_data; }
+	FFTL_NODISCARD constexpr const T* begin() const { return data(); }
+	FFTL_NODISCARD constexpr const T* end() const { return data() + size(); }
+	FFTL_NODISCARD constexpr T* begin() { return data(); }
+	FFTL_NODISCARD constexpr T* end() { return data() + size(); }
+	FFTL_NODISCARD constexpr criter rbegin() const { return end() - 1; }
+	FFTL_NODISCARD constexpr criter rend() const { return begin() - 1; }
+	FFTL_NODISCARD constexpr riter rbegin() { return end() - 1; }
+	FFTL_NODISCARD constexpr riter rend() { return begin() - 1; }
 
-	[[nodiscard]] constexpr operator const T*() { return data(); }
-	[[nodiscard]] constexpr operator T*() { return data(); }
+	FFTL_NODISCARD constexpr const _array_type& data() const { return m_data; }
+	FFTL_NODISCARD constexpr _array_type& data() { return m_data; }
+
+	FFTL_NODISCARD constexpr operator const T*() { return data(); }
+	FFTL_NODISCARD constexpr operator T*() { return data(); }
 };
 
 template <typename T, size_t T_MAX_SIZE>
 class Array
 {
 public:
+
+	class riter
+	{
+	public:
+		FFTL_FORCEINLINE constexpr riter(T* p) : m_{ p } {}
+		FFTL_FORCEINLINE constexpr riter& operator++() { --m_; return *this; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr T& operator->() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr T& operator*() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const riter& lhs, const riter& rhs) { return lhs.m_ == rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const riter& lhs, const riter& rhs) { return lhs.m_ != rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const riter& lhs, const T* rhs) { return lhs.m_ == rhs; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const riter& lhs, const T* rhs) { return lhs.m_ != rhs; }
+	private:
+		T* m_;
+	};
+	class criter
+	{
+	public:
+		FFTL_FORCEINLINE constexpr criter(const T* p) : m_{ p } {}
+		FFTL_FORCEINLINE constexpr criter& operator++() { --m_; return *this; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T& operator->() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE constexpr const T& operator*() const { return *m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const criter& lhs, const criter& rhs) { return lhs.m_ == rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const criter& lhs, const criter& rhs) { return lhs.m_ != rhs.m_; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const criter& lhs, const T* rhs) { return lhs.m_ == rhs; }
+		FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const criter& lhs, const T* rhs) { return lhs.m_ != rhs; }
+	private:
+		const T* m_;
+	};
+
 	using difference_type = typename std::pointer_traits<T*>::difference_type;
 
 	Array() = default;
 	Array(size_t nSize) : m_data(), m_size(nSize) { for (size_t i = 0; i < nSize; ++i) { T* pData = reinterpret_cast<T*>(m_data + i); ::new(pData) T(); } }
-	[[nodiscard]] T& operator[](difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<T*>(m_data[n].m_Bytes); }
-	[[nodiscard]] const T& operator[](difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<const T*>(m_data[n].m_Bytes); }
-	[[nodiscard]] T* operator+(difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<T*>(m_data + n); }
-	[[nodiscard]] const T* operator+(difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<const T*>(m_data + n); }
+	FFTL_NODISCARD T& operator[](difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<T*>(m_data[n].m_Bytes); }
+	FFTL_NODISCARD const T& operator[](difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<const T*>(m_data[n].m_Bytes); }
+	FFTL_NODISCARD T* operator+(difference_type n) { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<T*>(m_data + n); }
+	FFTL_NODISCARD const T* operator+(difference_type n) const { FFTL_ASSERT(n < static_cast<difference_type>(m_size)); return *reinterpret_cast<const T*>(m_data + n); }
 
-	[[nodiscard]] size_t size() const { return m_size; }
-	[[nodiscard]] const T* begin() const { return reinterpret_cast<const T*>(m_data); }
-	[[nodiscard]] const T* end() const { return reinterpret_cast<const T*>(m_data + size()); }
-	[[nodiscard]] T* begin() { return reinterpret_cast<T*>(m_data); }
-	[[nodiscard]] T* end() { return reinterpret_cast<T*>(m_data + size()); }
+	FFTL_NODISCARD size_t size() const { return m_size; }
+
+	FFTL_NODISCARD const T* begin() const { return reinterpret_cast<const T*>(m_data); }
+	FFTL_NODISCARD const T* end() const { return reinterpret_cast<const T*>(m_data + size()); }
+	FFTL_NODISCARD T* begin() { return reinterpret_cast<T*>(m_data); }
+	FFTL_NODISCARD T* end() { return reinterpret_cast<T*>(m_data + size()); }
+	FFTL_NODISCARD constexpr criter rbegin() const { return end() - 1; }
+	FFTL_NODISCARD constexpr criter rend() const { return begin() - 1; }
+	FFTL_NODISCARD constexpr riter rbegin() { return end() - 1; }
+	FFTL_NODISCARD constexpr riter rend() { return begin() - 1; }
 
 	template<class... _Valty>
 	decltype(auto) emplace_back(_Valty&&... _Val)

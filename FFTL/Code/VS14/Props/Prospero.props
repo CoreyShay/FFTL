@@ -1,25 +1,57 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug'">
-    <Import Project="Debug_Prospero.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Common.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release'">
-    <Import Project="Release_Prospero.props" />
-  </ImportGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Profile'">
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <CppExceptions>false</CppExceptions>
       <ExtraWarnings>true</ExtraWarnings>
       <Warnings>MoreWarnings</Warnings>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DisableSpecificWarnings>invalid-offsetof</DisableSpecificWarnings>
+      <DisableSpecificWarnings>invalid-offsetof;bitwise-instead-of-logical</DisableSpecificWarnings>
       <FastMath>true</FastMath>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <PreprocessorDefinitions>FFTL_ASSUME_SSE3=1;FFTL_ASSUME_SSE4=1;FFTL_ASSUME_AVX=1;FFTL_ASSUME_AVX2=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>-std=c++20 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>-lScePosix_stub_weak;-lSceSysmodule_stub_weak;-lSceAudioOut_stub_weak;-lSceAudio3d_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lScePosix_stub_weak;-lSceSysmodule_stub_weak;-lSceAcm_stub_weak;-lSceAudioOut_stub_weak;-lSceAudio3d_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <LinkTimeOptimization>false</LinkTimeOptimization>
+      <OptimizationLevel>Level0</OptimizationLevel>
+      <NoStrictAliasing>false</NoStrictAliasing>
+      <UnrollLoops>false</UnrollLoops>
+    </ClCompile>
+    <Link>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Profile'">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <OptimizationLevel>Level3</OptimizationLevel>
+      <NoStrictAliasing>true</NoStrictAliasing>
+      <UnrollLoops>true</UnrollLoops>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
+    </ClCompile>
+    <Link>
+      <DataStripping>StripFuncsAndData</DataStripping>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(DebuggerFlavor)'=='ProsperoDebugger'" Label="OverrideDebuggerDefaults">
+    <!--LocalDebuggerCommand>$(TargetPath)</LocalDebuggerCommand-->
+    <!--LocalDebuggerCommandArguments></LocalDebuggerCommandArguments-->
+    <!--LocalDebuggerTarget></LocalDebuggerTarget-->
+    <!--LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory-->
+    <!--LocalRunCommandLine></LocalRunCommandLine-->
+  </PropertyGroup>
 </Project>

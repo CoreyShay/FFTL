@@ -33,16 +33,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define COMPARE_WITH_FFTW 0
 
-#include "Core/Math/FFT.h"
-#include "Core/Platform/Log.h"
-#include "Core/Platform/Timer.h"
-
+#include "../Core/defs.h"
+#include "../Core/Math/FFT.h"
+#include "../Core/Containers/ListAtomic.h"
+#include "../Core/Containers/MemPoolFixedBlock.h"
+#include "../Core/Platform/CpuInfo.h"
+#include "../Core/Platform/Log.h"
+#include "../Core/Platform/Thread.h"
+#include "../Core/Platform/Timer.h"
+#include "../Core/Math/Vector.h"
+#include "../Core/Platform/Atomic.h"
 #include "kiss_fft130/kiss_fftr.h"
 
 #if defined(_MSC_VER)
-#elif defined(__ANDROID__)
+#	pragma warning(disable : 4324) // structure was padded due to alignment specifier
+#elif defined(FFTL_PLATFORM_ANDROID)
 #	include <android/native_activity.h>
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
+#elif defined(FFTL_PLATFORM_PLAYSTATION)
 size_t sceLibcHeapSize = 1000*1024*1024;
 unsigned int sceLibcHeapExtendedAlloc = 1;
 #endif
@@ -51,12 +58,13 @@ unsigned int sceLibcHeapExtendedAlloc = 1;
 #	include "fftw/fftw3.h"
 #endif
 
+#include <iostream>
 #include <stdio.h>
-#include <memory>
+#include <string>
+#include "rlutil.h"
 
 #if defined(_MSC_VER)
-#	include <conio.h>
-#	pragma warning(disable : 4996)
+#pragma warning(disable : 4996)
 #endif
 
 //#include <intrin.h>
@@ -67,9 +75,8 @@ unsigned int sceLibcHeapExtendedAlloc = 1;
 namespace FFTL
 {
 
-
 /**********************************************************/
-/* fft.c                                                  */
+/* fft::c                                                  */
 /* (c) Douglas L. Jones                                   */
 /* University of Illinois at Urbana-Champaign             */
 /* January 19, 1992                                       */
@@ -149,7 +156,7 @@ void fft(u32 n, u32 m, float x[], float y[])
 #endif
 
 
-constexpr u32 _M = 8;
+constexpr u32 _M = 9;
 constexpr u32 _N = 1 << _M;
 
 typedef float fltType;
@@ -175,13 +182,12 @@ static void revbin_permute(cxNumber<float>* a, uint n)
 	}
 }
 
-FixedArray_Aligned32<cxNumber<float>, _N> twid4;
+FixedArray_Aligned32<cxNumber<float>, _N > twid4;
 
 //static constexpr uint RX = 4; // == r
 static constexpr uint LX = 2; // == log(r)/log(p) == log_2(r)
-void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
+static void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
 	// decimation in time radix 4 fft
-	// ldn == log_2(n)
 	// ldn == log_2(n)
 {
 	uint twiddleIndex = 0;
@@ -247,6 +253,9 @@ void dit4l_fft(cxNumber<float> *f, uint ldn, int is)
 }
 
 
+int CvtSd2ToWav(const wchar_t* szPath);
+
+
 FixedArray_Aligned32<fltType, _N> fInput1;
 FixedArray_Aligned32<fltType, _N> fInput2;
 FixedArray_Aligned32<cxNumber<fltType>, _N> cxIn;
@@ -263,11 +272,10 @@ FixedArray_Aligned64<cxNumber<f32_8>, _N> cxInterleaved8;
 
 FFTL::Convolver<_M, 4, float, float> m_Convolver;
 FFTL::FixedArray<FFTL::Convolver<_M, 4, float, float>::Kernel, 4> m_KernelFD;
-FFTL::Convolver_Slow<float, _N, _N*4> m_Convolver_Slow;
+FFTL::Convolver_Slow<float, _N, _N * 4> m_Convolver_Slow;
 
 void convolutionTest()
 {
-#if 0
 	MemZero(fInput1);
 	MemZero(fInput2);
 	MemZero(cxOut);
@@ -280,7 +288,7 @@ void convolutionTest()
 	MemZero(cxInterleaved4);
 	MemZero(cxInterleaved8);
 
-	using fftScalar = FFT<_M, float>;
+	typedef FFT<_M, float> fftScalar;
 
 	FixedArray_Aligned32<fltType, _N*2> input111;
 	MemZero(input111);
@@ -321,7 +329,7 @@ void convolutionTest()
 	FixedArray_Aligned32<fltType, _N*2> H_re;
 	FixedArray_Aligned32<fltType, _N*2> H_im;
 
-	using fftScalar2N = FFT<_M + 1, float>;
+	typedef FFT<_M+1, float> fftScalar2N;
 	fftScalar2N::TransformForward(h, H_re, H_im);
 	for (uint i = 0; i < 2*_N; ++i)
 	{
@@ -377,8 +385,8 @@ void convolutionTest()
 	//	fOutput2[i] = c0.i;
 	//}
 
-	//fftScalar.TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
-#endif
+	//fftScalar::TransformInverse(fOutput1, fOutput2, fTimeOutput1, fTimeOutput2);
+
 }
 
 void verifyFFT()
@@ -425,20 +433,10 @@ void verifyFFT()
 		cxIn[n].Set(fInput1[n], 0);
 	}
 
-	using fftScalar = FFT_Base<_M, float>;
-	using fftSimd = FFT<_M, float, float>;
+	typedef FFT<_M, float> fftScalar;
+	typedef FFT<_M, float, float> fftSimd;
 
-//	dit4l_fft(cxIn.data(), _M, 1);
-
-	fftScalar::TransformForward(cxIn, cxOut);
-	fftScalar::TransformInverse(cxOut, cxIn);
-
-	for (uint n = 0; n < _N; ++n)
-	{
-		const float fScaled = cxIn[n].r / _N;
-		const float fDiff = fInput1[n] - fScaled;
-		FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.000001f);
-	}
+	dit4l_fft(cxIn.data(), _M, 1);
 
 	fftScalar::TransformForward_InPlace_DIF(fTimeOutput1, fTimeOutput2);
 	fftScalar::TransformInverse_InPlace_DIT(fTimeOutput1, fTimeOutput2);
@@ -550,9 +548,9 @@ void verifyRealFFT()
 		//MemZero(vInput);
 		//(__m256&)vInput[0] = _mm256_setr_ps(1, 2, 3, 4, 5, 6, 7, 8);
 
-		constexpr FFT_Real<_M, f32_8, float> fftSingleReal{ };
+		typedef FFT_Real<_M, f32_8, float> fftSingleReal;
 
-		fftSingleReal.TransformForward(*vInput, *vHalfOutR, *vHalfOutI);
+		fftSingleReal::TransformForward(*vInput, *vHalfOutR, *vHalfOutI);
 
 		for (uint n = 0; n < _N / 2; ++n)
 		{
@@ -601,6 +599,8 @@ void verifyConvolution()
 	}
 #endif
 
+	fKernel[0] += 0.0f;
+
 	m_Convolver_Slow.SetKernel(fKernel);
 	m_Convolver.InitKernel(m_KernelFD.data(), fKernel.data(), fKernel.size());
 
@@ -628,22 +628,22 @@ void verifyConvolution()
 		}
 #endif
 
-		m_Convolver_Slow.Convolve(fInput2, fOutput1);
-		m_Convolver.Convolve(fInput2, m_KernelFD.data(), m_KernelFD.size());
+		m_Convolver_Slow.Convolve(fOutput1, fInput2);
+		m_Convolver.Convolve(fOutput2, fInput2, m_KernelFD.data(), m_KernelFD.size());
 
 		for (uint n = 0; n < _N; ++n)
 		{
-			const float fDiff = fInput2[n] - fOutput1[n];
+			const float fDiff = fOutput2[n] - fOutput1[n];
 			FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.005f);
 		}
 
-		m_Convolver_Slow.Convolve(fInput2, fOutput1);
-		m_Convolver.Convolve(fInput2, m_KernelFD.data(), m_KernelFD.size());
+		m_Convolver_Slow.Convolve(fOutput1, fInput2);
+		m_Convolver.Convolve(fOutput2, fInput2, m_KernelFD.data(), m_KernelFD.size());
 
-		for ( uint n = 0; n < _N; ++n )
+		for (uint n = 0; n < _N; ++n)
 		{
-			const float fDiff = fInput2[n] - fOutput1[n];
-			FFTL_ASSERT_ALWAYS(Abs( fDiff ) <= 0.005f);
+			const float fDiff = fOutput2[n] - fOutput1[n];
+			FFTL_ASSERT_ALWAYS(Abs(fDiff) <= 0.005f);
 		}
 	}
 
@@ -685,7 +685,7 @@ void perfTest()
 		{
 			fft::TransformForward_InPlace_DIF(cxInterleaved8);
 		}
-		timer.StopAccum();
+		timer.PauseAccum();
 		FFTL_LOG_MSG("Complex Forward FFT 8 ch AVX size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 	}
 
@@ -697,7 +697,7 @@ void perfTest()
 		{
 			fft::TransformForward_InPlace_DIF(cxInterleaved4);
 		}
-		timer.StopAccum();
+		timer.PauseAccum();
 		FFTL_LOG_MSG("Complex Forward FFT 4 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 	}
 
@@ -710,8 +710,8 @@ void perfTest()
 		{
 			fft::TransformForward(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
 		}
-		timer.StopAccum();
-		FFTL_LOG_MSG("Complex Forward FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
+		timer.PauseAccum();
+		FFTL_LOG_MSG("Complex Forward FFT 1 ch SIMD%u size %u: %f us\n", FFTL_SIMD_F32_WIDTH, _N, timer.GetMicroseconds() / loopCount);
 	}
 
 	{
@@ -722,8 +722,8 @@ void perfTest()
 		{
 			fft::TransformInverse(fInput1, fInput2, fTimeOutput1, fTimeOutput2);
 		}
-		timer.StopAccum();
-		FFTL_LOG_MSG("Complex Inverse FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
+		timer.PauseAccum();
+		FFTL_LOG_MSG("Complex Inverse FFT 1 ch SIMD%u size %u: %f us\n", FFTL_SIMD_F32_WIDTH, _N, timer.GetMicroseconds() / loopCount);
 	}
 
 	{
@@ -734,8 +734,8 @@ void perfTest()
 		{
 			fft::TransformForward_InPlace_DIF(fInput1, fInput2);
 		}
-		timer.StopAccum();
-		FFTL_LOG_MSG("Complex Forward in-place FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
+		timer.PauseAccum();
+		FFTL_LOG_MSG("Complex Forward in-place FFT 1 ch SIMD%u size %u: %f us\n", FFTL_SIMD_F32_WIDTH, _N, timer.GetMicroseconds() / loopCount);
 	}
 
 	{
@@ -746,8 +746,8 @@ void perfTest()
 		{
 			fft::TransformInverse_InPlace_DIT(fInput1, fInput2);
 		}
-		timer.StopAccum();
-		FFTL_LOG_MSG("Complex Inverse in-place FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
+		timer.PauseAccum();
+		FFTL_LOG_MSG("Complex Inverse in-place FFT 1 ch SIMD%u size %u: %f us\n", FFTL_SIMD_F32_WIDTH, _N, timer.GetMicroseconds() / loopCount);
 	}
 
 
@@ -763,7 +763,7 @@ void perfTest()
 		{
 			fft::TransformForward(fInput1, fHalfOut1, fHalfOut2);
 		}
-		timer.StopAccum();
+		timer.PauseAccum();
 		FFTL_LOG_MSG("Real Forward FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 
 		timer.Reset();
@@ -773,7 +773,7 @@ void perfTest()
 		{
 			fft::TransformInverse(fHalfOut1, fHalfOut2, fTimeOutput1);
 		}
-		timer.StopAccum();
+		timer.PauseAccum();
 		FFTL_LOG_MSG("Real Inverse FFT 1 ch SSE size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 
 #if COMPARE_WITH_FFTW
@@ -788,36 +788,389 @@ void perfTest()
 			{
 				fftwf_execute(planForward); /* repeat as needed */
 			}
-			timer.StopAccum();
+			timer.PauseAccum();
 			fftwf_destroy_plan(planForward);
 			FFTL_LOG_MSG("FFTW size %u: %f us\n", _N, timer.GetMicroseconds() / loopCount);
 		}
 #endif
 	}
 
-#if defined(_MSC_VER)
-	FFTL_LOG_MSG("Done. Press any key to exit.\n");
-	_getch();
-#endif
+//	_getch();
 }
 
-void RunTests()
+struct ListTester
 {
-	FFTL::verifyFFT();
-	FFTL::verifyRealFFT();
+	FFTL_Define_ListAtomicNode(public, ListTester, m_ListNode);
+
+	u64 m_nUpdateCount = 0;
+	u64 m_nAddCount = 0;
+	u64 m_nRemCount = 0;
+
+	template <typename T_Functor>
+	void Update(T_Functor func)
+	{
+		AtomicIncrement(&m_nUpdateCount);
+		func();
+	}
+};
+void LinkedListThreadSafetyTest()
+{
+	constexpr uint COUNT = 128;
+	constexpr uint ADD_TARGET = COUNT * 3 / 4;
+	constexpr uint REM_TARGET = COUNT / 2;
+
+	u64 totalUpdateForCount = 0;
+	u64 totalUpdateRevCount = 0;
+	u64 nodeCount = 0;
+	u64 totalAddCount = 0;
+	u64 totalRemCount = 0;
+
+	FixedArray<ListTester, COUNT> testArray;
+	FFTL_Define_ListAtomic(ListTester, m_ListNode, testList);
+	FixedArray<u8, COUNT> allocated{ false };
+
+	bool terminateAllThreads = false;
+
+	auto funcUpdateFor = [&]()
+	{
+		while (!terminateAllThreads)
+		{
+			for (auto&& tester : testList)
+			{
+				tester.Update( [&]() { AtomicIncrement( &totalUpdateForCount ); } );
+			}
+		}
+	};
+	auto funcUpdateRev = [&]()
+	{
+		while (!terminateAllThreads)
+		{
+			for (auto&& tester : FFTL::reverse(testList))
+			{
+				tester.Update( [&]() { AtomicIncrement( &totalUpdateRevCount ); } );
+			}
+		}
+	};
+
+	auto funcAdd = [&]()
+	{
+		uint targetIndex = 0;
+		while (!terminateAllThreads)
+		{
+			if (nodeCount < ADD_TARGET)
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocated[targetIndex], 1, 0) == 0 )
+				{
+					ListTester* obj = &testArray[targetIndex];
+					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.IsLinked());
+					AtomicIncrement(&obj->m_nAddCount);
+					testList.AddTail(obj);
+					FFTL_ASSERT_ALWAYS(AtomicIncrement(&allocated[targetIndex]) == 1);
+					AtomicIncrement(&nodeCount);
+					AtomicIncrement(&totalAddCount);
+				}
+				targetIndex = (targetIndex + 1) % COUNT;
+			}
+		}
+	};
+
+	auto funcRem = [&]()
+	{
+		uint targetIndex = 0;
+		while ( !terminateAllThreads )
+		{
+			if (nodeCount > REM_TARGET)
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocated[targetIndex], 1, 2) == 2)
+				{
+					ListTester* obj = &testArray[targetIndex];
+					obj->m_ListNode.RemoveFromList();
+					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.IsLinked());
+					AtomicIncrement(&obj->m_nRemCount);
+					FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocated[targetIndex]) == 1);
+					AtomicDecrement(&nodeCount);
+					AtomicIncrement(&totalRemCount);
+				}
+				targetIndex = (targetIndex + 1) % COUNT;
+			}
+		}
+	};
+
+	ThreadFunctor threadFuncUpdate0{ funcUpdateFor };
+	ThreadFunctor threadFuncUpdate1{ funcUpdateRev };
+	ThreadFunctor threadFuncAdd0{ funcAdd };
+	ThreadFunctor threadFuncAdd1{ funcAdd };
+	ThreadFunctor threadFuncRem0{ funcRem };
+	ThreadFunctor threadFuncRem1{ funcRem };
+
+	threadFuncUpdate0.Start("threadFuncUpdate0");
+	threadFuncUpdate1.Start("threadFuncUpdate1");
+	threadFuncAdd0.Start("threadFuncAdd0");
+	threadFuncAdd1.Start("threadFuncAdd1");
+	threadFuncRem0.Start("threadFuncRem0");
+	threadFuncRem1.Start("threadFuncRem1");
+
+	for (uint i = 0; i < 10; ++i)
+	{
+		ThreadSleep(1000);
+		FFTL_LOG_MSG("[%s] UpdateFor: %llu, UpdateRev: %llu, Add: %llu, Rem: %llu, NodeCount: %llu\n", __FUNCTION__, totalUpdateForCount, totalUpdateRevCount, totalAddCount, totalRemCount, nodeCount);
+	}
+	terminateAllThreads = true;
+
+	threadFuncUpdate0.Stop();
+	threadFuncUpdate1.Stop();
+	threadFuncAdd0.Stop();
+	threadFuncAdd1.Stop();
+	threadFuncRem0.Stop();
+	threadFuncRem1.Stop();
+
+	FFTL_LOG_MSG("[%s] All threads terminated gracefully\n", __FUNCTION__ );
+}
+
+void MemPoolThreadSafetyTest()
+{
+	constexpr uint COUNT = 256;
+	constexpr uint ADD_TARGET = COUNT * 3 / 4;
+	constexpr uint REM_TARGET = COUNT / 2;
+
+	u64 totalUpdateForCount = 0;
+	u64 totalUpdateRevCount = 0;
+	u64 nodeCount = 0;
+	u64 totalAddCount = 0;
+	u64 totalRemCount = 0;
+	u64 timeAdd = 0;
+	u64 timeRem = 0;
+
+	FixedArray<ListTester*, COUNT> testArray{ nullptr };
+	FixedBlockMemPoolStatic_ThreadSafe<ListTester, COUNT> testPool;
+	FixedArray<u8, COUNT> allocated{ false };
+
+	bool terminateAllThreads = false;
+
+	auto funcUpdateFor = [&]()
+	{
+		while (!terminateAllThreads)
+		{
+			for (auto&& allocFlag : allocated)
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocFlag, 3, 2) == 2)
+				{
+					const auto idx = &allocFlag - allocated.data();
+					testArray[idx]->Update([&]() { AtomicIncrement(&totalUpdateForCount); });
+					FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocFlag) == 3);
+				}
+			}
+		}
+	};
+	auto funcUpdateRev = [&]()
+	{
+		while (!terminateAllThreads)
+		{
+			for (auto&& allocFlag : FFTL::reverse(allocated))
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocFlag, 3, 2) == 2)
+				{
+					const auto idx = &allocFlag - allocated.data();
+					testArray[idx]->Update([&]() { AtomicIncrement(&totalUpdateRevCount); });
+					FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocFlag) == 3);
+				}
+			}
+		}
+	};
+
+	auto funcAdd = [&]()
+	{
+		uint targetIndex = 0;
+		while (!terminateAllThreads)
+		{
+			if (nodeCount < ADD_TARGET)
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocated[targetIndex], 1, 0) == 0)
+				{
+					Timer timer;
+					timer.Start();
+					ListTester* obj = testPool.Construct();
+					timer.Stop();
+					if (!obj)
+						FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocated[targetIndex]) == 1);
+					else
+					{
+						testArray[targetIndex] = obj;
+						AtomicIncrement(&obj->m_nAddCount);
+						FFTL_ASSERT_ALWAYS(AtomicIncrement(&allocated[targetIndex]) == 1);
+						AtomicIncrement(&nodeCount);
+						AtomicIncrement(&totalAddCount);
+						AtomicAdd(&timeAdd, timer.GetTicks());
+					}
+				}
+				targetIndex = (targetIndex + 1) % COUNT;
+			}
+		}
+	};
+
+	auto funcRem = [&]()
+	{
+		uint targetIndex = 0;
+		while (!terminateAllThreads)
+		{
+			if (nodeCount > REM_TARGET)
+			{
+				if (AtomicCompareExchangeStrong<u8>(&allocated[targetIndex], 1, 2) == 2)
+				{
+					ListTester* obj = testArray[targetIndex];
+					testArray[targetIndex] = nullptr;
+					AtomicIncrement(&obj->m_nRemCount);
+					Timer timer;
+					timer.Start();
+					testPool.Free(obj);
+					timer.Stop();
+					FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocated[targetIndex]) == 1);
+					AtomicDecrement(&nodeCount);
+					AtomicIncrement(&totalRemCount);
+					AtomicAdd(&timeRem, timer.GetTicks());
+				}
+				targetIndex = (targetIndex + 1) % COUNT;
+			}
+		}
+	};
+
+	ThreadFunctor threadFuncUpdate0{ funcUpdateFor };
+	ThreadFunctor threadFuncUpdate1{ funcUpdateRev };
+	ThreadFunctor threadFuncAdd0{ funcAdd };
+	ThreadFunctor threadFuncAdd1{ funcAdd };
+	ThreadFunctor threadFuncRem0{ funcRem };
+	ThreadFunctor threadFuncRem1{ funcRem };
+
+	threadFuncUpdate0.Start("threadFuncUpdate0");
+	threadFuncUpdate1.Start("threadFuncUpdate1");
+	threadFuncAdd0.Start("threadFuncAdd0");
+	threadFuncAdd1.Start("threadFuncAdd1");
+	threadFuncRem0.Start("threadFuncRem0");
+	threadFuncRem1.Start("threadFuncRem1");
+
+	for (uint i = 0; i < 10; ++i)
+	{
+		ThreadSleep(1000);
+		FFTL_LOG_MSG("[%s] UpdateFor: %llu, UpdateRev: %llu, Add: %llu, Rem: %llu, NodeCount: %llu\n", __FUNCTION__, totalUpdateForCount, totalUpdateRevCount, totalAddCount, totalRemCount, nodeCount);
+	}
+
+	terminateAllThreads = true;
+
+	threadFuncUpdate0.Stop();
+	threadFuncUpdate1.Stop();
+	threadFuncAdd0.Stop();
+	threadFuncAdd1.Stop();
+	threadFuncRem0.Stop();
+	threadFuncRem1.Stop();
+
+	FFTL_LOG_MSG("[%s] [Performance] Avg Add: %f, Avg Rem: %f \n", __FUNCTION__, Timer::ToMicroseconds(timeAdd) / totalAddCount, Timer::ToMicroseconds(timeRem) / totalRemCount);
+	FFTL_LOG_MSG("[%s] All threads terminated gracefully\n", __FUNCTION__);
+}
+
+// h must be size [N + M - 1]
+void Convolve( const float* f, uint N, const float* g, uint M, float* h )
+{
+	MemZero( h, N + M );
+	for ( uint n = 0; n < N; ++n )
+	{
+		for ( uint m = 0; m < M; ++m )
+		{
+			h[n + m] += f[n] * g[m];
+		}
+	}
+}
+
+
+int RunTests()
+{
+#if defined(FFTL_PLATFORM_PLAYSTATION)
+
+#	if defined(FFTL_PLATFORM_PROSPERO)
+#		define FFTL_TEST_PS_PLATFORM_NAME "Prospero"
+#	elif defined(FFTL_PLATFORM_ORBIS)
+#		define FFTL_TEST_PS_PLATFORM_NAME "Orbis"
+#	endif
+	int startResult;
+#	if defined(FFTL_BUILD_DEBUG)
+	SceKernelModule handle = sceKernelLoadStartModule("/app0/Code/VS14/Generated/Output/" FFTL_TEST_PS_PLATFORM_NAME "/Debug/AudioEngine_" FFTL_TEST_PS_PLATFORM_NAME ".prx", 0, nullptr, 0, nullptr, &startResult);
+#	else
+	SceKernelModule handle = sceKernelLoadStartModule("/app0/Code/VS14/Generated/Output/" FFTL_TEST_PS_PLATFORM_NAME "/Release/AudioEngine_" FFTL_TEST_PS_PLATFORM_NAME ".prx", 0, nullptr, 0, nullptr, &startResult);
+#	endif
+	(void)handle;
+#endif
+
+	//	Make sure we always flush denormals to zero
+	FFTL::SetCpuFlushDenormalMode(true);
+
+#if defined(_MSC_VER)
+//	__HrLoadAllImportsForDll("AudioEngine.dll");
+#endif
+
+//	FFTL::ImpulseTest();
+//	FFTL::ImpulseTest2();
 	FFTL::verifyConvolution();
 //	FFTL::convolutionTest();
-	FFTL::perfTest();
+	FFTL::verifyFFT();
+	FFTL::verifyRealFFT();
+//	FFTL::perfTest();
+//	FFTL::LinkedListThreadSafetyTest();
+	FFTL::MemPoolThreadSafetyTest();
+
+//	return FFTL::CvtSd2ToWav(L"M:\\Clone Defect");
+//	return FFTL::MultitrackTest();
+	return 0;
 }
+
 
 } // namespace FFTL
 using namespace FFTL;
 
+inline float GetEps(float e)
+{
+	int a = *reinterpret_cast<int*>(&e) + 1;
+	return *reinterpret_cast<float*>(&a) - e;
+}
+
+#if defined(_MSC_VER)
+#include <Delayimp.h>
+#endif
+
+
+bool bb0[1 << 12];
+bool bb1[1 << 12];
+bool bb2[1 << 12];
 int main()
 {
-	FFTL::RunTests();
+	constexpr uint loopCount = 1024;
 
-	return 0;
+	FFTL::Timer timer;
+
+	timer.Start();
+	for ( uint t = 0; t < loopCount; ++t )
+	{
+		for ( uint i = 0; i < sizeof( bb0 ); ++i )
+		{
+			bb2[i] = (bb0[i] | bb1[i]);
+		}
+	}
+	timer.Stop();
+	FFTL_LOG_MSG( "%f us\n", timer.GetMicroseconds() / loopCount );
+	FFTL_LOG_MSG( "%u bb2\n", bb2[rand() % sizeof(bb2)]);
+
+	return FFTL::RunTests();
 }
+
+
+#endif
+
+
+#if defined(FFTL_PLATFORM_WINDOWS)
+#include <iostream>
+#include <string>
+#include <functional>
+#include <filesystem>
+
+#include "Core/Platform/File.h"
+
 #endif
 

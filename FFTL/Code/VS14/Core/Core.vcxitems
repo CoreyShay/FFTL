@@ -16,6 +16,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\Array.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\List.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\ListAtomic.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\ComplexNumber.h" />
@@ -32,6 +33,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Atomic.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Log.h" />
@@ -40,7 +42,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\ThreadEvent.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\ReturnCodes.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\Casts.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\MetaProgramming.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\S24.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StdFunctions.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\StringFixed.h" />
@@ -48,8 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.inl" />
-    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_default.inl" />
-    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_vec8_default.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Default.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Vec8_Default.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\Matrix33_Default.inl">
@@ -124,12 +125,15 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Vector.inl">
       <FileType>Document</FileType>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Atomic.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\File.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\GCC\Atomic_GCC.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Orbis\Thread_Orbis.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Posix\Thread_Posix.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Timer.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Windows\Atomic_Windows.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Windows\Thread_Windows.inl" />
   </ItemGroup>
   <ItemGroup>

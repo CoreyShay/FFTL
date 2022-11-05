@@ -38,16 +38,15 @@ namespace FFTL
 {
 
 
-//	Contained List sample usage :
+//	Intrusive List sample usage :
 /*
 
 class Object
 {
-	friend class ObjectManager;
 private:
 	int Stuff1;
 	float Stuff2;
-	FFTL_Define_ListNode(Object, m_ListNode);
+	FFTL_Define_ListNode(private, Object, m_ListNode); // scope access must be specified or else all members below will be public!
 };
 
 class ObjectManager
@@ -59,21 +58,33 @@ public:
 */
 
 
-#define FFTL_Define_ListNode(T, __nodeName__)									\
+#define FFTL_Define_ListNode(__access__, T, __nodeName__)						\
+public:																			\
 struct __nodeName__ ## __memberNameTag__										\
 {																				\
 	static constexpr ptrdiff_t MyOffset() { return offsetof(T, __nodeName__); }	\
 };																				\
+__access__:																		\
 FFTL::ListNode<T, __nodeName__ ## __memberNameTag__> __nodeName__
 
-#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) FFTL::TContainedLinkedList<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember> __listName__
-#define FFTL_Define_List_Array(T, ElementTypeNodeMember, __listName__, N) FFTL::FixedArray< FFTL::TContainedLinkedList<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember>, N > __listName__
+#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__> __listName__
+#define FFTL_Define_List_Array(T, ElementTypeNodeMember, __listName__, N) FFTL::FixedArray< FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__>, N> __listName__
 
 
-//	You create these, and manually add them to the ListDouble class
+template <typename T, typename Tag> class List;
+template <typename T, typename Tag> class ListIterator;
+template <typename T, typename Tag> class ListIteratorFor;
+template <typename T, typename Tag> class ListIteratorRev;
+
+
 template <typename T, typename Tag>
-class [[nodiscard]] ListNode
+class FFTL_NODISCARD ListNode
 {
+	friend class List<T, Tag>;
+	friend class ListIterator<T, Tag>;
+	friend class ListIteratorFor<T, Tag>;
+	friend class ListIteratorRev<T, Tag>;
+
 public:
 	ListNode()
 		: m_pNextNode(nullptr)
@@ -93,20 +104,20 @@ public:
 			m_pPrevNode->m_pNextNode = m_pNextNode;
 	}
 
-	T* GetElement() { FFTL_ASSERT(m_pNextNode && m_pPrevNode); return reinterpret_cast<T*>(reinterpret_cast<char*>(this) - Tag::MyOffset()); }
-	const T* GetElement() const { FFTL_ASSERT(m_pNextNode && m_pPrevNode); return reinterpret_cast<const T*>(reinterpret_cast<const char*>(this) - Tag::MyOffset()); }
+	FFTL_NODISCARD T* GetElement() { FFTL_ASSERT(m_pNextNode && m_pPrevNode); return reinterpret_cast<T*>(reinterpret_cast<char*>(this) - Tag::MyOffset()); }
+	FFTL_NODISCARD const T* GetElement() const { FFTL_ASSERT(m_pNextNode && m_pPrevNode); return reinterpret_cast<const T*>(reinterpret_cast<const char*>(this) - Tag::MyOffset()); }
 
-	static ListNode<T, Tag>* GetNodeFromElement(T* pElem) { return reinterpret_cast<ListNode<T, Tag>*>(reinterpret_cast<char*>(pElem) + Tag::MyOffset()); }
-	static const ListNode<T, Tag>* GetNodeFromElement(const T* pElem) { return reinterpret_cast<const ListNode<T, Tag>*>(reinterpret_cast<const char*>(pElem) + Tag::MyOffset()); }
+	FFTL_NODISCARD static ListNode<T, Tag>* GetNodeFromElement(T* pElem) { return reinterpret_cast<ListNode<T, Tag>*>(reinterpret_cast<char*>(pElem) + Tag::MyOffset()); }
+	FFTL_NODISCARD static const ListNode<T, Tag>* GetNodeFromElement(const T* pElem) { return reinterpret_cast<const ListNode<T, Tag>*>(reinterpret_cast<const char*>(pElem) + Tag::MyOffset()); }
 
-	const ListNode<T, Tag>* GetNextNode() const { return m_pNextNode; }
-	ListNode<T, Tag>* GetNextNode() { return m_pNextNode; }
-	const ListNode<T, Tag>* GetPrevNode() const { return m_pPrevNode; }
-	ListNode<T, Tag>* GetPrevNode() { return m_pPrevNode; }
+	FFTL_NODISCARD const ListNode<T, Tag>* GetNextNode() const { return m_pNextNode; }
+	FFTL_NODISCARD ListNode<T, Tag>* GetNextNode() { return m_pNextNode; }
+	FFTL_NODISCARD const ListNode<T, Tag>* GetPrevNode() const { return m_pPrevNode; }
+	FFTL_NODISCARD ListNode<T, Tag>* GetPrevNode() { return m_pPrevNode; }
 
-	[[nodiscard]] bool IsBackEnd() const { return m_pNextNode == nullptr; }
-	[[nodiscard]] bool IsFrontEnd() const { return m_pPrevNode == nullptr; }
-	[[nodiscard]] bool IsLinked() const { return m_pNextNode != nullptr || m_pPrevNode != nullptr; }
+	FFTL_NODISCARD bool IsBackEnd() const { return m_pNextNode == nullptr; }
+	FFTL_NODISCARD bool IsFrontEnd() const { return m_pPrevNode == nullptr; }
+	FFTL_NODISCARD bool IsLinked() const { return m_pNextNode != nullptr || m_pPrevNode != nullptr; }
 
 	void AddBefore(ListNode<T, Tag>* in_pNode)
 	{
@@ -154,117 +165,163 @@ private:
 };
 
 
-
-
-
-
-template <typename T, typename Tag, ListNode<T, Tag> T::* PtrToMember>
-class TContainedLinkedListIterator
+template <typename T, typename Tag>
+class FFTL_NODISCARD ListIterator
 {
 public:
-	explicit TContainedLinkedListIterator(ListNode<T, Tag>* pFirstLink)
-		: m_pCurrentLink(pFirstLink)
-	{ }
-	explicit TContainedLinkedListIterator(T* FirstLink)
-		: m_pCurrentLink(FirstLink->PtrToMember)
-	{ }
+	explicit ListIterator(ListNode<T, Tag>* pFirstNode)
+		: m_pCurrentNode(pFirstNode)
+	{
+		FFTL_ASSERT(pFirstNode);
+	}
+	explicit ListIterator(T* pFirstNode)
+		: m_pCurrentNode(ListNode<T, Tag>::GetNodeFromElement(pFirstNode))
+	{
+	}
+
+	ListIterator(const ListIterator&) = delete;
+	ListIterator& operator=(const ListIterator&) = delete;
+
+	FFTL_NODISCARD FFTL_FORCEINLINE T* Get()
+	{
+		FFTL_ASSERT(this->m_pCurrentNode);
+		return this->m_pCurrentNode->GetElement();
+	}
+
+	FFTL_NODISCARD FFTL_FORCEINLINE T& operator->()
+	{
+		return *Get();
+	}
+
+	FFTL_NODISCARD FFTL_FORCEINLINE T& operator*()
+	{
+		return *Get();
+	}
+
+	FFTL_NODISCARD FFTL_FORCEINLINE bool IsBackEnd() const
+	{
+		return this->m_pCurrentNode->IsBackEnd();
+	}
+
+	FFTL_NODISCARD FFTL_FORCEINLINE bool IsFrontEnd() const
+	{
+		return this->m_pCurrentNode->IsFrontEnd();
+	}
+
+	FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const ListIterator& lhs, const ListIterator& rhs) { return lhs.m_pCurrentNode == rhs.m_pCurrentNode; }
+	FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const ListIterator& lhs, const ListIterator& rhs) { return lhs.m_pCurrentNode != rhs.m_pCurrentNode; }
+	FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator==(const ListIterator& lhs, const ListNode<T, Tag>* rhs) { return lhs.m_pCurrentNode == rhs; }
+	FFTL_NODISCARD FFTL_FORCEINLINE friend bool operator!=(const ListIterator& lhs, const ListNode<T, Tag>* rhs) { return lhs.m_pCurrentNode != rhs; }
+
+protected:
+
+	~ListIterator() = default;
+
+	ListNode<T, Tag>* m_pCurrentNode;
+};
+
+template <typename T, typename Tag>
+class FFTL_NODISCARD ListIteratorFor : public ListIterator<T, Tag>
+{
+public:
+	using NodeType = ListNode<T, Tag>;
+
+	explicit ListIteratorFor(NodeType* pFirstNode)
+		: ListIterator<T, Tag>(pFirstNode)
+	{
+	}
+	explicit ListIteratorFor(T* pFirstNode)
+		: ListIteratorFor<T, Tag>(NodeType::GetNodeFromElement(pFirstNode))
+	{
+	}
+	ListIteratorFor(ListIteratorFor&& rhs)
+		: ListIterator<T, Tag>(std::exchange(rhs.m_pCurrentNode, nullptr))
+	{
+	}
+
+	ListIteratorFor(const ListIteratorFor&) = delete;
+	ListIteratorFor& operator=(const ListIteratorFor&) = delete;
+	ListIteratorFor& operator=(ListIteratorFor&&) = delete;
 
 	/**
 	* Advances the iterator to the next element.
 	*/
-	FFTL_FORCEINLINE void Next()
+	void Advance()
 	{
-		FFTL_ASSERT(m_pCurrentLink);
-		this->m_pCurrentLink = this->m_pCurrentLink->GetNextNode();
+		FFTL_ASSERT(this->m_pCurrentNode);
+		this->m_pCurrentNode = this->m_pCurrentNode->GetNextNode();
 	}
+
+	ListIteratorFor& operator++()
+	{
+		this->Advance();
+		return *this;
+	}
+
+	//	Don't overload these
+	ListIteratorFor operator++(int) = delete;
+	ListIteratorFor operator--(int) = delete;
+	ListIteratorFor& operator--() = delete;
+};
+
+template <typename T, typename Tag>
+class FFTL_NODISCARD ListIteratorRev : public ListIterator<T, Tag>
+{
+public:
+	using NodeType = ListNode<T, Tag>;
+
+	explicit ListIteratorRev(NodeType* pFirstNode)
+		: ListIterator<T, Tag>(pFirstNode)
+	{
+	}
+	explicit ListIteratorRev(T* pFirstNode)
+		: ListIteratorFor<T, Tag>(NodeType::GetNodeFromElement(pFirstNode))
+	{
+	}
+	ListIteratorRev(ListIteratorRev&& rhs)
+		: ListIterator<T, Tag>(std::exchange(rhs.m_pCurrentNode, nullptr))
+	{
+	}
+
+	ListIteratorRev(const ListIteratorRev&) = delete;
+	ListIteratorRev& operator=(const ListIteratorRev&) = delete;
+	ListIteratorRev& operator=(ListIteratorRev&&) = delete;
 
 	/**
-	* Advances the iterator to the previous element.
+	* Advances the iterator to the next element.
 	*/
-	FFTL_FORCEINLINE void Prev()
+	void Advance()
 	{
-		FFTL_ASSERT(m_pCurrentLink);
-		this->m_pCurrentLink = this->m_pCurrentLink->GetPrevNode();
+		FFTL_ASSERT(this->m_pCurrentNode);
+		this->m_pCurrentNode = this->m_pCurrentNode->GetPrevNode();
 	}
 
-	FFTL_FORCEINLINE TContainedLinkedListIterator& operator++()
+	ListIteratorRev& operator++()
 	{
-		this->Next();
+		this->Advance();
 		return *this;
 	}
 
-	FFTL_FORCEINLINE TContainedLinkedListIterator operator++(int)
-	{
-		auto Tmp = *this;
-		this->Next();
-		return Tmp;
-	}
-
-	FFTL_FORCEINLINE TContainedLinkedListIterator& operator--()
-	{
-		this->Prev();
-		return *this;
-	}
-
-	FFTL_FORCEINLINE TContainedLinkedListIterator operator--(int)
-	{
-		auto Tmp = *this;
-		this->Prev();
-		return Tmp;
-	}
-
-	FFTL_FORCEINLINE T* Get()
-	{
-		FFTL_ASSERT(this->m_pCurrentLink);
-		return this->m_pCurrentLink->GetElement();
-	}
-
-	FFTL_FORCEINLINE T& operator->()
-	{
-		return *Get();
-	}
-
-	FFTL_FORCEINLINE T& operator*()
-	{
-		return *Get();
-	}
-
-	[[nodiscard]] FFTL_FORCEINLINE bool IsBackEnd() const
-	{
-		return this->m_pCurrentLink->IsBackEnd();
-	}
-
-	[[nodiscard]] FFTL_FORCEINLINE bool IsFrontEnd() const
-	{
-		return this->m_pCurrentLink->IsFrontEnd();
-	}
-
-private:
-
-	ListNode<T, Tag>* m_pCurrentLink;
-
-	FFTL_FORCEINLINE friend bool operator==(const TContainedLinkedListIterator& lhs, const TContainedLinkedListIterator& rhs) { return lhs.m_pCurrentLink == rhs.m_pCurrentLink; }
-	FFTL_FORCEINLINE friend bool operator!=(const TContainedLinkedListIterator& lhs, const TContainedLinkedListIterator& rhs) { return lhs.m_pCurrentLink != rhs.m_pCurrentLink; }
+	//	Don't overload these
+	ListIteratorRev operator++(int) = delete;
+	ListIteratorRev operator--(int) = delete;
+	ListIteratorRev& operator--() = delete;
 };
 
 
-/**
-* This is a very simple doubly linked list class that links nodes together created externally.
-* It does not own the nodes, and will not delete them. You need to do that yourself.
-*/
-template <typename T, typename Tag, ListNode<T, Tag> T::* PtrToMember>
-class TContainedLinkedList
+template <typename T, typename Tag>
+class FFTL_NODISCARD List
 {
 public:
-	TContainedLinkedList()
+	List()
 		: m_HeadSentinel(&m_TailSentinel, nullptr)
 		, m_TailSentinel(nullptr, &m_HeadSentinel)
 	{
 	}
 
-	~TContainedLinkedList()
+	~List()
 	{
-		for (auto* pCur = m_HeadSentinel.GetNextNode(); pCur;)
+		for (auto* pCur = m_HeadSentinel.GetNextNode(); !pCur->IsBackEnd();)
 		{
 			auto pNodeCur = pCur;
 			pCur = pCur->GetNextNode();
@@ -274,25 +331,29 @@ public:
 
 	void AddHead(T* in_pElement)
 	{
-		FFTL_ASSERT((in_pElement->*PtrToMember).GetNextNode()==nullptr);
-		FFTL_ASSERT((in_pElement->*PtrToMember).GetPrevNode()==nullptr);
-		FFTL_ASSERT(&(in_pElement->*PtrToMember) != &m_HeadSentinel && &(in_pElement->*PtrToMember) != &m_TailSentinel);
+		ListNode<T, Tag>* in_pNode = ListNode<T, Tag>::GetNodeFromElement(in_pElement);
 
-		m_HeadSentinel.AddAfter(&(in_pElement->*PtrToMember));
+		FFTL_ASSERT(in_pNode->GetNextNode() == nullptr);
+		FFTL_ASSERT(in_pNode->GetPrevNode() == nullptr);
+		FFTL_ASSERT(in_pNode != &m_HeadSentinel && in_pNode != &m_TailSentinel);
+
+		m_HeadSentinel.AddAfter(in_pNode);
 	}
 
 	void AddTail(T* in_pElement)
 	{
-		FFTL_ASSERT((in_pElement->*PtrToMember).GetNextNode()==nullptr);
-		FFTL_ASSERT((in_pElement->*PtrToMember).GetPrevNode()==nullptr);
-		FFTL_ASSERT(&(in_pElement->*PtrToMember) != &m_HeadSentinel && &(in_pElement->*PtrToMember) != &m_TailSentinel);
+		ListNode<T, Tag>* in_pNode = ListNode<T, Tag>::GetNodeFromElement(in_pElement);
 
-		m_TailSentinel.AddBefore(&(in_pElement->*PtrToMember));
+		FFTL_ASSERT(in_pNode->GetNextNode() == nullptr);
+		FFTL_ASSERT(in_pNode->GetPrevNode() == nullptr);
+		FFTL_ASSERT(in_pNode != &m_HeadSentinel && in_pNode != &m_TailSentinel);
+
+		m_TailSentinel.AddBefore(in_pNode);
 	}
 
 	static void RemoveElement(T* in_pElement)
 	{
-		(in_pElement->*PtrToMember).RemoveFromList();
+		ListNode<T, Tag>::GetNodeFromElement(in_pElement)->RemoveFromList();
 	}
 
 	static void RemoveNode(ListNode<T, Tag>* in_pNode)
@@ -300,57 +361,41 @@ public:
 		in_pNode->RemoveFromList();
 	}
 
-	T* RemoveHead()
+	FFTL_NODISCARD static ListIteratorFor<T, Tag> CreateIteratorFor(ListNode<T, Tag>* pStartNode)
 	{
-		auto pNext = m_HeadSentinel.GetNextNode();
-		if (pNext)
-		{
-			pNext->RemoveFromList();
-			return pNext->GetElement();
-		}
-		return nullptr;
+		return ListIteratorFor<T, Tag>(pStartNode);
+	}
+	FFTL_NODISCARD static ListIteratorFor<T, Tag> CreateIteratorFor(T* pStartNode)
+	{
+		return ListIteratorFor<T, Tag>(pStartNode);
+	}
+	FFTL_NODISCARD static ListIteratorRev<T, Tag> CreateIteratorRev(ListNode<T, Tag>* pStartNode)
+	{
+		return ListIteratorRev<T, Tag>(pStartNode);
+	}
+	FFTL_NODISCARD static ListIteratorRev<T, Tag> CreateIteratorRev(T* pStartNode)
+	{
+		return ListIteratorRev<T, Tag>(pStartNode);
+	}
+	FFTL_NODISCARD ListIteratorFor<T, Tag> CreateIteratorHead()
+	{
+		return CreateIteratorFor(m_HeadSentinel.GetNextNode());
+	}
+	FFTL_NODISCARD ListIteratorRev<T, Tag> CreateIteratorTail()
+	{
+		return CreateIteratorRev(m_TailSentinel.GetPrevNode());
 	}
 
-	T* RemoveTail()
-	{
-		auto pPrev = m_TailSentinel.GetPrevNode();
-		if (pPrev)
-		{
-			pPrev->RemoveFromList();
-			return pPrev->GetElement();
-		}
-		return nullptr;
-	}
+	FFTL_NODISCARD const ListNode<T, Tag>* GetHead() const { return this->m_HeadSentinel.GetNextNode(); }
+	FFTL_NODISCARD ListNode<T, Tag>* GetHead() { return this->m_HeadSentinel.GetNextNode(); }
+	FFTL_NODISCARD const ListNode<T, Tag>* GetTail() const { return this->m_TailSentinel.GetPrevNode(); }
+	FFTL_NODISCARD ListNode<T, Tag>* GetTail() { return this->m_TailSentinel.GetPrevNode(); }
+	FFTL_NODISCARD bool IsEmpty() const { return this->m_HeadSentinel.GetNextNode() == &this->m_TailSentinel; }
 
-	static TContainedLinkedListIterator<T, Tag, PtrToMember> CreateIterator(ListNode<T, Tag>* pStartNode)
-	{
-		return TContainedLinkedListIterator<T, Tag, PtrToMember>(pStartNode);
-	}
-	static TContainedLinkedListIterator<T, Tag, PtrToMember> CreateIterator(T* pStartNode)
-	{
-		return TContainedLinkedListIterator<T, Tag, PtrToMember>(pStartNode);
-	}
-	TContainedLinkedListIterator<T, Tag, PtrToMember> CreateIteratorHead()
-	{
-		return CreateIterator(m_HeadSentinel.GetNextNode());
-	}
-	TContainedLinkedListIterator<T, Tag, PtrToMember> CreateIteratorTail()
-	{
-		return CreateIterator(m_TailSentinel.GetPrevNode());
-	}
-	TContainedLinkedListIterator<T, Tag, PtrToMember> CreateIteratorEnd()
-	{
-		return CreateIterator(&m_TailSentinel);
-	}
-
-	const ListNode<T, Tag>* GetHead() const { return this->m_HeadSentinel.GetNextNode(); }
-	ListNode<T, Tag>* GetHead() { return this->m_HeadSentinel.GetNextNode(); }
-	const ListNode<T, Tag>* GetTail() const { return this->m_TailSentinel.GetPrevNode(); }
-	ListNode<T, Tag>* GetTail() { return this->m_TailSentinel.GetPrevNode(); }
-	[[nodiscard]] bool IsEmpty() const { return this->m_HeadSentinel.GetNextNode() == &this->m_TailSentinel; }
-
-	TContainedLinkedListIterator<T, Tag, PtrToMember> begin() { return CreateIteratorHead(); }
-	TContainedLinkedListIterator<T, Tag, PtrToMember> end() { return CreateIteratorEnd(); }
+	FFTL_NODISCARD ListIteratorFor<T, Tag> begin() { return CreateIteratorHead(); }
+	FFTL_NODISCARD ListIteratorRev<T, Tag> rbegin() { return CreateIteratorTail(); }
+	FFTL_NODISCARD ListNode<T, Tag>* end() { return &m_TailSentinel; }
+	FFTL_NODISCARD ListNode<T, Tag>* rend() { return &m_HeadSentinel; }
 
 protected:
 	ListNode<T, Tag> m_HeadSentinel;

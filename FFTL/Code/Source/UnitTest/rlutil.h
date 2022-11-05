@@ -52,6 +52,11 @@
 #	include <string.h> // for strlen()
 #endif
 
+#if defined(_MSC_VER)
+#	pragma warning(push)
+#	pragma warning(disable : 4996) // 'sprintf' : This function or variable may be unsafe.Consider using sprintf_s instead.To disable deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details.
+#endif
+
 #ifdef __cplusplus
 	/// Namespace forward declarations
 	namespace rlutil {
@@ -67,7 +72,7 @@
 	#include <conio.h>    // for getch() and kbhit()
 	#define getch _getch
 	#define kbhit _kbhit
-#elif !defined(__ORBIS__) && !defined(__PROSPERO__)
+#elif !defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_PLATFORM_XBOX)
 	#include <termios.h> // for getch() and kbhit()
 	#include <unistd.h> // for getch(), kbhit() and (u)sleep()
 	#include <sys/ioctl.h> // for getkey()
@@ -113,10 +118,10 @@ RLUTIL_INLINE int kbhit(void) {
 	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 	return cnt; // Return number of characters
 }
-#elif defined(__ORBIS__) || defined(__PROSPERO__)
+#elif defined(FFTL_PLATFORM_PLAYSTATION) || defined(FFTL_PLATFORM_XBOX)
 #	define getch getchar
 #	define kbhit getchar
-#endif // _WIN32
+#endif // FFTL_PLATFORM_WINDOWS
 
 #ifndef gotoxy
 /// Function: gotoxy
@@ -358,7 +363,7 @@ enum {
 /// Note:
 /// Only Arrows, Esc, Enter and Space are currently working properly.
 RLUTIL_INLINE int getkey(void) {
-	#ifndef _WIN32
+	#ifndef FFTL_PLATFORM_WINDOWS
 	int cnt = kbhit(); // for ANSI escapes processing
 	#endif
 	int k = getch();
@@ -394,9 +399,9 @@ RLUTIL_INLINE int getkey(void) {
 				default: return kk-123+KEY_F1; // Function keys
 			}}
 		case 13: return KEY_ENTER;
-#ifdef _WIN32
+#ifdef FFTL_PLATFORM_WINDOWS
 		case 27: return KEY_ESCAPE;
-#else // _WIN32
+#else // FFTL_PLATFORM_WINDOWS
 		case 155: // single-character CSI
 		case 27: {
 			// Process ANSI escape sequences
@@ -409,7 +414,7 @@ RLUTIL_INLINE int getkey(void) {
 				}
 			} else return KEY_ESCAPE;
 		}
-#endif // _WIN32
+#endif // FFTL_PLATFORM_WINDOWS
 		default: return k;
 	}
 }
@@ -471,7 +476,7 @@ RLUTIL_INLINE RLUTIL_STRING_T getANSIBackgroundColor(const int c) {
 ///
 /// See <Color Codes>
 RLUTIL_INLINE void setColor(int c) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 
@@ -489,7 +494,7 @@ RLUTIL_INLINE void setColor(int c) {
 ///
 /// See <Color Codes>
 RLUTIL_INLINE void setBackgroundColor(int c) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 
@@ -508,7 +513,7 @@ RLUTIL_INLINE void setBackgroundColor(int c) {
 /// See <Color Codes>
 /// See <resetColor>
 RLUTIL_INLINE int saveDefaultColor(void) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	static char initialized = 0; // bool
 	static WORD attributes;
 
@@ -532,7 +537,7 @@ RLUTIL_INLINE int saveDefaultColor(void) {
 /// See <setColor>
 /// See <saveDefaultColor>
 RLUTIL_INLINE void resetColor(void) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (WORD)saveDefaultColor());
 #else
 	RLUTIL_PRINT(ANSI_ATTRIBUTE_RESET);
@@ -542,7 +547,7 @@ RLUTIL_INLINE void resetColor(void) {
 /// Function: cls
 /// Clears screen, resets all attributes and moves cursor home.
 RLUTIL_INLINE void cls(void) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	// Based on https://msdn.microsoft.com/en-us/library/windows/desktop/ms682022%28v=vs.85%29.aspx
 	const HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	const COORD coordScreen = {0, 0};
@@ -566,13 +571,13 @@ RLUTIL_INLINE void cls(void) {
 /// Function: locate
 /// Sets the cursor position to 1-based x,y.
 RLUTIL_INLINE void locate(int x, int y) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	COORD coord;
 	// TODO: clamping/assert for x/y <= 0?
 	coord.X = (SHORT)(x - 1);
 	coord.Y = (SHORT)(y - 1); // Windows uses 0-based coordinates
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-#else // _WIN32 || USE_ANSI
+#else // FFTL_PLATFORM_WINDOWS || USE_ANSI
 	#ifdef RLUTIL_USE_STD
 		RLUTIL_PRINT("\033[" << y << ";" << x << "H");
 	#else // RLUTIL_USE_STD
@@ -580,7 +585,7 @@ RLUTIL_INLINE void locate(int x, int y) {
 		sprintf(buf, "\033[%d;%df", y, x);
 		RLUTIL_PRINT(buf);
 	#endif // RLUTIL_USE_STD
-#endif // _WIN32 || USE_ANSI
+#endif // FFTL_PLATFORM_WINDOWS || USE_ANSI
 }
 
 /// Function: setString
@@ -593,14 +598,14 @@ RLUTIL_INLINE void setString(const RLUTIL_STRING_T & str_) {
 RLUTIL_INLINE void setString(RLUTIL_STRING_T str) {
 	size_t len = strlen(str);
 #endif // RLUTIL_USE_STD
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD numberOfCharsWritten;
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 
 	GetConsoleScreenBufferInfo(hConsoleOutput, &csbi);
 	WriteConsoleOutputCharacterA(hConsoleOutput, str, (DWORD)len, csbi.dwCursorPosition, &numberOfCharsWritten);
-#else // _WIN32 || USE_ANSI
+#else // FFTL_PLATFORM_WINDOWS || USE_ANSI
 	RLUTIL_PRINT(str);
 	#ifdef RLUTIL_USE_STD
 		RLUTIL_PRINT("\033[" << len << 'D');
@@ -609,7 +614,7 @@ RLUTIL_INLINE void setString(RLUTIL_STRING_T str) {
 		sprintf(buf, "\033[%uD", (unsigned)len);
 		RLUTIL_PRINT(buf);
 	#endif // RLUTIL_USE_STD
-#endif // _WIN32 || USE_ANSI
+#endif // FFTL_PLATFORM_WINDOWS || USE_ANSI
 }
 
 /// Function: setChar
@@ -622,15 +627,15 @@ RLUTIL_INLINE void setChar(char ch) {
 /// Function: setCursorVisibility
 /// Shows/hides the cursor.
 RLUTIL_INLINE void setCursorVisibility(char visible) {
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	HANDLE hConsoleOutput = GetStdHandle( STD_OUTPUT_HANDLE );
 	CONSOLE_CURSOR_INFO structCursorInfo;
 	GetConsoleCursorInfo( hConsoleOutput, &structCursorInfo ); // Get current cursor size
 	structCursorInfo.bVisible = (visible ? TRUE : FALSE);
 	SetConsoleCursorInfo( hConsoleOutput, &structCursorInfo );
-#else // _WIN32 || USE_ANSI
+#else // FFTL_PLATFORM_WINDOWS || USE_ANSI
 	RLUTIL_PRINT((visible ? ANSI_CURSOR_SHOW : ANSI_CURSOR_HIDE));
-#endif // _WIN32 || USE_ANSI
+#endif // FFTL_PLATFORM_WINDOWS || USE_ANSI
 }
 
 /// Function: hidecursor
@@ -648,7 +653,7 @@ RLUTIL_INLINE void showcursor(void) {
 /// Function: msleep
 /// Waits given number of milliseconds before continuing.
 RLUTIL_INLINE void msleep(unsigned int ms) {
-#ifdef _WIN32
+#ifdef _MSC_VER
 	Sleep(ms);
 #else
 	// usleep argument must be under 1 000 000
@@ -660,7 +665,7 @@ RLUTIL_INLINE void msleep(unsigned int ms) {
 /// Function: trows
 /// Get the number of rows in the terminal window or -1 on error.
 RLUTIL_INLINE int trows(void) {
-#ifdef _WIN32
+#ifdef FFTL_PLATFORM_WINDOWS
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
 		return -1;
@@ -679,13 +684,13 @@ RLUTIL_INLINE int trows(void) {
 #else // TIOCGSIZE
 	return -1;
 #endif // TIOCGSIZE
-#endif // _WIN32
+#endif // FFTL_PLATFORM_WINDOWS
 }
 
 /// Function: tcols
 /// Get the number of columns in the terminal window or -1 on error.
 RLUTIL_INLINE int tcols(void) {
-#ifdef _WIN32
+#ifdef FFTL_PLATFORM_WINDOWS
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
 		return -1;
@@ -704,7 +709,7 @@ RLUTIL_INLINE int tcols(void) {
 #else // TIOCGSIZE
 	return -1;
 #endif // TIOCGSIZE
-#endif // _WIN32
+#endif // FFTL_PLATFORM_WINDOWS
 }
 
 /// Function: anykey
@@ -737,13 +742,13 @@ RLUTIL_INLINE void setConsoleTitle(RLUTIL_STRING_T title) {
 #else // RLUTIL_USE_STD
 		title;
 #endif // RLUTIL_USE_STD
-#if defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#if defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 	SetConsoleTitleA(true_title);
 #else
 	RLUTIL_PRINT(ANSI_CONSOLE_TITLE_PRE);
 	RLUTIL_PRINT(true_title);
 	RLUTIL_PRINT(ANSI_CONSOLE_TITLE_POST);
-#endif // defined(_WIN32) && !defined(RLUTIL_USE_ANSI)
+#endif // defined(FFTL_PLATFORM_WINDOWS) && !defined(RLUTIL_USE_ANSI)
 }
 
 // Classes are here at the end so that documentation is pretty.
@@ -759,4 +764,9 @@ struct CursorHider {
 };
 
 } // namespace rlutil
+
+#if defined(_MSC_VER)
+#	pragma warning(pop) // 'sprintf' : This function or variable may be unsafe.Consider using sprintf_s instead.To disable deprecation, use _CRT_SECURE_NO_WARNINGS.See online help for details.
+#endif
+
 #endif

@@ -4,9 +4,6 @@
     <Filter Include="Containers">
       <UniqueIdentifier>{a450d184-0752-44a5-a665-0ee27aa2e075}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Default">
-      <UniqueIdentifier>{ebac7f42-e4c6-467e-ba9e-4e7ea5eb557a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Platform">
       <UniqueIdentifier>{d45a64e7-d243-411b-acee-88572ad7c915}</UniqueIdentifier>
     </Filter>
@@ -33,6 +30,9 @@
     </Filter>
     <Filter Include="Math\SSE">
       <UniqueIdentifier>{7f7b7fcb-6a12-45c0-a193-e75126887d5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\GCC">
+      <UniqueIdentifier>{64b4b510-140a-4e04-b64b-b3c774021801}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -117,20 +117,20 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\Casts.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Utils\MetaProgramming.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Log.h">
       <Filter>Platform</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Atomic.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\ListAtomic.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_Default.inl">
-      <Filter>Default</Filter>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Default\Math_vec8_Default.inl">
-      <Filter>Default</Filter>
-    </None>
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Thread.inl">
       <Filter>Platform</Filter>
     </None>
@@ -251,11 +251,21 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\NEON\Utils_NEON.inl">
       <Filter>Math\NEON</Filter>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.inl">
+      <Filter>Containers</Filter>
+    </None>
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\CpuInfo.inl">
       <Filter>Platform</Filter>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.inl">
-      <Filter>Containers</Filter>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\GCC\Atomic_GCC.inl">
+      <Filter>Platform\GCC</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Windows\Atomic_Windows.inl">
+      <Filter>Platform\Windows</Filter>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Atomic.inl">
+      <Filter>Platform</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -475,8 +475,20 @@ FFTL_FORCEINLINE __m128 sse_constRtp()
 	}
 	else
 	{
-		alignas(16) constexpr u32 i[4] = { x, y, z, w };
-		return *reinterpret_cast<const __m128*>(i);
+		if constexpr (FFTL_HAS_CONSTEXPR_BIT_CAST)
+		{
+			FFTL_BIT_CAST_CONSTEXPR const f32 fx = bit_cast<f32>(x);
+			FFTL_BIT_CAST_CONSTEXPR const f32 fy = bit_cast<f32>(y);
+			FFTL_BIT_CAST_CONSTEXPR const f32 fz = bit_cast<f32>(z);
+			FFTL_BIT_CAST_CONSTEXPR const f32 fw = bit_cast<f32>(w);
+
+			return _mm_setr_ps(fx, fy, fz, fw);
+		}
+		else
+		{
+			alignas(16) constexpr u32 i[4] = { x, y, z, w };
+			return bit_cast<const __m128>(i);
+		}
 	}
 }
 

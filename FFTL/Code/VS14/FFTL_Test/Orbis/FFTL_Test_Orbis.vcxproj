@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>ORBIS</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|ORBIS">
+      <Configuration>Profile</Configuration>
+      <Platform>ORBIS</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|ORBIS">
       <Configuration>Release</Configuration>
       <Platform>ORBIS</Platform>

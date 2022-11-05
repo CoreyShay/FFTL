@@ -714,6 +714,67 @@ inline mask32x4 CmpGe(f32_4_In a, f32_4_In b)
 	};
 }
 
+inline mask32x4 CmpEq(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x == b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y == b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z == b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w == b.m_v.w ? 0xffffffff : 0,
+	};
+}
+inline mask32x4 CmpNe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x != b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y != b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z != b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w != b.m_v.w ? 0xffffffff : 0,
+	};
+}
+inline mask32x4 CmpLt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x < b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y < b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z < b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w < b.m_v.w ? 0xffffffff : 0,
+	};
+}
+inline mask32x4 CmpLe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x <= b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y <= b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z <= b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w <= b.m_v.w ? 0xffffffff : 0,
+	};
+}
+inline mask32x4 CmpGt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x > b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y > b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z > b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w > b.m_v.w ? 0xffffffff : 0,
+	};
+}
+inline mask32x4 CmpGe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4
+	{
+		a.m_v.x >= b.m_v.x ? 0xffffffff : 0,
+		a.m_v.y >= b.m_v.y ? 0xffffffff : 0,
+		a.m_v.z >= b.m_v.z ? 0xffffffff : 0,
+		a.m_v.w >= b.m_v.w ? 0xffffffff : 0,
+	};
+}
+
 template<typename T, bool bX, bool bY, bool bZ, bool bW>
 inline typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
 {

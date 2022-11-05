@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Debug'">
-    <Import Project="Debug_Android.props" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)'=='Release'">
-    <Import Project="Release_Android.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="Common.props" />
   </ImportGroup>
   <PropertyGroup>
     <PlatformToolset>Clang_5_0</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Profile'">
+    <UseDebugLibraries>false</UseDebugLibraries>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
@@ -41,11 +41,34 @@
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ExceptionHandling>Disabled</ExceptionHandling>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <AdditionalOptions>-Wno-"invalid-offsetof" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wno-"invalid-offsetof" -Wno-"undefined-internal" -Wno-"macro-redefined" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>-lm;-lOpenSLES;%(AdditionalDependencies)</AdditionalDependencies>
       <LibraryDependencies>%(LibraryDependencies);GLESv1_CM;EGL;</LibraryDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <StrictAliasing>false</StrictAliasing>
+      <Optimization>Disabled</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <DataLevelLinking>false</DataLevelLinking>
+    </ClCompile>
+    <Link>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Profile'">
+    <ClCompile>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
+      <Optimization>Full</Optimization>
+      <StrictAliasing>true</StrictAliasing>
+      <OmitFramePointers>true</OmitFramePointers>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <DataLevelLinking>true</DataLevelLinking>
+    </ClCompile>
+    <Link>
     </Link>
   </ItemDefinitionGroup>
 </Project>

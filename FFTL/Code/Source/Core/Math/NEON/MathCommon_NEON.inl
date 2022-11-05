@@ -794,7 +794,7 @@ FFTL_FORCEINLINE mask32x4 mask32x4::PropagateInt<0, 0, 0, 0>(int)
 }
 
 template<s32 i>
-FFTL_FORCEINLINE mask32x4 GenMaskFromInt()
+FFTL_FORCEINLINE mask32x4 mask32x4::GenMaskFromInt()
 {
 	return vdupq_n_u32(static_cast<u32>(i));
 }
@@ -868,6 +868,31 @@ FFTL_FORCEINLINE mask32x4 CmpGe(f32_4_In a, f32_4_In b)
 	return mask32x4(vcgeq_f32(a.m_v, b.m_v));
 }
 
+FFTL_FORCEINLINE mask32x4 CmpEq(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vceqq_u32(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpNe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vmvnq_u32(vceqq_u32(a.m_v, b.m_v)));
+}
+FFTL_FORCEINLINE mask32x4 CmpLt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vcltq_u32(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpLe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vcleq_u32(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGt(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vcgtq_u32(a.m_v, b.m_v));
+}
+FFTL_FORCEINLINE mask32x4 CmpGe(mask32x4_In a, mask32x4_In b)
+{
+	return mask32x4(vcgeq_u32(a.m_v, b.m_v));
+}
+
 template<typename T, bool bX, bool bY, bool bZ, bool bW>
 FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
 {
@@ -900,8 +925,8 @@ FFTL_FORCEINLINE bool GetCpuFlushDenormalMode()
 	size_t x;
 
 	//	Get the floating-point status and control register and store it into x.
-	__asm(
-	FFTL_ASM_READ_FPCR " %[result], " FFTL_ASM_FPCR " \r\n"
+	__asm __volatile(
+		FFTL_ASM_READ_FPCR " %[result], " FFTL_ASM_FPCR " \r\n"
 		: [result] "=r" (x) : :
 		);
 
@@ -913,7 +938,7 @@ FFTL_FORCEINLINE void SetCpuFlushDenormalMode(bool bEnable)
 	size_t x;
 
 	//	Get the floating-point status and control register and store it into x.
-	__asm(
+	__asm __volatile(
 		FFTL_ASM_READ_FPCR " %[result], " FFTL_ASM_FPCR " \r\n"
 		: [result] "=r" (x) : :
 		);
@@ -922,7 +947,7 @@ FFTL_FORCEINLINE void SetCpuFlushDenormalMode(bool bEnable)
 	x = bEnable ? x | (1 << 24) : x & ~(1 << 24);
 
 	//	Store the new x into the floating-point status and control register
-	__asm(
+	__asm __volatile(
 		FFTL_ASM_WRITE_FPCR " " FFTL_ASM_FPCR " ,%[value]"
 		:
 		: [value] "r" (x)

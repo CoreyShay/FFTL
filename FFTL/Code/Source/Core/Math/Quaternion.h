@@ -27,6 +27,7 @@ public:
 	/// WARNING: The default constructor does not initialize. In debug it initializes with sNaNs.
 				quat() = default;
 				quat(const quat& copy) = default;
+				quat& operator=(const quat& copy) = default;
 				quat(f32 x, f32 y, f32 z, f32 w);
 				quat(const vec3& axis, f32 angleRad);
 	explicit	quat(const vec4& vec);
@@ -42,10 +43,10 @@ public:
 	// Getters
 	//
 
-	[[nodiscard]] f32		GetX() const;
-	[[nodiscard]] f32		GetY() const;
-	[[nodiscard]] f32		GetZ() const;
-	[[nodiscard]] f32		GetW() const;
+	FFTL_NODISCARD f32		GetX() const;
+	FFTL_NODISCARD f32		GetY() const;
+	FFTL_NODISCARD f32		GetZ() const;
+	FFTL_NODISCARD f32		GetW() const;
 
 	//
 	// Element insertion (preserves the remaining elements in this)
@@ -69,13 +70,13 @@ public:
 	//
 
 	quat&					operator*=(const quat& rot);
-	[[nodiscard]] quat		operator*(const quat& b) const;
-	[[nodiscard]] quat		operator-() const;
-	[[nodiscard]] quat		operator+(const quat& other) const;
-	[[nodiscard]] quat		operator-(const quat& other) const;
+	FFTL_NODISCARD quat		operator*(const quat& b) const;
+	FFTL_NODISCARD quat		operator-() const;
+	FFTL_NODISCARD quat		operator+(const quat& other) const;
+	FFTL_NODISCARD quat		operator-(const quat& other) const;
 
-	[[nodiscard]] bool		operator==(const quat& b) const;
-	[[nodiscard]] bool		operator!=(const quat& b) const;
+	FFTL_NODISCARD bool		operator==(const quat& b) const;
+	FFTL_NODISCARD bool		operator!=(const quat& b) const;
 
 	//
 	// Conversion
@@ -86,10 +87,10 @@ public:
 	void						ToMat33(mat33& dst) const;
 	/// Returns a rotation matrix from the quat.
 	/// Assumes the quat to be normalized().
-	[[nodiscard]] mat33		ToMat33() const;
-	[[nodiscard]] const vec4&	AsVec4() const;
+	FFTL_NODISCARD mat33		ToMat33() const;
+	FFTL_NODISCARD const vec4&	AsVec4() const;
 	friend void					StoreU(f32 *p, const quat& q);
-	[[nodiscard]] vec3			ToForward() const;
+	FFTL_NODISCARD vec3			ToForward() const;
 
 	//
 	// Functions of the quaternion
@@ -105,11 +106,11 @@ public:
 	friend quat		Normalize(const quat& q);
 	friend quat		NormalizeFast(const quat& q);
 
-	[[nodiscard]] bool			HasValidAxis() const;
-	[[nodiscard]] vec3			GetAxis() const;
-	[[nodiscard]] f32			GetAngle() const;
-	[[nodiscard]] vec3			Transform(const vec3& vec) const;
-	[[nodiscard]] vec3			MakeRelative(const vec3& vec) const;
+	FFTL_NODISCARD bool			HasValidAxis() const;
+	FFTL_NODISCARD vec3			GetAxis() const;
+	FFTL_NODISCARD f32			GetAngle() const;
+	FFTL_NODISCARD vec3			Transform(const vec3& vec) const;
+	FFTL_NODISCARD vec3			MakeRelative(const vec3& vec) const;
 
 	//
 	// In-place operations (do not return *this - this is inefficient and error-prone)
@@ -123,8 +124,8 @@ public:
 	// Out-of-place operations
 	//
 
-	[[nodiscard]] quat			GetRotated(const quat& rot) const;
-	[[nodiscard]] quat			GetConjugated() const;
+	FFTL_NODISCARD quat			GetRotated(const quat& rot) const;
+	FFTL_NODISCARD quat			GetConjugated() const;
 
 	//
 	// In-place builders (do not return *this - this is inefficient and error-prone)
@@ -145,23 +146,23 @@ public:
 	// Out-of-place builders
 	//
 
-	[[nodiscard]] FFTL_FORCEINLINE static quat	FromMatScaled(const mat33& mat)					{ quat q; q.BuildFromMatScaled(mat); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	FromMatOrtho(const mat33& mat)					{ quat q; q.BuildFromMatOrtho(mat);  return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	FromAxisAngle(const vec3& axis, f32 angleRad)	{ quat q; q.BuildFromAxisAngle(axis, angleRad); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	FromEuler(f32 anglex, f32 angley, f32 anglez)	{ quat q; q.BuildFromEuler(anglex, angley, anglez); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	FromEuler(const vec3& angles)					{ quat q; q.BuildFromEuler(angles); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	SLerp(const quat& q0, const quat& q1, f32 t)	{ quat q; q.BuildSlerp(q0, q1, t); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	SLerpFast(quat qFrom, const quat& qTo, f32 t)	{ quat q; q.BuildSlerpFast(qFrom, qTo, t); return q; }
-	[[nodiscard]] FFTL_FORCEINLINE static quat	SLerpFast(const quat& qFrom, const quat& qTo, f32 t, f32 fromDotTo) { quat q; q.BuildSlerpFast(qFrom, qTo, t, fromDotTo); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	FromMatScaled(const mat33& mat)					{ quat q; q.BuildFromMatScaled(mat); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	FromMatOrtho(const mat33& mat)					{ quat q; q.BuildFromMatOrtho(mat);  return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	FromAxisAngle(const vec3& axis, f32 angleRad)	{ quat q; q.BuildFromAxisAngle(axis, angleRad); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	FromEuler(f32 anglex, f32 angley, f32 anglez)	{ quat q; q.BuildFromEuler(anglex, angley, anglez); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	FromEuler(const vec3& angles)					{ quat q; q.BuildFromEuler(angles); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	SLerp(const quat& q0, const quat& q1, f32 t)	{ quat q; q.BuildSlerp(q0, q1, t); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	SLerpFast(quat qFrom, const quat& qTo, f32 t)	{ quat q; q.BuildSlerpFast(qFrom, qTo, t); return q; }
+	FFTL_NODISCARD FFTL_FORCEINLINE static quat	SLerpFast(const quat& qFrom, const quat& qTo, f32 t, f32 fromDotTo) { quat q; q.BuildSlerpFast(qFrom, qTo, t, fromDotTo); return q; }
 
 	//
 	// Other statics
 	//
 
-	[[nodiscard]] static f32	AngularDifference(const quat& a, const quat& b);
-	[[nodiscard]] static quat	LoadA(const f32* p);
-	[[nodiscard]] static quat	LoadU(const f32* p);
-	[[nodiscard]] static quat	genIdentity();
+	FFTL_NODISCARD static f32	AngularDifference(const quat& a, const quat& b);
+	FFTL_NODISCARD static quat	LoadA(const f32* p);
+	FFTL_NODISCARD static quat	LoadU(const f32* p);
+	FFTL_NODISCARD static quat	genIdentity();
 
 private:
 
@@ -174,13 +175,13 @@ private:
 // Element insertion (preserves the remaining elements in this)
 //
 
-[[nodiscard]] quat				InsertX(const quat& q, f32 f);
-[[nodiscard]] quat				InsertY(const quat& q, f32 f);
-[[nodiscard]] quat				InsertZ(const quat& q, f32 f);
-[[nodiscard]] quat				InsertW(const quat& q, f32 f);
+FFTL_NODISCARD quat				InsertX(const quat& q, f32 f);
+FFTL_NODISCARD quat				InsertY(const quat& q, f32 f);
+FFTL_NODISCARD quat				InsertZ(const quat& q, f32 f);
+FFTL_NODISCARD quat				InsertW(const quat& q, f32 f);
 
-[[nodiscard]] f32	Dot(const quat& a, const quat& b);
-[[nodiscard]] quat	Lerp(f32 mu, const quat& from, const quat& to);
+FFTL_NODISCARD f32	Dot(const quat& a, const quat& b);
+FFTL_NODISCARD quat	Lerp(f32 mu, const quat& from, const quat& to);
 
 } // namespace FFTL
 

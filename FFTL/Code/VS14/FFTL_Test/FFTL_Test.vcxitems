@@ -29,5 +29,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\kiss_fftr.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\kiss_fft130\_kiss_fft_guts.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\rlutil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\UnitTest\test.h" />
   </ItemGroup>
 </Project>

@@ -53,11 +53,11 @@ public:
 #endif //platform
 
 #if defined(FFTL_PLATFORM_PLAYSTATION) && !defined(FFTL_THREAD_USE_POSIX)
-	[[nodiscard]] HandleType GetHandle() const { return m_Handle; }
-	[[nodiscard]] HandleType GetHandle() { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #else
-	[[nodiscard]] HandleType GetHandle() const { return m_Handle; }
-	[[nodiscard]] HandleType GetHandle() { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() const { return m_Handle; }
+	FFTL_NODISCARD HandleType GetHandle() { return m_Handle; }
 #endif
 
 private:

@@ -69,14 +69,14 @@ inline void FixedBlockMemPool::Init(void* pPool, size_type maxCount, size_type a
 
 #if defined(FFTL_ENABLE_PROFILING)
 	//	0xad will be the audio signature
-	memset(m_Pool, 0xad, allocSize * maxCount);
+	MemSet(m_Pool, 0xad, allocSize * maxCount);
 #endif
 }
 
 inline void FixedBlockMemPool::Init(uint maxCount, size_type allocSize, size_type alignment)
 {
 	allocSize = AlignForward(alignment, allocSize);
-	void* pPool = Alloc(allocSize*maxCount + maxCount*sizeof(*m_FreeIndexStack), alignment);
+	void* pPool = Alloc(allocSize * maxCount + maxCount * sizeof(*m_FreeIndexStack), alignment);
 	Init(pPool, maxCount, allocSize);
 	m_bPoolOwned = true;
 }
@@ -97,7 +97,7 @@ inline FixedBlockMemPool::~FixedBlockMemPool()
 
 // PURPOSE: Gets a pointer to the next free memory space.
 // RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-inline void* FixedBlockMemPool::AllocateObject()
+inline void* FixedBlockMemPool::Allocate()
 {
 	size_type usedCount = m_NumUsedEntries;
 	if (usedCount != _MaxCount)
@@ -121,7 +121,7 @@ inline void* FixedBlockMemPool::AllocateObject()
 // NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 //			an instance more than once, or a pointer to an object outside the bounds of our array,
 //			although there are some assertions to warn you if you might be.
-inline void FixedBlockMemPool::FreeObject(void* pInstance)
+inline void FixedBlockMemPool::Free(void* pInstance)
 {
 	FFTL_ASSERT(pInstance <= GetEntry(_MaxCount - 1));
 	FFTL_ASSERT(pInstance >= GetEntry(0));
@@ -131,7 +131,7 @@ inline void FixedBlockMemPool::FreeObject(void* pInstance)
 	{
 		--usedCount;
 		FFTL_ASSERT(m_FreeIndexStack[usedCount] == INDEX_USED_SIGNATURE);
-		m_FreeIndexStack[usedCount] = GetObjectIndex(pInstance);
+		m_FreeIndexStack[usedCount] = GetIndex(pInstance);
 		m_NumUsedEntries = usedCount;
 #if defined(FFTL_ENABLE_PROFILING)
 		//	0xad will be the audio signature
@@ -173,69 +173,70 @@ inline FixedBlockMemPool_ThreadSafe::FixedBlockMemPool_ThreadSafe(uint maxCount,
 inline void FixedBlockMemPool_ThreadSafe::Init(void* pPool, uint maxCount, uint allocSize)
 {
 	_Mybase::Init(pPool, maxCount, allocSize);
-#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
-	m_HeadIndex = 0;
-	m_TailIndex = 0;
-#if defined(FFTL_ENABLE_PROFILING)
-	m_CollisionCount = 0;
-#endif
+#if FFTL_FIXEDBLOCKPOOL_ATOMIC && defined(FFTL_ENABLE_PROFILING)
+	m_UsedCollisionCount = 0;
+	m_EntryCollisionCount = 0;
 #endif
 }
 
 inline void FixedBlockMemPool_ThreadSafe::Init(uint maxCount, uint allocSize, uint alignment)
 {
 	_Mybase::Init(maxCount, allocSize, alignment);
-#if defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
-	m_HeadIndex = 0;
-	m_TailIndex = 0;
-#if defined(FFTL_ENABLE_PROFILING)
-	m_CollisionCount = 0;
-#endif
+#if FFTL_FIXEDBLOCKPOOL_ATOMIC && defined(FFTL_ENABLE_PROFILING)
+	m_UsedCollisionCount = 0;
+	m_EntryCollisionCount = 0;
 #endif
 }
 
 // PURPOSE: Gets a pointer to the next free memory space.
 // RETURN : Pointer to the newly allocated memory, or nullptr if the pool is full
-inline void* FixedBlockMemPool_ThreadSafe::AllocateObject()
+inline void* FixedBlockMemPool_ThreadSafe::Allocate()
 {
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 	MutexScopedLock lock(&m_Mutex);
-	return _Mybase::AllocateObject();
+	return _Mybase::Allocate();
 #else
-	const size_type usedCount = AtomicIncrement(&this->m_NumUsedEntries) + 1;
-	if (usedCount < _MaxCount)
+	void *pType = nullptr;
+
+	//	Increment the used count atomically but only if the pool isn't or has become full.
+	size_type usedCount = AtomicLoad(&this->m_NumUsedEntries);
+	do FFTL_UNLIKELY
 	{
-#if defined(FFTL_ENABLE_PROFILING)
-		AtomicCompareExchange(&this->m_HighwaterMarkEntries, usedCount, usedCount + 1);
-		AtomicIncrement(&this->m_TotalAllocs);
-#endif // defined(FFTL_ENABLE_PROFILING)
-
-	_RESTART_ADD:
-		//	Increment the head index of the queue
-		const size_type stackIndex = (AtomicIncrement(&this->m_HeadIndex) + 1) & (_MaxCount - 1);
-
-		//	Mark this one as used and signal FreeObject to continue if it was waiting on this index
-		volatile size_type* pOldEntryIndex = this->m_FreeIndexStack + stackIndex;
-
-		//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
-		// around us, we can just retry getting the stack index.
-		const size_type entryIndex = AtomicExchange(pOldEntryIndex, INDEX_USED_SIGNATURE);
-		if (entryIndex == INDEX_USED_SIGNATURE) FFTL_UNLIKELY
-		{
-#if defined(FFTL_ENABLE_PROFILING)
-			AtomicIncrement(&this->m_CollisionCount);
-#endif // defined(FFTL_ENABLE_PROFILING)
-			goto _RESTART_ADD;
-		}
-
-		FFTL_ASSERT(stackIndex < _MaxCount);
-		FFTL_ASSERT(entryIndex < _MaxCount);
-		void* pType = this->GetEntry(entryIndex);
+		FFTL_ASSERT(usedCount <= _MaxCount);
+	if (usedCount == _MaxCount) FFTL_UNLIKELY
+	{
+		//	If the pool is full, return early
 		return pType;
 	}
+	} while (![&]()
+		{
+			const bool ret = AtomicCompareExchangeWeakRef<size_type>(&this->m_NumUsedEntries, usedCount + 1u, usedCount);
+#	if defined(FFTL_ENABLE_PROFILING)
+			if (!ret)
+				AtomicIncrement(&this->m_UsedCollisionCount);
+#	endif
+			return ret;
+		}());
 
-	AtomicDecrement(&this->m_NumUsedEntries);
-	return nullptr;
+	//	Atomically mark this stack entry as used so that any concurrent free operation will spin before overwriting it.
+	size_type pointerIndex;
+	while ((pointerIndex = AtomicExchange(&this->m_FreeIndexStack[usedCount], INDEX_USED_SIGNATURE)) == INDEX_USED_SIGNATURE) FFTL_UNLIKELY
+	{
+#	if defined(FFTL_ENABLE_PROFILING)
+		AtomicIncrement(&this->m_EntryCollisionCount);
+#	endif
+	}
+
+	pType = this->GetEntry(pointerIndex);
+
+#	if defined(FFTL_ENABLE_PROFILING)
+	for (size_type highWaterMark = AtomicLoad(&this->m_HighwaterMarkEntries); highWaterMark < usedCount + 1u && AtomicCompareExchangeWeakRef<size_type>(&this->m_HighwaterMarkEntries, usedCount + 1u, highWaterMark);)
+	{
+	}
+	AtomicIncrement(&this->m_TotalAllocs);
+#	endif
+
+	return pType;
 #endif
 }
 
@@ -244,43 +245,41 @@ inline void* FixedBlockMemPool_ThreadSafe::AllocateObject()
 // NOTES  : Pretty much assumes that you know what you're doing, and not trying to return
 //			an instance more than once, or a pointer to an object outside the bounds of our array,
 //			although there are some assertions to warn you if you might be.
-inline void FixedBlockMemPool_ThreadSafe::FreeObject(void* pInstance)
+inline void FixedBlockMemPool_ThreadSafe::Free(void* pInstance)
 {
-#if !defined(FFTL_FIXEDBLOCKPOOL_ATOMIC)
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
 	MutexScopedLock lock(&m_Mutex);
-	_Mybase::FreeObject(pInstance);
+	_Mybase::Free(pInstance);
 #else
-#if defined(FFTL_ENABLE_PROFILING)
-	//	0xad will be the audio clearing signature
-	memset(pInstance, 0xad, _AllocSize);
-#endif
-	FFTL_ASSERT(pInstance <= this->GetEntry(_MaxCount - 1));
-	FFTL_ASSERT(pInstance >= this->GetEntry(0));
+	FFTL_ASSERT(this->IsContainedPointer(pInstance));
+	FFTL_ASSERT(AtomicLoad(&this->m_NumUsedEntries) > 0);
 
-#if defined(FFTL_ENABLE_PROFILING)
-	AtomicIncrement(&this->m_TotalFrees);
-#endif // defined(FFTL_ENABLE_PROFILING)
-
-_RESTART_ADD:
-	//	Increment the tail index of the queue
-	const size_type stackIndex = (AtomicIncrement(&this->m_TailIndex) + 1) & (_MaxCount - 1);
-	const size_type blockIndex = GetObjectIndex(pInstance);
-	volatile size_type* pEntryIndex = this->m_FreeIndexStack + stackIndex;
-
-	//	If the unlikely scenario occurs where we've waited in this thread long enough to the point where other threads have spun
-	// around us, we can just retry getting the stack index.
-	if (!AtomicCompareExchange(pEntryIndex, INDEX_USED_SIGNATURE, blockIndex)) FFTL_UNLIKELY
+	if constexpr (FFTL_USING_ASSERTS)
 	{
-#if defined(FFTL_ENABLE_PROFILING)
-		AtomicIncrement(&this->m_CollisionCount);
-#endif // defined(FFTL_ENABLE_PROFILING)
-		goto _RESTART_ADD;
+		//	0xad will be the audio signature
+		MemSet(pInstance, 0xad, _AllocSize);
 	}
 
-	//	Decrement the used entries atomically
-	const size_type usedCount = AtomicDecrement(&this->m_NumUsedEntries);
-	FFTL_ASSERT(usedCount != 0);
-	(void)usedCount;
+	const size_type ptrIndex = this->GetIndex(pInstance);
+
+	//	Atomic decrement
+	const size_type usedCount = AtomicDecrement(&this->m_NumUsedEntries) - 1;
+
+	//	Catastrophic assert
+	FFTL_ASSERT(usedCount < _MaxCount);
+
+	//	Atomically spin if a concurrent allocate operation hasn't yet marked this stack entry as used.
+	while (AtomicCompareExchangeWeak(&this->m_FreeIndexStack[usedCount], ptrIndex, INDEX_USED_SIGNATURE) != INDEX_USED_SIGNATURE) FFTL_UNLIKELY
+	{
+#	if defined(FFTL_ENABLE_PROFILING)
+		AtomicIncrement(&this->m_EntryCollisionCount);
+#	endif
+	}
+
+#	if defined(FFTL_ENABLE_PROFILING)
+	AtomicIncrement(&this->m_TotalFrees);
+#	endif
+
 #endif
 }
 

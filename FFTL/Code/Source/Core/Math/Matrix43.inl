@@ -246,19 +246,19 @@ inline f32 mat43::Determinant3x3() const
 	return AsMat33().Determinant();
 }
 
-inline const vec3& mat43::Right() const
+inline const vec3 mat43::Right() const
 {
 	return Row<0>();
 }
-inline const vec3& mat43::Forward() const
+inline const vec3 mat43::Forward() const
 {
 	return Row<1>();
 }
-inline const vec3& mat43::Up() const
+inline const vec3 mat43::Up() const
 {
 	return Row<2>();
 }
-inline const vec3& mat43::Position() const
+inline const vec3 mat43::Position() const
 {
 	return Row<3>();
 }
@@ -280,7 +280,7 @@ inline vec3& mat43::Position()
 }
 
 template<uint ROW>
-inline const vec3& mat43::Row() const
+inline const vec3 mat43::Row() const
 {
 	static_assert(ROW <= 3, "Only 1st 3 rows are valid");
 	return m_v[ROW].CastTo<3>();

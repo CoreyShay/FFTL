@@ -2,12 +2,23 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 	<Type Name="FFTL::StringFixed&lt;*&gt;">
-		<DisplayString>{data}</DisplayString>
+		<DisplayString>{m_data}</DisplayString>
 		<Expand>
 			<Item Name="[size]" ExcludeView="simple">$T1</Item>
 			<ArrayItems>
 				<Size>$T1</Size>
-				<ValuePointer>data</ValuePointer>
+				<ValuePointer>m_data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::WStringFixed&lt;*&gt;">
+		<DisplayString>{m_data}</DisplayString>
+		<Expand>
+			<Item Name="[size]" ExcludeView="simple">$T1</Item>
+			<ArrayItems>
+				<Size>$T1</Size>
+				<ValuePointer>m_data</ValuePointer>
 			</ArrayItems>
 		</Expand>
 	</Type>
@@ -18,7 +29,7 @@
 			<Item Name="[size]" ExcludeView="simple">$T2</Item>
 			<ArrayItems>
 				<Size>$T2</Size>
-				<ValuePointer>data</ValuePointer>
+				<ValuePointer>m_data</ValuePointer>
 			</ArrayItems>
 		</Expand>
 	</Type>
@@ -30,7 +41,7 @@
 			<Item Name="[capacity]" ExcludeView="simple">$T2</Item>
 			<ArrayItems>
 				<Size>m_size</Size>
-				<ValuePointer>($T1*)m_Data</ValuePointer>
+				<ValuePointer>($T1*)m_data</ValuePointer>
 			</ArrayItems>
 		</Expand>
 	</Type>
@@ -54,18 +65,18 @@
 	</Type>
 	
 	<Type Name="FFTL::Timer">
-		<DisplayString>{ ((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount }</DisplayString>
+		<DisplayString>{ ((double)m_TotalTicks * sm_StaticInfo.m_TicksToUsScalar) / m_nAccumCount }</DisplayString>
 		<Expand>
-			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_TicksToUsScalar</Item>
-			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount</Item>
+			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_StaticInfo.m_TicksToUsScalar</Item>
+			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_StaticInfo.m_TicksToUsScalar) / m_nAccumCount</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="FFTL::CpuTimer">
 		<DisplayString>{ ((double)m_TotalTicks) / m_nAccumCount }</DisplayString>
 		<Expand>
-			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_TicksToUsScalar</Item>
-			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_TicksToUsScalar) / m_nAccumCount</Item>
+			<Item Name="[TotalTime_uS]">m_TotalTicks * sm_StaticInfo.m_TicksToUsScalar</Item>
+			<Item Name="[AvgTime_uS]">((double)m_TotalTicks * sm_StaticInfo.m_TicksToUsScalar) / m_nAccumCount</Item>
 		</Expand>
 	</Type>
 

@@ -7,11 +7,11 @@ namespace FFTL
 {
 
 
-struct [[nodiscard]] s24
+struct FFTL_NODISCARD s24
 {
-	s24();
-	constexpr s24(int r);
-	/*constexpr*/ operator int() const;
+	/*constexpr*/ s24();
+	FFTL_NODISCARD constexpr s24(int r);
+	constexpr operator int() const;
 
 	u8 b[3];
 };
@@ -37,7 +37,7 @@ FFTL_FORCEINLINE constexpr s24::s24(int r)
 {
 }
 
-FFTL_FORCEINLINE /*constexpr*/ s24::operator int() const
+FFTL_FORCEINLINE constexpr s24::operator int() const
 {
 #if defined(FFTL_LITTLEENDIAN)
 	s32 i = (static_cast<s32>(b[0]) << 8) | (static_cast<s32>(b[1]) << 16) | (static_cast<s32>(b[2]) << 24);

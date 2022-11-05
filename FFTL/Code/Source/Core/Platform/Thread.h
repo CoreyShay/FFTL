@@ -104,14 +104,14 @@ public:
 	ThreadHandle() {}
 	ThreadHandle(ThreadId id) : m_ID(id) {}
 
-	[[nodiscard]] ThreadId GetId() const { return m_ID; }
+	FFTL_NODISCARD ThreadId GetId() const { return m_ID; }
 	ThreadHandle& operator=(ThreadId id) { m_ID = id; return *this; }
-	[[nodiscard]] bool operator==(ThreadId id) const { return m_ID == id; }
-	[[nodiscard]] bool operator!=(ThreadId id) const { return m_ID != id; }
-	[[nodiscard]] bool operator>(ThreadId id) const { return m_ID > id; }
-	[[nodiscard]] bool operator<(ThreadId id) const { return m_ID < id; }
-	[[nodiscard]] bool operator>=(ThreadId id) const { return m_ID >= id; }
-	[[nodiscard]] bool operator<=(ThreadId id) const { return m_ID <= id; }
+	FFTL_NODISCARD bool operator==(ThreadId id) const { return m_ID == id; }
+	FFTL_NODISCARD bool operator!=(ThreadId id) const { return m_ID != id; }
+	FFTL_NODISCARD bool operator>(ThreadId id) const { return m_ID > id; }
+	FFTL_NODISCARD bool operator<(ThreadId id) const { return m_ID < id; }
+	FFTL_NODISCARD bool operator>=(ThreadId id) const { return m_ID >= id; }
+	FFTL_NODISCARD bool operator<=(ThreadId id) const { return m_ID <= id; }
 private:
 	ThreadId m_ID;
 };
@@ -125,10 +125,10 @@ private:
 
 
 //	Gets the thread id of the thread of the calling function.
-[[nodiscard]] ThreadId GetThreadIdCurrent();
+FFTL_NODISCARD ThreadId GetThreadIdCurrent();
 
 //	Gets the thread handle of the thread of the calling function.
-[[nodiscard]] ThreadHandle GetThreadHandleCurrent();
+FFTL_NODISCARD ThreadHandle GetThreadHandleCurrent();
 
 //	Sets the name of a thread. All platforms.
 void SetThreadName(ThreadHandle handle, const char* pszName);
@@ -163,7 +163,7 @@ public:
 	virtual ~ThreadOwner() = default;
 	typedef ThreadResult(ThreadOwner::*RunFunction)();
 	template <typename T>
-	[[nodiscard]] static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
+	FFTL_NODISCARD static RunFunction ToRunFunction(ThreadResult (T::*pf)()) { return static_cast<RunFunction>(pf); }
 };
 #if defined(_MSC_VER)
 #	pragma warning(pop)
@@ -179,11 +179,11 @@ public:
 	void Pause();
 	void Unpause();
 
-	[[nodiscard]] ThreadHandle GetThreadHandle() const;
-	[[nodiscard]] ThreadId GetThreadId() const;
-	[[nodiscard]] ThreadResult GetRunResult();
-	[[nodiscard]] bool GetIsRunning() const;
-	[[nodiscard]] bool GetIsFlaggedForStop() const;
+	FFTL_NODISCARD ThreadHandle GetThreadHandle() const;
+	FFTL_NODISCARD ThreadId GetThreadId() const;
+	FFTL_NODISCARD ThreadResult GetRunResult();
+	FFTL_NODISCARD bool GetIsRunning() const;
+	FFTL_NODISCARD bool GetIsFlaggedForStop() const;
 
 protected:
 	ThreadHandle					m_Handle = 0;

@@ -17,11 +17,14 @@
 
 #include "android_native_app_glue.h"
 
-#include "Core/Platform/Log.h"
-#include "Core/Platform/Thread.h"
+#include "../../Core/Platform/Log.h"
+#include "../../Core/Platform/Thread.h"
 
 #include <android/log.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 
 static void free_saved_state(Android_App* pApp) {
@@ -651,7 +654,7 @@ void android_main(struct Android_App* state) {
 	engine.app = state;
 
 	// Prepare to monitor accelerometer
-	engine.sensorManager = ASensorManager_getInstance();
+	engine.sensorManager = ASensorManager_getInstanceForPackage("FFTL.Test.Android");
 	engine.accelerometerSensor = ASensorManager_getDefaultSensor(engine.sensorManager,
 		ASENSOR_TYPE_ACCELEROMETER);
 	engine.sensorEventQueue = ASensorManager_createEventQueue(engine.sensorManager,

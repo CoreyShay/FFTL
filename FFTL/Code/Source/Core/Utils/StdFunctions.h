@@ -1,10 +1,8 @@
 #pragma once
 
-// Fixed array string template
-
 #include "../defs.h"
 
-#include "Casts.h"
+#include "MetaProgramming.h"
 #include "../Math/MathCommon.h"
 #include "../Containers/Array.h"
 #include <cstring>
@@ -40,12 +38,12 @@ namespace FFTL
 //	Compares blocks of memory of a size known at compile time in the fastest way possible.
 // Powers of 2 sizes <= 64 are branchless.
 template<size_t T_BYTE_COUNT>
-[[nodiscard]] bool CompareBytesEQ(const void* a, const void* b);
+FFTL_NODISCARD bool CompareBytesEQ(const void* a, const void* b);
 
 //	Copies the number of bytes in the template param from pSrc to pDst.
 // Uses MemCopy, except sometimes just a few, fast, tiny instructions if the size is optimal.
 template<size_t T_BYTE_COUNT>
-[[nodiscard]] void* CopyBytes(void* pDst, const void* pSrc);
+FFTL_NODISCARD void* CopyBytes(void* pDst, const void* pSrc);
 
 
 
@@ -103,76 +101,81 @@ FFTL_FORCEINLINE f32* ArrayCopy(FixedArray<f32, N_DST>& dst, const FixedArray<f6
 	return dst.data();
 }
 
+FFTL_FORCEINLINE void* MemSet(void* dst, u8 c, size_t size)
+{
+	return memset(dst, c, size);
+}
+
 template<typename T>
 FFTL_FORCEINLINE T* MemZero(T* pDst, size_t uCount)
 {
-	return static_cast<T*>(memset(pDst, 0, uCount * sizeof(T)));
+	return static_cast<T*>(MemSet(pDst, 0, uCount * sizeof(T)));
 }
 
 template<typename T, size_t N>
 FFTL_FORCEINLINE T* MemZero(T(&dst)[N])
 {
-	return static_cast<T*>(memset(dst, 0, sizeof(dst)));
+	return static_cast<T*>(MemSet(dst, 0, sizeof(dst)));
 }
 
 template<typename T, size_t N>
 FFTL_FORCEINLINE T* MemZero(FixedArray<T, N>& dst)
 {
-	return static_cast<T*>(memset(&dst, 0, sizeof(dst)));
+	return static_cast<T*>(MemSet(&dst, 0, sizeof(dst)));
 }
 
 template<typename T>
 FFTL_FORCEINLINE T* MemZero(T& dst)
 {
-	return static_cast<T*>(memset(&dst, 0, sizeof(dst)));
+	return static_cast<T*>(MemSet(&dst, 0, sizeof(dst)));
 }
 
 template<uint T_ALIGNMENT, typename T>
-[[nodiscard]] FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& offset)
 {
 	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (T_ALIGNMENT - 1)) & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-[[nodiscard]] FFTL_FORCEINLINE constexpr T AlignForward(const T& alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignForward(const T& alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return (offset + (alignment - 1)) & ~(alignment - 1);
 }
 
 template<uint T_ALIGNMENT, typename T>
-[[nodiscard]] FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& offset)
 {
 	static_assert((T_ALIGNMENT & (T_ALIGNMENT - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(T_ALIGNMENT - 1);
 }
 template<typename T>
-[[nodiscard]] FFTL_FORCEINLINE constexpr T AlignBackward(const T& alignment, const T& offset)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& alignment, const T& offset)
 {
 	FFTL_ASSERT_MSG((alignment & (alignment - 1)) == 0, "Alignment must be power of 2");
 	return offset & ~(alignment - 1);
 }
 
 template<typename T, size_t N>
-[[nodiscard]] FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&)[N])
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&)[N])
 {
 	return N;
 }
 
 template <typename T, size_t N>
-[[nodiscard]] FFTL_FORCEINLINE constexpr size_t ArraySize(const FixedArray<T, N>&)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const FixedArray<T, N>&)
 {
 	return N;
 }
 
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<1>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<1>(const void* a, const void* b)
 {
 	return *reinterpret_cast<const byte*>(a) == *reinterpret_cast<const byte*>(b);
 }
 
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<2>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<2>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u16 u; };
@@ -182,7 +185,7 @@ template<>
 }
 
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<4>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<4>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u32 u; };
@@ -191,7 +194,7 @@ template<>
 }
 
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<8>(const void* a, const void* b)
 {
 #pragma pack(push, 1)
 	struct _ScopedPackedInt { u64 u; };
@@ -202,7 +205,7 @@ template<>
 
 #if defined(FFTL_SSE2)
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<16>(const void* a, const void* b)
 {
 	const __m128i vA = _mm_loadu_si128(reinterpret_cast<const __m128i*>(a));
 	const __m128i vB = _mm_loadu_si128(reinterpret_cast<const __m128i*>(b));
@@ -210,7 +213,7 @@ template<>
 }
 
 template<>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ<32>(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ<32>(const void* a, const void* b)
 {
 #if defined(FFTL_AVX2)
 	const __m256i vA = _mm256_loadu_si256((const __m256i*)a);
@@ -231,7 +234,7 @@ template<>
 
 
 template<size_t T_BYTE_COUNT>
-[[nodiscard]] FFTL_FORCEINLINE bool CompareBytesEQ(const void* a, const void* b)
+FFTL_NODISCARD FFTL_FORCEINLINE bool CompareBytesEQ(const void* a, const void* b)
 {
 	return memcmp(a, b, T_BYTE_COUNT) == 0;
 }
@@ -277,7 +280,7 @@ FFTL_FORCEINLINE void* CopyBytes<4>(void* pDst, const void* pSrc)
 	return pDst;
 }
 
-[[nodiscard]] inline bool ScanForAnyNonzero(const f32* pBuffer, size_t nCount)
+FFTL_NODISCARD inline bool ScanForAnyNonzero(const f32* pBuffer, size_t nCount)
 {
 	for (uint i = 0; i < nCount; ++i)
 	{
@@ -287,7 +290,7 @@ FFTL_FORCEINLINE void* CopyBytes<4>(void* pDst, const void* pSrc)
 	return false;
 }
 
-[[nodiscard]] inline bool ScanForAnyAboveThreshold(const f32* pBuffer, size_t nCount, f32 fThreshold)
+FFTL_NODISCARD inline bool ScanForAnyAboveThreshold(const f32* pBuffer, size_t nCount, f32 fThreshold)
 {
 	for (uint i = 0; i < nCount; ++i)
 	{
@@ -297,7 +300,7 @@ FFTL_FORCEINLINE void* CopyBytes<4>(void* pDst, const void* pSrc)
 	return false;
 }
 
-[[nodiscard]] inline bool ScanForConsecutiveZeroes(const f32* pBuffer, size_t nCount, size_t nThresholdCountCount)
+FFTL_NODISCARD inline bool ScanForConsecutiveZeroes(const f32* pBuffer, size_t nCount, size_t nThresholdCountCount)
 {
 	size_t nZeroCount = 0;
 	for (uint i = 0; i < nCount; ++i)
@@ -337,11 +340,11 @@ inline void ByteReverse(void* pObj, size_t objSize)
 		Swap(*pFnt, *pEnd);
 }
 
-[[nodiscard]] FFTL_FORCEINLINE bool StringEquals(const char* pszA, const char* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringEquals(const char* pszA, const char* pszB)
 {
 	return strcmp(pszA, pszB) == 0;
 }
-[[nodiscard]] FFTL_FORCEINLINE bool StringIEquals(const char* pszA, const char* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringIEquals(const char* pszA, const char* pszB)
 {
 #if defined(_POSIX_VERSION)
 	return strcasecmp(pszA, pszB) == 0;
@@ -350,11 +353,11 @@ inline void ByteReverse(void* pObj, size_t objSize)
 #endif
 }
 #if defined(FFTL_WCHAR)
-[[nodiscard]] FFTL_FORCEINLINE bool StringEquals(const wchar_t* pszA, const wchar_t* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringEquals(const wchar_t* pszA, const wchar_t* pszB)
 {
 	return wcscmp(pszA, pszB) == 0;
 }
-[[nodiscard]] inline bool StringEquals(const wchar_t* pszA, const char* pszB)
+FFTL_NODISCARD inline bool StringEquals(const wchar_t* pszA, const char* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -367,7 +370,7 @@ inline void ByteReverse(void* pObj, size_t objSize)
 	}
 	return true;
 }
-[[nodiscard]] inline bool StringEquals(const char* pszA, const wchar_t* pszB)
+FFTL_NODISCARD inline bool StringEquals(const char* pszA, const wchar_t* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -380,7 +383,7 @@ inline void ByteReverse(void* pObj, size_t objSize)
 	}
 	return true;
 }
-[[nodiscard]] FFTL_FORCEINLINE bool StringIEquals(const wchar_t* pszA, const wchar_t* pszB)
+FFTL_NODISCARD FFTL_FORCEINLINE bool StringIEquals(const wchar_t* pszA, const wchar_t* pszB)
 {
 #if defined(_POSIX_VERSION)
 	return wcscasecmp(pszA, pszB) == 0;
@@ -388,7 +391,7 @@ inline void ByteReverse(void* pObj, size_t objSize)
 	return _wcsicmp(pszA, pszB) == 0;
 #endif
 }
-[[nodiscard]] inline bool StringIEquals(const wchar_t* pszA, const char* pszB)
+FFTL_NODISCARD inline bool StringIEquals(const wchar_t* pszA, const char* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{
@@ -401,7 +404,7 @@ inline void ByteReverse(void* pObj, size_t objSize)
 	}
 	return true;
 }
-[[nodiscard]] inline bool StringIEquals(const char* pszA, const wchar_t* pszB)
+FFTL_NODISCARD inline bool StringIEquals(const char* pszA, const wchar_t* pszB)
 {
 	for (; ; ++pszA, ++pszB)
 	{

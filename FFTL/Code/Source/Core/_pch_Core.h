@@ -38,6 +38,6 @@ struct IUnknown; // Workaround for "combaseapi.h(229): error C2187: syntax error
 #include "Math/Matrix43.h"
 #include "Math/Matrix33.h"
 #include "Platform/Log.h"
-#include "Utils/Casts.h"
+#include "Utils/MetaProgramming.h"
 #include "Utils/StdFunctions.h"
 #include "Utils/S24.h"

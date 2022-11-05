@@ -74,12 +74,12 @@ public:
 	// Operators
 	//
 
-	[[nodiscard]] mat43	operator*(f32 rhs) const;
-	[[nodiscard]] mat43	operator/(f32 rhs) const;
-	[[nodiscard]] mat43 	operator+(const mat43& rhs) const;
-	[[nodiscard]] mat43 	operator-(const mat43& rhs) const;
-	[[nodiscard]] bool		operator==(const mat43& rhs) const;
-	[[nodiscard]] bool		operator!=(const mat43& rhs) const;
+	FFTL_NODISCARD mat43	operator*(f32 rhs) const;
+	FFTL_NODISCARD mat43	operator/(f32 rhs) const;
+	FFTL_NODISCARD mat43 	operator+(const mat43& rhs) const;
+	FFTL_NODISCARD mat43 	operator-(const mat43& rhs) const;
+	FFTL_NODISCARD bool		operator==(const mat43& rhs) const;
+	FFTL_NODISCARD bool		operator!=(const mat43& rhs) const;
 	mat43&					operator=(const mat43& rhs);
 	mat43&					operator*=(f32 rhs);
 	mat43&					operator/=(f32 rhs);
@@ -92,68 +92,68 @@ public:
 
 //	void			store(f32* m) const;
 //	void			toArray(f32* m) const;
-	[[nodiscard]] const f32*	Ptr() const;
-	[[nodiscard]] f32*			Ptr();
+	FFTL_NODISCARD const f32*	Ptr() const;
+	FFTL_NODISCARD f32*			Ptr();
 
 	//
 	// Functions of the matrix
 	//
 
-	[[nodiscard]] bool			IsNearEqual(const mat43& rhs, f32 tol = 0.001f) const;
-	[[nodiscard]] bool			IsNan() const;
-	[[nodiscard]] bool			IsInf() const;
-	[[nodiscard]] bool			IsFinite() const;
-	[[nodiscard]] bool			IsNonFinite() const;
+	FFTL_NODISCARD bool			IsNearEqual(const mat43& rhs, f32 tol = 0.001f) const;
+	FFTL_NODISCARD bool			IsNan() const;
+	FFTL_NODISCARD bool			IsInf() const;
+	FFTL_NODISCARD bool			IsFinite() const;
+	FFTL_NODISCARD bool			IsNonFinite() const;
 	/// Checks whether any element is larger than the given threshold
-	[[nodiscard]] bool			IsOrthogonal3x3() const;
+	FFTL_NODISCARD bool			IsOrthogonal3x3() const;
 	/// Checks if the 3x3 sub-matrix is orthonormal
-	[[nodiscard]] bool			IsOrthonormal3x3() const;
+	FFTL_NODISCARD bool			IsOrthonormal3x3() const;
 	/// Checks if the 3x3 sub-matrix is orthonormal and the last row is (0,0,0,1)
-	[[nodiscard]] bool			IsOrthonormal() const;
+	FFTL_NODISCARD bool			IsOrthonormal() const;
 	/// Computes the determinant of the 3x3 part of the matrix
-	[[nodiscard]] f32			Determinant3x3() const;
+	FFTL_NODISCARD f32			Determinant3x3() const;
 	/// Returns a vec3 of the 1st row
-	[[nodiscard]] const vec3&	Right() const;
+	FFTL_NODISCARD const vec3	Right() const;
 	/// Returns a vec3 of the 2nd row
-	[[nodiscard]] const vec3&	Forward() const;
+	FFTL_NODISCARD const vec3	Forward() const;
 	/// Returns a vec3 of the 3rd row
-	[[nodiscard]] const vec3&	Up() const;
+	FFTL_NODISCARD const vec3	Up() const;
 	/// Returns a vec3 of the 4th row
-	[[nodiscard]] const vec3&	Position() const;
+	FFTL_NODISCARD const vec3	Position() const;
 	/// Returns a vec3 of the 1st row
-	[[nodiscard]] vec3&		Right();
+	FFTL_NODISCARD vec3&		Right();
 	/// Returns a vec3 of the 2nd row
-	[[nodiscard]] vec3&		Forward();
+	FFTL_NODISCARD vec3&		Forward();
 	/// Returns a vec3 of the 3rd row
-	[[nodiscard]] vec3&		Up();
+	FFTL_NODISCARD vec3&		Up();
 	/// Returns a vec3 of the 4th row
-	[[nodiscard]] vec3&		Position();
+	FFTL_NODISCARD vec3&		Position();
 	template<uint ROW>
-	[[nodiscard]] const vec3&	Row() const;
+	FFTL_NODISCARD const vec3	Row() const;
 	template<uint ROW>
-	[[nodiscard]] vec3&		Row();
+	FFTL_NODISCARD vec3&		Row();
 	/// Returns Euler angles (in degrees) that describe the orientation of the axes
-	[[nodiscard]] vec3			GetAngles() const;
+	FFTL_NODISCARD vec3			GetAngles() const;
 	/// Returns the size of the right, forward and up vectors
-	[[nodiscard]] vec3			GetScale() const;
+	FFTL_NODISCARD vec3			GetScale() const;
 	/// Returns the squared size of the right, forward and up vectors
-	[[nodiscard]] vec3			GetScale_sq() const;
+	FFTL_NODISCARD vec3			GetScale_sq() const;
 	/// Reinterprets as 3x3 matrix. Data is compatible.
-	[[nodiscard]] const mat33&	AsMat33() const;
-	[[nodiscard]] mat33&		AsMat33();
+	FFTL_NODISCARD const mat33&	AsMat33() const;
+	FFTL_NODISCARD mat33&		AsMat33();
 	/// Reinterprets as 4x4 matrix. Data is compatible.
-	[[nodiscard]] const mat44&	AsMat44() const;
-	[[nodiscard]] mat44&		AsMat44();
+	FFTL_NODISCARD const mat44&	AsMat44() const;
+	FFTL_NODISCARD mat44&		AsMat44();
 	
 	//
 	// Transforms
 	//
 	
 	/// Computes p * (*this)
-	[[nodiscard]] vec3			Transform(const vec3& p) const;
+	FFTL_NODISCARD vec3			Transform(const vec3& p) const;
 	/// Computes p * (3x3 part of *this).
 	/// Does NOT assume the matrix is 3x3.
-	[[nodiscard]] vec3			Transform3x3(const vec3& p) const;
+	FFTL_NODISCARD vec3			Transform3x3(const vec3& p) const;
 
 	//
 	// In-place operations (do not return *this - this is inefficient and error-prone)
@@ -221,33 +221,33 @@ public:
 	//
 
 	/// Returns a copy of this matrix where the orientation is changed so that forward is parallel to target - position.
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetLookat(const vec3& target) const					{ mat43 m; m.Position() = Position(); m.Lookat(target); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetLookat(const vec3& target) const					{ mat43 m; m.Position() = Position(); m.Lookat(target); return m; }
 	/// Returns a matrix where forward is fwd and right is orthogonal to fwd and up and up is orthogonal to fwd and this->right.
 	/// Fwd and up must be unit length.
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetOrient(const vec3& fwd, const vec3& up) const	{ mat43 m; m.Position() = Position(); m.Orient(fwd, up); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetOrient(const vec3& fwd, const vec3& up) const	{ mat43 m; m.Position() = Position(); m.Orient(fwd, up); return m; }
 	/// Returns a matrix where forward to is fwd and right and up are chosen to complete an orthonormal system. Tries to match up = (0,0,1). 
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetOrient(const vec3& fwd) const					{ mat43 m; m.Position() = Position(); m.Orient(fwd); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetTranslatedPre(f32 x, f32 y, f32 z) const			{ mat43 m = *this; m.TranslatePre(x, y, z); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetTranslatedPre(const vec3& v) const				{ mat43 m = *this; m.TranslatePre(v); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetTranslatedPost(const vec3& v) const				{ mat43 m = *this; m.TranslatePost(v); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetScaledPre(f32 sx, f32 sy, f32 sz) const			{ mat43 m = *this; m.ScalePre(sx, sy, sz); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetScaledPre(const vec3& s) const					{ mat43 m = *this; m.ScalePre(s); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetScaledPre(f32 s) const							{ mat43 m = *this; m.ScalePre(s); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetScaledPost(const vec3& s) const					{ mat43 m = *this; m.ScalePost(s); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetScaledPost(f32 s) const							{ mat43 m = *this; m.ScalePost(s); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetInverse() const									{ mat43 m = *this; m.Invert(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetInverse3x3() const								{ mat43 m = *this; m.Invert3x3(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetInverseOrthonormal() const						{ mat43 m = *this; m.InvertOrthonormal(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetTranspose3x3() const								{ mat43 m = *this; m.Transpose3x3(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetOrthogonalized() const							{ mat43 m = *this; m.Orthogonalize(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetOrthonormalized() const							{ mat43 m = *this; m.Orthonormalize(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat43	GetNormalizedAxis() const							{ mat43 m = *this; m.NormalizeAxis(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetOrient(const vec3& fwd) const					{ mat43 m; m.Position() = Position(); m.Orient(fwd); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetTranslatedPre(f32 x, f32 y, f32 z) const			{ mat43 m = *this; m.TranslatePre(x, y, z); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetTranslatedPre(const vec3& v) const				{ mat43 m = *this; m.TranslatePre(v); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetTranslatedPost(const vec3& v) const				{ mat43 m = *this; m.TranslatePost(v); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetScaledPre(f32 sx, f32 sy, f32 sz) const			{ mat43 m = *this; m.ScalePre(sx, sy, sz); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetScaledPre(const vec3& s) const					{ mat43 m = *this; m.ScalePre(s); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetScaledPre(f32 s) const							{ mat43 m = *this; m.ScalePre(s); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetScaledPost(const vec3& s) const					{ mat43 m = *this; m.ScalePost(s); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetScaledPost(f32 s) const							{ mat43 m = *this; m.ScalePost(s); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetInverse() const									{ mat43 m = *this; m.Invert(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetInverse3x3() const								{ mat43 m = *this; m.Invert3x3(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetInverseOrthonormal() const						{ mat43 m = *this; m.InvertOrthonormal(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetTranspose3x3() const								{ mat43 m = *this; m.Transpose3x3(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetOrthogonalized() const							{ mat43 m = *this; m.Orthogonalize(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetOrthonormalized() const							{ mat43 m = *this; m.Orthonormalize(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat43	GetNormalizedAxis() const							{ mat43 m = *this; m.NormalizeAxis(); return m; }
 
 	// 
 	// Out-of-place builders
 	//
 
-	[[nodiscard]] FFTL_FORCEINLINE static mat43	CreateLookAt(const vec3& lookAt, const vec3& position);
+	FFTL_NODISCARD FFTL_FORCEINLINE static mat43	CreateLookAt(const vec3& lookAt, const vec3& position);
 
 private:
 
@@ -257,28 +257,28 @@ private:
 /// Assumes that the first matrix is 4x3 (4th column (0,0,0,1)) and the other is 3x3 (position == 0 and 4th column = (0,0,0,1))
 void					Mul(const mat43& a, const mat33& b, mat43& out);
 /// Assumes that the first matrix is 4x3 (4th column (0,0,0,1)) and the other is 3x3 (position == 0 and 4th column = (0,0,0,1))
-[[nodiscard]] mat43	Mul(const mat43& a, const mat33& b);
+FFTL_NODISCARD mat43	Mul(const mat43& a, const mat33& b);
 
 /// Assumes that both matrices have normal 4th columns, i.e. (0,0,0,1)
 void					Mul(const mat43& a, const mat43& b, mat43& out);
 /// Assumes that both matrices have normal 4th columns, i.e. (0,0,0,1)
-[[nodiscard]] mat43	Mul(const mat43& a, const mat43& b);
+FFTL_NODISCARD mat43	Mul(const mat43& a, const mat43& b);
 
 /// Assumes that both matrices are 3x3 (position == 0 and 4th column = (0,0,0,1))
 void					Mul3x3(const mat43& a, const mat43& b, mat43& out);
 /// Assumes that both matrices are 3x3 (position == 0 and 4th column = (0,0,0,1))
-[[nodiscard]] mat43	Mul3x3(const mat43& a, const mat43& b);
+FFTL_NODISCARD mat43	Mul3x3(const mat43& a, const mat43& b);
 
 /// Computes m * v. m does NOT have to be 3x3.
-[[nodiscard]] vec3		Mul3x3(const mat43& m, const vec3& v);
+FFTL_NODISCARD vec3		Mul3x3(const mat43& m, const vec3& v);
 /// Computes v * m. m does NOT have to be 3x3.
-[[nodiscard]] vec3		Mul3x3(const vec3& v, const mat43& m);
+FFTL_NODISCARD vec3		Mul3x3(const vec3& v, const mat43& m);
 // FOR OTHER MATRIX-VECTOR TRANSFORMS, USE mat43::transformX
 
-[[nodiscard]] mat43	Add(const mat43& a, const mat43& b);
-[[nodiscard]] mat43	Sub(const mat43& a, const mat43& b);
+FFTL_NODISCARD mat43	Add(const mat43& a, const mat43& b);
+FFTL_NODISCARD mat43	Sub(const mat43& a, const mat43& b);
 
-[[nodiscard]] mat43	Abs(const mat43& a);
+FFTL_NODISCARD mat43	Abs(const mat43& a);
 
 
 
@@ -287,7 +287,7 @@ void					Mul3x3(const mat43& a, const mat43& b, mat43& out);
 
 //	This is a more compact way to store a mat43 in that it doesn't have the unnecessary w components (12 floats rather than 16)
 template<bool ALIGNED, bool TRANSPOSED>
-class [[nodiscard]] mat43StoreBase
+class FFTL_NODISCARD mat43StoreBase
 {
 protected:
 	FFTL_FORCEINLINE mat43StoreBase();
@@ -299,19 +299,19 @@ public:
 	FFTL_FORCEINLINE void Load(mat43& out) const;
 	FFTL_FORCEINLINE void Load3x3(mat33& out) const;
 	FFTL_FORCEINLINE void operator=(const mat43& in)	{ Store(in); }
-	[[nodiscard]] FFTL_FORCEINLINE const f32* Ptr() const				{ return reinterpret_cast<const f32*>(this); }
-	[[nodiscard]] FFTL_FORCEINLINE f32* Ptr()							{ return reinterpret_cast<f32*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const f32* Ptr() const				{ return reinterpret_cast<const f32*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE f32* Ptr()							{ return reinterpret_cast<f32*>(this); }
 
 	template<uint ROW>
-	[[nodiscard]] vec3 LoadRow() const;
-	[[nodiscard]] FFTL_FORCEINLINE vec3 LoadRight() const				{ return LoadRow<0>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vec3 LoadForward() const			{ return LoadRow<1>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vec3 LoadUp() const					{ return LoadRow<2>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vec3 LoadPosition() const			{ return LoadRow<3>(); }
+	FFTL_NODISCARD vec3 LoadRow() const;
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadRight() const				{ return LoadRow<0>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadForward() const			{ return LoadRow<1>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadUp() const					{ return LoadRow<2>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vec3 LoadPosition() const			{ return LoadRow<3>(); }
 };
 
 template<bool ALIGNED=false, bool TRANSPOSED=false>
-class [[nodiscard]] mat43Store : public mat43StoreBase<ALIGNED, TRANSPOSED>
+class FFTL_NODISCARD mat43Store : public mat43StoreBase<ALIGNED, TRANSPOSED>
 {
 public:
 	typedef mat43StoreBase<ALIGNED, TRANSPOSED> _BASE;
@@ -323,7 +323,7 @@ private:
 };
 
 template<bool TRANSPOSED>
-class [[nodiscard]] mat43Store<true, TRANSPOSED> : public mat43StoreBase<true, TRANSPOSED>
+class FFTL_NODISCARD mat43Store<true, TRANSPOSED> : public mat43StoreBase<true, TRANSPOSED>
 {
 public:
 	typedef mat43StoreBase<true, TRANSPOSED> _BASE;

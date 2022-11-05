@@ -13,7 +13,7 @@ inline vecT<N>::vecT()
 {
 #if defined(FFTL_ENABLE_ASSERT)
 	//	Fill with invalid stuff that will be more obvious if used accidentally
-	const f32 f = ReinterpretAs<f32>(0xffffffff);
+	FFTL_BIT_CAST_CONSTEXPR f32 f = bit_cast<f32>(0xffffffff);
 	m_v.x = f;
 	m_v.y = f;
 	m_v.z = f;

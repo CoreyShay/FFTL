@@ -43,9 +43,9 @@ public:
 
 #if defined(FFTL_SIMD_F32x4)
 #else
-	[[nodiscard]] f32				Get(uint n) const { return Ptr()[n]; }
-	[[nodiscard]] const f32*		Ptr() const { return reinterpret_cast<const f32*>(&m_v); }
-	[[nodiscard]] f32*				Ptr() { return reinterpret_cast<f32*>(&m_v); }
+	FFTL_NODISCARD f32				Get(uint n) const { return Ptr()[n]; }
+	FFTL_NODISCARD const f32*		Ptr() const { return reinterpret_cast<const f32*>(&m_v); }
+	FFTL_NODISCARD f32*				Ptr() { return reinterpret_cast<f32*>(&m_v); }
 #endif
 
 	constexpr vecT(f32 x, f32 y, f32 z, f32 w) : f32_4(x, y, z, w) {}	//(x, y, z, w)
@@ -79,46 +79,46 @@ public:
 
 
 	//	Returns the native type.
-	[[nodiscard]] constexpr const vecNative&		AsIntrinsic() const { return m_v; }
+	FFTL_NODISCARD constexpr vecNative	AsIntrinsic() const { return m_v; }
 
 	//	reinterprets as mask32x4
-	[[nodiscard]] FFTL_FORCEINLINE const mask32x4&	AsVecfcmp() const { return *reinterpret_cast<const mask32x4*>(this); }
-	[[nodiscard]] FFTL_FORCEINLINE mask32x4&		AsVecfcmp() { return *reinterpret_cast<mask32x4*>(this); }
+	FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR mask32x4	AsVecfcmp() const { return bit_cast<mask32x4>(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR mask32x4&	AsVecfcmp() { return bit_cast<mask32x4&>(m_v); }
 
 	//	Casting (reinterpreting) between N types (all data is compatible)
 	template<uint M>
-	[[nodiscard]] const vecT<M>&	CastTo() const { return *reinterpret_cast<const vecT<M>*>(this); }
+	FFTL_NODISCARD FFTL_BIT_CAST_CONSTEXPR const vecT<M>	CastTo() const { return bit_cast<vecT<M>>(m_v); }
 	template<uint M>
-	[[nodiscard]] vecT<M>&			CastTo() { return *reinterpret_cast<vecT<M>*>(this); }
+	FFTL_NODISCARD vecT<M>&									CastTo() { return *reinterpret_cast<vecT<M>*>(this); }
 	
-	[[nodiscard]] FFTL_FORCEINLINE const vecT<4>& CastTo4() const { return CastTo<4>(); }
-	[[nodiscard]] FFTL_FORCEINLINE const vecT<3>& CastTo3() const { return CastTo<3>(); }
-	[[nodiscard]] FFTL_FORCEINLINE const vecT<2>& CastTo2() const { return CastTo<2>(); }
-	[[nodiscard]] FFTL_FORCEINLINE const vecT<1>& CastTo1() const { return CastTo<1>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const vecT<4> CastTo4() const { return CastTo<4>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const vecT<3> CastTo3() const { return CastTo<3>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const vecT<2> CastTo2() const { return CastTo<2>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE const vecT<1> CastTo1() const { return CastTo<1>(); }
 	
-	[[nodiscard]] FFTL_FORCEINLINE vecT<4>& CastTo4() { return CastTo<4>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vecT<3>& CastTo3() { return CastTo<3>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vecT<2>& CastTo2() { return CastTo<2>(); }
-	[[nodiscard]] FFTL_FORCEINLINE vecT<1>& CastTo1() { return CastTo<1>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vecT<4>& CastTo4() { return CastTo<4>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vecT<3>& CastTo3() { return CastTo<3>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vecT<2>& CastTo2() { return CastTo<2>(); }
+	FFTL_NODISCARD FFTL_FORCEINLINE vecT<1>& CastTo1() { return CastTo<1>(); }
 
 	//
 	// Getters
 	//
 
-	[[nodiscard]] f32	GetX() const;
-	[[nodiscard]] f32	GetY() const;
-	[[nodiscard]] f32	GetZ() const;
-	[[nodiscard]] f32	GetW() const;
+	FFTL_NODISCARD f32	GetX() const;
+	FFTL_NODISCARD f32	GetY() const;
+	FFTL_NODISCARD f32	GetZ() const;
+	FFTL_NODISCARD f32	GetW() const;
 
 	///	Extracts and reinterprets the binary representation of the f32 to an int
-	[[nodiscard]] int					GetAsIntX() const;
-	[[nodiscard]] int					GetAsIntY() const;
-	[[nodiscard]] int					GetAsIntZ() const;
-	[[nodiscard]] int					GetAsIntW() const;
-	[[nodiscard]] int					GetAsIntR() const { return GetAsIntX(); }
-	[[nodiscard]] int					GetAsIntG() const { return GetAsIntY(); }
-	[[nodiscard]] int					GetAsIntB() const { return GetAsIntZ(); }
-	[[nodiscard]] int					GetAsIntA() const { return GetAsIntW(); }
+	FFTL_NODISCARD int					GetAsIntX() const;
+	FFTL_NODISCARD int					GetAsIntY() const;
+	FFTL_NODISCARD int					GetAsIntZ() const;
+	FFTL_NODISCARD int					GetAsIntW() const;
+	FFTL_NODISCARD int					GetAsIntR() const { return GetAsIntX(); }
+	FFTL_NODISCARD int					GetAsIntG() const { return GetAsIntY(); }
+	FFTL_NODISCARD int					GetAsIntB() const { return GetAsIntZ(); }
+	FFTL_NODISCARD int					GetAsIntA() const { return GetAsIntW(); }
 
 	//
 	// Element insertion (preserves the remaining elements in this)
@@ -141,17 +141,17 @@ public:
 	vecT&							operator-=(const vecT& b);
 	vecT&							operator*=(const vecT& b);
 	vecT&							operator/=(const vecT& b);
-	[[nodiscard]] vecT				operator-() const;
-	[[nodiscard]] vecT				operator+(const vecT& b) const;
-	[[nodiscard]] vecT				operator-(const vecT& b) const;
-	[[nodiscard]] vecT				operator*(const vecT& b) const;
-	[[nodiscard]] vecT				operator/(const vecT& b) const;
-	[[nodiscard]] bool				operator==(const vecT& b) const;
-	[[nodiscard]] bool				operator!=(const vecT& b) const;
+	FFTL_NODISCARD vecT				operator-() const;
+	FFTL_NODISCARD vecT				operator+(const vecT& b) const;
+	FFTL_NODISCARD vecT				operator-(const vecT& b) const;
+	FFTL_NODISCARD vecT				operator*(const vecT& b) const;
+	FFTL_NODISCARD vecT				operator/(const vecT& b) const;
+	FFTL_NODISCARD bool				operator==(const vecT& b) const;
+	FFTL_NODISCARD bool				operator!=(const vecT& b) const;
 
-	[[nodiscard]] vecT				operator|(const mask32x4& b) const { return vecT{ f32_4::operator|(b) }; }
-	[[nodiscard]] vecT				operator&(const mask32x4& b) const { return vecT{ f32_4::operator&(b) }; }
-	[[nodiscard]] vecT				operator^(const mask32x4& b) const { return vecT{ f32_4::operator^(b) }; }
+	FFTL_NODISCARD vecT				operator|(const mask32x4& b) const { return vecT{ f32_4::operator|(b) }; }
+	FFTL_NODISCARD vecT				operator&(const mask32x4& b) const { return vecT{ f32_4::operator&(b) }; }
+	FFTL_NODISCARD vecT				operator^(const mask32x4& b) const { return vecT{ f32_4::operator^(b) }; }
 	template<uint M> friend vecT<M>	AndNot(const vecT<M>& a, const mask32x4& b);
 	template<uint M> friend vecT<M>	AndNot(const mask32x4& a, const vecT<M>& b);
 
@@ -164,51 +164,51 @@ public:
 	// Surgical arithmetic affecting only the selected elements
 	//
 
-	template<bool bX, bool bY, bool bZ, bool bW> [[nodiscard]] vecT	Add(f32 f) const;
-	template<bool bX, bool bY, bool bZ, bool bW> [[nodiscard]] vecT	Sub(f32 f) const;
-	template<bool bX, bool bY, bool bZ, bool bW> [[nodiscard]] vecT	Mul(f32 f) const;
-	template<bool bX, bool bY, bool bZ, bool bW> [[nodiscard]] vecT	Div(f32 f) const;
-	template<bool bX, bool bY, bool bZ, bool bW> [[nodiscard]] vecT	Negate() const;
+	template<bool bX, bool bY, bool bZ, bool bW> FFTL_NODISCARD vecT	Add(f32 f) const;
+	template<bool bX, bool bY, bool bZ, bool bW> FFTL_NODISCARD vecT	Sub(f32 f) const;
+	template<bool bX, bool bY, bool bZ, bool bW> FFTL_NODISCARD vecT	Mul(f32 f) const;
+	template<bool bX, bool bY, bool bZ, bool bW> FFTL_NODISCARD vecT	Div(f32 f) const;
+	template<bool bX, bool bY, bool bZ, bool bW> FFTL_NODISCARD vecT	Negate() const;
 
 	//
 	// Surgical arithmetic affecting only one element
 	//
 
-	[[nodiscard]] vecT		AddX(f32 f) const;
-	[[nodiscard]] vecT		AddY(f32 f) const;
-	[[nodiscard]] vecT		AddZ(f32 f) const;
-	[[nodiscard]] vecT		AddW(f32 f) const;
-	[[nodiscard]] vecT		SubX(f32 f) const;
-	[[nodiscard]] vecT		SubY(f32 f) const;
-	[[nodiscard]] vecT		SubZ(f32 f) const;
-	[[nodiscard]] vecT		SubW(f32 f) const;
-	[[nodiscard]] vecT		MulX(f32 f) const;
-	[[nodiscard]] vecT		MulY(f32 f) const;
-	[[nodiscard]] vecT		MulZ(f32 f) const;
-	[[nodiscard]] vecT		MulW(f32 f) const;
-	[[nodiscard]] vecT		DivX(f32 f) const;
-	[[nodiscard]] vecT		DivY(f32 f) const;
-	[[nodiscard]] vecT		DivZ(f32 f) const;
-	[[nodiscard]] vecT		DivW(f32 f) const;
-	[[nodiscard]] vecT		NegateX() const;
-	[[nodiscard]] vecT		NegateY() const;
-	[[nodiscard]] vecT		NegateZ() const;
-	[[nodiscard]] vecT		NegateW() const;
+	FFTL_NODISCARD vecT		AddX(f32 f) const;
+	FFTL_NODISCARD vecT		AddY(f32 f) const;
+	FFTL_NODISCARD vecT		AddZ(f32 f) const;
+	FFTL_NODISCARD vecT		AddW(f32 f) const;
+	FFTL_NODISCARD vecT		SubX(f32 f) const;
+	FFTL_NODISCARD vecT		SubY(f32 f) const;
+	FFTL_NODISCARD vecT		SubZ(f32 f) const;
+	FFTL_NODISCARD vecT		SubW(f32 f) const;
+	FFTL_NODISCARD vecT		MulX(f32 f) const;
+	FFTL_NODISCARD vecT		MulY(f32 f) const;
+	FFTL_NODISCARD vecT		MulZ(f32 f) const;
+	FFTL_NODISCARD vecT		MulW(f32 f) const;
+	FFTL_NODISCARD vecT		DivX(f32 f) const;
+	FFTL_NODISCARD vecT		DivY(f32 f) const;
+	FFTL_NODISCARD vecT		DivZ(f32 f) const;
+	FFTL_NODISCARD vecT		DivW(f32 f) const;
+	FFTL_NODISCARD vecT		NegateX() const;
+	FFTL_NODISCARD vecT		NegateY() const;
+	FFTL_NODISCARD vecT		NegateZ() const;
+	FFTL_NODISCARD vecT		NegateW() const;
 
 
-	[[nodiscard]] vecT		Negate() const;
-	[[nodiscard]] vecT		ZeroNonFinite() const;
-	[[nodiscard]] vecT		ReplaceNonFinite(const vecT& a) const;
+	FFTL_NODISCARD vecT		Negate() const;
+	FFTL_NODISCARD vecT		ZeroNonFinite() const;
+	FFTL_NODISCARD vecT		ReplaceNonFinite(const vecT& a) const;
 
 
 
 	template<bool ALIGNED>
-	[[nodiscard]] static vecT	Load(const f32* p);
+	FFTL_NODISCARD static vecT	Load(const f32* p);
 
-	[[nodiscard]] static vecT			LoadA(const f32* p);
-	[[nodiscard]] static vecT			LoadU(const f32* p);
-	[[nodiscard]] static vecT			Splat(f32 f);
-	[[nodiscard]] static vecT			X000(f32 f); //(f, 0, 0, 0)
+	FFTL_NODISCARD static vecT			LoadA(const f32* p);
+	FFTL_NODISCARD static vecT			LoadU(const f32* p);
+	FFTL_NODISCARD static vecT			Splat(f32 f);
+	FFTL_NODISCARD static vecT			X000(f32 f); //(f, 0, 0, 0)
 	
 	template<bool ALIGNED, uint M>
 	friend  void						Store(f32* p, const vecT<M>& v);
@@ -257,11 +257,11 @@ public:
 
 	///	Generates vecT((f32&)x, (f32&)y, (f32&)z, (f32&)w).
 	///	Using integers to reinterpret as floats because template parameters can't be floats.
-	template<u32 x, u32 y, u32 z, u32 w>	[[nodiscard]] static vecT	GenConstRtp();
-	template<u32 val>						[[nodiscard]] static vecT	GenConstRtp();
+	template<u32 x, u32 y, u32 z, u32 w>	FFTL_NODISCARD static vecT	GenConstRtp();
+	template<u32 val>						FFTL_NODISCARD static vecT	GenConstRtp();
 	
-	[[nodiscard]] static vecT					Zero();
-	[[nodiscard]] static vecT					Infinity();
+	FFTL_NODISCARD static vecT					Zero();
+	FFTL_NODISCARD static vecT					Infinity();
 
 
 
@@ -368,13 +368,13 @@ constexpr vec3 vec3_zaxis{ 0, 0, 1, 0 };
 
 
 
-template<uint M> [[nodiscard]] vecT<M>	InsertX(const vecT<M>& v, f32 f);
-template<uint M> [[nodiscard]] vecT<M>	InsertY(const vecT<M>& v, f32 f);
-template<uint M> [[nodiscard]] vecT<M>	InsertZ(const vecT<M>& v, f32 f);
-template<uint M> [[nodiscard]] vecT<M>	InsertW(const vecT<M>& v, f32 f);
+template<uint M> FFTL_NODISCARD vecT<M>	InsertX(const vecT<M>& v, f32 f);
+template<uint M> FFTL_NODISCARD vecT<M>	InsertY(const vecT<M>& v, f32 f);
+template<uint M> FFTL_NODISCARD vecT<M>	InsertZ(const vecT<M>& v, f32 f);
+template<uint M> FFTL_NODISCARD vecT<M>	InsertW(const vecT<M>& v, f32 f);
 
 template<bool bX, bool bY, bool bZ, bool bW, uint M>
-[[nodiscard]] vecT<M> ZeroElements(const vecT<M>& v);
+FFTL_NODISCARD vecT<M> ZeroElements(const vecT<M>& v);
 
 
 
@@ -387,24 +387,24 @@ template<bool ALIGNED, uint M> void			Store(f32* p, const vecT<M>& v);
 template<uint M> void						StoreA(f32* p, const vecT<M>& v);
 template<uint M> void						StoreU(f32* p, const vecT<M>& v);
 
-template<uint M> [[nodiscard]] bool		IsNormal( const vecT<M>& v );
-template<uint M> [[nodiscard]] f32			Length_sq( const vecT<M>& v );
-template<uint M> [[nodiscard]] vecT<M>		Length_sqV(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32			Length(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>		LengthV(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32			Length_fast(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD bool		IsNormal( const vecT<M>& v );
+template<uint M> FFTL_NODISCARD f32			Length_sq( const vecT<M>& v );
+template<uint M> FFTL_NODISCARD vecT<M>		Length_sqV(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32			Length(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		LengthV(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32			Length_fast(const vecT<M>& v);
 
-template<uint M> [[nodiscard]] vecT<M>		Normalize(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>		Normalize(const vecT<M>& v, f32& out_fLen);
-template<uint M> [[nodiscard]] vecT<M>		NormalizeSafe(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>		NormalizeSafe(const vecT<M>& v, f32& out_fLen);
-template<uint M> [[nodiscard]] vecT<M>		NormalizeFast(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>		NormalizeFastSafe(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		Normalize(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		Normalize(const vecT<M>& v, f32& out_fLen);
+template<uint M> FFTL_NODISCARD vecT<M>		NormalizeSafe(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		NormalizeSafe(const vecT<M>& v, f32& out_fLen);
+template<uint M> FFTL_NODISCARD vecT<M>		NormalizeFast(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		NormalizeFastSafe(const vecT<M>& v);
 
-template<uint M> [[nodiscard]] vecT<M>		ZeroNegative(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>		ZeroNegative(const vecT<M>& v);
 
-template<uint M> [[nodiscard]] vecT<M>		Reflect(const vecT<M>& a, const vecT<M>& n);
-template<uint M> [[nodiscard]] vecT<M>		Project(const vecT<M>& a, const vecT<M>& p); /// Projects p onto a (NOT VICE VERSA!)
+template<uint M> FFTL_NODISCARD vecT<M>		Reflect(const vecT<M>& a, const vecT<M>& n);
+template<uint M> FFTL_NODISCARD vecT<M>		Project(const vecT<M>& a, const vecT<M>& p); /// Projects p onto a (NOT VICE VERSA!)
 
 
 
@@ -412,84 +412,84 @@ template<uint M> [[nodiscard]] vecT<M>		Project(const vecT<M>& a, const vecT<M>&
 //	vecT functions outside the class.
 //
 
-template<uint M> [[nodiscard]] const vecT<2>&	AsVec2(const vecT<M>& a);
-template<uint M> [[nodiscard]] const vecT<3>&	AsVec3(const vecT<M>& a);
-template<uint M> [[nodiscard]] const vecT<4>&	AsVec4(const vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<2>&		AsVec2(vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<3>&		AsVec3(vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<4>&		AsVec4(vecT<M>& a);
+template<uint M> FFTL_NODISCARD const vecT<2>&	AsVec2(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD const vecT<3>&	AsVec3(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD const vecT<4>&	AsVec4(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<2>&		AsVec2(vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<3>&		AsVec3(vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<4>&		AsVec4(vecT<M>& a);
 
-template<uint M> [[nodiscard]] vecT<M>	Min(const vecT<M>& a, const vecT<M>& b);
-template<uint M> [[nodiscard]] vecT<M>	Max(const vecT<M>& a, const vecT<M>& b);
-template<uint M> [[nodiscard]] f32		Min(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32		Max(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	MinV(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	MaxV(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32		MinAbs(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32		MaxAbs(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	Clamp(const vecT<M>& val, const vecT<M>& lhs, const vecT<M>& b);
-template<uint M> [[nodiscard]] u32		MinIndex(const vecT<M>& v); // Returns the index of min lowest value
-template<uint M> [[nodiscard]] u32		MaxIndex(const vecT<M>& v); // Returns the index of max lowest value
-template<uint M> [[nodiscard]] vecT<M>	Sqrt(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	RSqrt(const vecT<M>& v); // Newton-Rhapson fast inverse square root
-template<uint M> [[nodiscard]] vecT<M>	Lerp(f32 mu, const vecT<M>& from, const vecT<M>& to);
-template<uint M> [[nodiscard]] vecT<M>	Abs(const vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<M>	AbsDiff(const vecT<M>& a, const vecT<M>& b);
-template<uint M> [[nodiscard]] vecT<M>	Pow4(const vecT<M>& a, f32 exp);
-template<uint M> [[nodiscard]] vecT<M>	Deg2rad(const vecT<M>& degrees);
-template<uint M> [[nodiscard]] vecT<M>	Rad2deg(const vecT<M>& radians);
-template<uint M> [[nodiscard]] vecT<M>	Sign(const vecT<M>& a);
-template<uint M> [[nodiscard]] f32		HSum(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	HSumV(const vecT<M>& v);
-template<uint M> [[nodiscard]] f32		Dot(const vecT<M>& a, const vecT<M>& b);
-template<uint M> [[nodiscard]] vecT<M>	DotV(const vecT<M>& a, const vecT<M>& b);
-template<uint M> [[nodiscard]] vecT<M>	Cross(const vecT<M>& a, const vecT<M>& b, const vecT<M>& c);
-template<uint M> [[nodiscard]] f32		Distance(const vecT<M>& lhs, const vecT<M>& b);
-template<uint M> [[nodiscard]] f32		Distance_sq(const vecT<M>& lhs, const vecT<M>& b);
-template<uint M> [[nodiscard]] f32		Mean(const vecT<M>& v);
-template<uint M> [[nodiscard]] vecT<M>	XXXX(const vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<M>	YYYY(const vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<M>	ZZZZ(const vecT<M>& a);
-template<uint M> [[nodiscard]] vecT<M>	WWWW(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<M>	Min(const vecT<M>& a, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD vecT<M>	Max(const vecT<M>& a, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD f32		Min(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32		Max(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	MinV(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	MaxV(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32		MinAbs(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32		MaxAbs(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	Clamp(const vecT<M>& val, const vecT<M>& lhs, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD u32		MinIndex(const vecT<M>& v); // Returns the index of min lowest value
+template<uint M> FFTL_NODISCARD u32		MaxIndex(const vecT<M>& v); // Returns the index of max lowest value
+template<uint M> FFTL_NODISCARD vecT<M>	Sqrt(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	RSqrt(const vecT<M>& v); // Newton-Rhapson fast inverse square root
+template<uint M> FFTL_NODISCARD vecT<M>	Lerp(f32 mu, const vecT<M>& from, const vecT<M>& to);
+template<uint M> FFTL_NODISCARD vecT<M>	Abs(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<M>	AbsDiff(const vecT<M>& a, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD vecT<M>	Pow4(const vecT<M>& a, f32 exp);
+template<uint M> FFTL_NODISCARD vecT<M>	Deg2rad(const vecT<M>& degrees);
+template<uint M> FFTL_NODISCARD vecT<M>	Rad2deg(const vecT<M>& radians);
+template<uint M> FFTL_NODISCARD vecT<M>	Sign(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD f32		HSum(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	HSumV(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD f32		Dot(const vecT<M>& a, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD vecT<M>	DotV(const vecT<M>& a, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD vecT<M>	Cross(const vecT<M>& a, const vecT<M>& b, const vecT<M>& c);
+template<uint M> FFTL_NODISCARD f32		Distance(const vecT<M>& lhs, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD f32		Distance_sq(const vecT<M>& lhs, const vecT<M>& b);
+template<uint M> FFTL_NODISCARD f32		Mean(const vecT<M>& v);
+template<uint M> FFTL_NODISCARD vecT<M>	XXXX(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<M>	YYYY(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<M>	ZZZZ(const vecT<M>& a);
+template<uint M> FFTL_NODISCARD vecT<M>	WWWW(const vecT<M>& a);
 
 //	R specifies the number of non-zero return elements desired, for example:
 // dotV<2>(a, b) { f32 r = dot(a, b); return vecT<N>(r, r, 0, 0); }
-template<uint R, uint M> [[nodiscard]] vecT<M>		DotV(const vecT<M>& a, const vecT<M>& b);
-template<uint R, uint M> [[nodiscard]] vecT<M>		Length_sqV(const vecT<M>& v);
-template<uint R, uint M> [[nodiscard]] vecT<M>		LengthV(const vecT<M>& v);
-template<uint R, uint M> [[nodiscard]] vecT<M>		Normalize(const vecT<M>& v);
-template<uint R, uint M> [[nodiscard]] vecT<M>		Normalize(const vecT<M>& v, f32& out_fLen);
-template<uint R, uint M> [[nodiscard]] vecT<M>		NormalizeSafe(const vecT<M>& v);
-template<uint R, uint M> [[nodiscard]] vecT<M>		NormalizeSafe(const vecT<M>& v, f32& out_fLen);
-template<uint R, uint M> [[nodiscard]] vecT<M>		NormalizeFast(const vecT<M>& v);
-template<uint R, uint M> [[nodiscard]] vecT<M>		NormalizeFastSafe(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		DotV(const vecT<M>& a, const vecT<M>& b);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		Length_sqV(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		LengthV(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		Normalize(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		Normalize(const vecT<M>& v, f32& out_fLen);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		NormalizeSafe(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		NormalizeSafe(const vecT<M>& v, f32& out_fLen);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		NormalizeFast(const vecT<M>& v);
+template<uint R, uint M> FFTL_NODISCARD vecT<M>		NormalizeFastSafe(const vecT<M>& v);
 
 ///	Rearranges the elements of a single vector, where each template parameter indexes one element in the source vector.
 /// permute<3,1,0,2>(v) = v.w, v.y, v.x, v.z
 template<int T0, int T1, int T2, int T3, uint M>
-[[nodiscard]] vecT<M> Permute(const vecT<M>& v);
+FFTL_NODISCARD vecT<M> Permute(const vecT<M>& v);
 
 ///	Rearranges the elements of a 2 vectors, where each template parameter indexes one element in one of the source vectors.
 /// permute<b3,a1,a0,b2>(a, b) = b.w, a.y, a.x, b.z
 template<int T0, int T1, int T2, int T3, uint M>
-[[nodiscard]] vecT<M> Permute(const vecT<M>& a, const vecT<M>& b);
+FFTL_NODISCARD vecT<M> Permute(const vecT<M>& a, const vecT<M>& b);
 
 
 //	Blend: return b(N) ? a[N] : b[N]
 template<bool bX, bool bY, bool bZ, bool bW, uint M>
-[[nodiscard]] vecT<M> Blend(const vecT<M>& a, const vecT<M>& b);
+FFTL_NODISCARD vecT<M> Blend(const vecT<M>& a, const vecT<M>& b);
 
 //	Blend: return msk ? a : b
 template<uint M>
-[[nodiscard]] vecT<M> Blend(const mask32x4& msk, const vecT<M>& a, const vecT<M>& b);
+FFTL_NODISCARD vecT<M> Blend(const mask32x4& msk, const vecT<M>& a, const vecT<M>& b);
 
 
 //	Geometry
-template<uint M> [[nodiscard]] vecT<M>	PointOnRay(const vecT<M>& start, const vecT<M>& dir, f32 dist);
-template<uint M> [[nodiscard]] vecT<M>	ClosestPointOnLineSegment(const vecT<M>& a, const vecT<M>& b, const vecT<M>& p);
+template<uint M> FFTL_NODISCARD vecT<M>	PointOnRay(const vecT<M>& start, const vecT<M>& dir, f32 dist);
+template<uint M> FFTL_NODISCARD vecT<M>	ClosestPointOnLineSegment(const vecT<M>& a, const vecT<M>& b, const vecT<M>& p);
 template<uint M> void SinCos(const vecT<M>& a, vecT<M>& s, vecT<M>& c);
-template<uint M> [[nodiscard]] vecT<M> Sin(const vecT<M>& y);
-template<uint M> [[nodiscard]] vecT<M> Cos(const vecT<M>& y);
+template<uint M> FFTL_NODISCARD vecT<M> Sin(const vecT<M>& y);
+template<uint M> FFTL_NODISCARD vecT<M> Cos(const vecT<M>& y);
 
 
 

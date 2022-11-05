@@ -48,10 +48,11 @@ namespace FFTL
 #if !defined(FFTL_CPU_INFO_KNOWN_TO_COMPILER)
 
 
-#if defined(__GNUC__) && defined(FFTL_SSE)
-FFTL_FORCEINLINE void __cpuid(int regs[4], int i)
+#if defined(FFTL_SSE)
+FFTL_FORCEINLINE void __x86_cpuid(int regs[4], int i)
 {
-	__asm__ __volatile__ (
+#if defined(__GNUC__)
+	__asm__ __volatile__(
 		"cpuid":
 		"=a" (regs[0]),
 		"=b" (regs[1]),
@@ -59,14 +60,21 @@ FFTL_FORCEINLINE void __cpuid(int regs[4], int i)
 		"=d" (regs[3]) :
 		"a" (i), "c" (0)
 		);
+#else
+	__cpuid(regs, i);
+#endif
 }
-FFTL_FORCEINLINE u64 _xgetbv(uint)
+
+FFTL_FORCEINLINE u64 __x86_getfeaturemask()
 {
+#if defined(__GNUC__)
 	size_t xcr0;
 	__asm__("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx");
 	return xcr0;
+#else
+	return _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+#endif
 }
-#define _XCR_XFEATURE_ENABLED_MASK 0
 #endif
 
 inline void CpuInfo::Init()
@@ -83,7 +91,7 @@ inline CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 	ArchFlags retFlags = ArchFlags::DEFAULT;
 
 	int cpuInfo[4];
-	__cpuid(cpuInfo, 1);
+	__x86_cpuid(cpuInfo, 1);
 
 	const int cpuFamily = ((cpuInfo[0] & 0xFF00000) >> 20) + ((cpuInfo[0] & 0xF00) >> 8);
 
@@ -97,22 +105,22 @@ inline CpuInfo::ArchFlags CpuInfo::DetectArchitectureSupport()
 
 	if (osUsesXSAVE_XRSTORE && cpuAVXSupport)
 	{
-		const u64 xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+		const u64 xcrFeatureMask = __x86_getfeaturemask();
 		if ((xcrFeatureMask & 0x6) == 0x6)
 		{
 			//	Now hold on. AMD 15h family CPU's handle AVX horribly, so make an exception for them.
-			__cpuid(cpuInfo, 0);
+			__x86_cpuid(cpuInfo, 0);
 			const int cpuName[4] = { cpuInfo[1], cpuInfo[3], cpuInfo[2], 0 };
 			if ((strstr((const char*)cpuName, "AMD") == nullptr) || cpuFamily != 0x15)
 			{
 				retFlags |= ArchFlags::AVX;
 
 				//	And finally, check for AVX2.
-				__cpuid(cpuInfo, 0x80000000);
+				__x86_cpuid(cpuInfo, 0x80000000);
 				const uint nExIds = cpuInfo[0];
 				if (nExIds >= 7)
 				{
-					__cpuid(cpuInfo, 7);
+					__x86_cpuid(cpuInfo, 7);
 					retFlags |= ((cpuInfo[1] & (1 <<  5))) != 0 ? ArchFlags::AVX2				: ArchFlags::DEFAULT;
 					retFlags |= ((cpuInfo[1] & (1 << 16))) != 0 ? ArchFlags::AVX512_F			: ArchFlags::DEFAULT;
 					retFlags |= ((cpuInfo[1] & (1 << 17))) != 0 ? ArchFlags::AVX512_DQ			: ArchFlags::DEFAULT;
@@ -143,12 +151,12 @@ inline CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
 	int cpuInfo[4];
 
 	//	Check for Intel fused multiply-add
-	__cpuid(cpuInfo, 1);
+	__x86_cpuid(cpuInfo, 1);
 	if ((cpuInfo[2] & (1 << 12)) != 0)
 		retFlags |= ExtFlags::FMA3;
 
 	//	Check for AMD fused multiply-add
-	__cpuid(cpuInfo, 0x80000001);
+	__x86_cpuid(cpuInfo, 0x80000001);
 	if ((cpuInfo[2] & (1 << 16)) != 0)
 		retFlags |= ExtFlags::FMA4;
 

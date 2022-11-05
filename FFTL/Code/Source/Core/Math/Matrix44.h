@@ -69,12 +69,12 @@ public:
 	// Operators
 	//
 
-	[[nodiscard]] mat44	operator*(f32 rhs) const;
-	[[nodiscard]] mat44	operator/(f32 rhs) const;
-	[[nodiscard]] mat44 	operator+(const mat44& rhs) const;
-	[[nodiscard]] mat44 	operator-(const mat44& rhs) const;
-	[[nodiscard]] bool		operator==(const mat44& rhs) const;
-	[[nodiscard]] bool		operator!=(const mat44& rhs) const;
+	FFTL_NODISCARD mat44	operator*(f32 rhs) const;
+	FFTL_NODISCARD mat44	operator/(f32 rhs) const;
+	FFTL_NODISCARD mat44 	operator+(const mat44& rhs) const;
+	FFTL_NODISCARD mat44 	operator-(const mat44& rhs) const;
+	FFTL_NODISCARD bool		operator==(const mat44& rhs) const;
+	FFTL_NODISCARD bool		operator!=(const mat44& rhs) const;
 	mat44&					operator=(const mat44& rhs);
 	mat44&					operator*=(f32 rhs);
 	mat44&					operator/=(f32 rhs);
@@ -87,38 +87,38 @@ public:
 
 	friend void					Store(f32* p, const mat44& m);
 	friend void					StoreA(f32* p, const mat44& m);
-	[[nodiscard]] const f32*	Ptr() const;
-	[[nodiscard]] f32*			Ptr();
-	[[nodiscard]] const mat33&	AsMat33() const;
-	[[nodiscard]] mat33&		AsMat33();
-	[[nodiscard]] const mat43&	AsMat43f() const;
-	[[nodiscard]] mat43&		AsMat43f();
+	FFTL_NODISCARD const f32*	Ptr() const;
+	FFTL_NODISCARD f32*			Ptr();
+	FFTL_NODISCARD const mat33&	AsMat33() const;
+	FFTL_NODISCARD mat33&		AsMat33();
+	FFTL_NODISCARD const mat43&	AsMat43f() const;
+	FFTL_NODISCARD mat43&		AsMat43f();
 
 	//
 	// Functions of the matrix
 	//
 
-	[[nodiscard]] bool			IsNearEqual(const mat44& rhs, f32 tol = 0.001f) const;
-	[[nodiscard]] bool			IsNan() const;
-	[[nodiscard]] bool			IsInf() const;
-	[[nodiscard]] bool			IsFinite() const;
-	[[nodiscard]] bool			IsNonFinite() const;
+	FFTL_NODISCARD bool			IsNearEqual(const mat44& rhs, f32 tol = 0.001f) const;
+	FFTL_NODISCARD bool			IsNan() const;
+	FFTL_NODISCARD bool			IsInf() const;
+	FFTL_NODISCARD bool			IsFinite() const;
+	FFTL_NODISCARD bool			IsNonFinite() const;
 	/// Checks whether any element is larger than the given threshold
-	[[nodiscard]] f32			Determinant() const;
+	FFTL_NODISCARD f32			Determinant() const;
 
 	template<uint ROW>
-	[[nodiscard]] const vec4&	Row() const;
+	FFTL_NODISCARD const vec4&	Row() const;
 	template<uint ROW>
-	[[nodiscard]] vec4&		Row();
+	FFTL_NODISCARD vec4&		Row();
 	
 	//
 	// Transforms
 	//
 	
 	/// Computes (*this) * p
-	[[nodiscard]] vec4			TransformTransposed(const vec4& p) const;
+	FFTL_NODISCARD vec4			TransformTransposed(const vec4& p) const;
 	/// Computes p * (*this)
-	[[nodiscard]] vec4			Transform(const vec4& p) const;
+	FFTL_NODISCARD vec4			Transform(const vec4& p) const;
 
 	//
 	// In-place operations (do not return *this - this is inefficient and error-prone)
@@ -135,8 +135,8 @@ public:
 	// Out-of-place operations
 	//
 
-	[[nodiscard]] FFTL_FORCEINLINE mat44	GetInverse() const		{ mat44 m = *this; m.Invert(); return m; }
-	[[nodiscard]] FFTL_FORCEINLINE mat44	GetTranspose() const	{ mat44 m = *this; m.Transpose(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat44	GetInverse() const		{ mat44 m = *this; m.Invert(); return m; }
+	FFTL_NODISCARD FFTL_FORCEINLINE mat44	GetTranspose() const	{ mat44 m = *this; m.Transpose(); return m; }
 
 
 private:
@@ -147,12 +147,12 @@ private:
 /// General matrix multiplication (no assumptions about orthonormal etc)
 void					Mul4x4(const mat44& a, const mat44& b, mat44& out);
 /// General matrix multiplication (no assumptions about orthonormal etc)
-[[nodiscard]] mat44	Mul4x4(const mat44& a, const mat44& b);
+FFTL_NODISCARD mat44	Mul4x4(const mat44& a, const mat44& b);
 
-[[nodiscard]] mat44	Add(const mat44& a, const mat44& b);
-[[nodiscard]] mat44	Sub(const mat44& a, const mat44& b);
+FFTL_NODISCARD mat44	Add(const mat44& a, const mat44& b);
+FFTL_NODISCARD mat44	Sub(const mat44& a, const mat44& b);
 
-[[nodiscard]] mat44	Abs(const mat44& a);
+FFTL_NODISCARD mat44	Abs(const mat44& a);
 
 
 
