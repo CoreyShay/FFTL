@@ -313,6 +313,8 @@ template <typename T, typename Tag>
 class FFTL_NODISCARD List
 {
 public:
+	static constexpr ptrdiff_t NODE_OFFSET = Tag::MyOffset();
+
 	List()
 		: m_HeadSentinel(&m_TailSentinel, nullptr)
 		, m_TailSentinel(nullptr, &m_HeadSentinel)

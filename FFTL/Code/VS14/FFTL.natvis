@@ -46,12 +46,22 @@
 		</Expand>
 	</Type>
 
-	<Type Name="FFTL::TContainedLinkedList&lt;*,*,*&gt;">
+	<Type Name="FFTL::List&lt;*,*&gt;">
 		<Expand>
 			<LinkedListItems Condition="m_HeadSentinel.m_pNextNode != &amp;m_TailSentinel">
 				<HeadPointer>m_HeadSentinel.m_pNextNode</HeadPointer>
 				<NextPointer>m_pNextNode->m_pNextNode ? m_pNextNode : 0</NextPointer>
-				<ValueNode>($T1*)((char*)this - $T3)</ValueNode>
+				<ValueNode>($T1*)((char*)this - FFTL::List&lt;$T1,$T2&gt;::NODE_OFFSET)</ValueNode>
+			</LinkedListItems>
+		</Expand>
+	</Type>
+
+	<Type Name="FFTL::ListAtomic&lt;*,*&gt;">
+		<Expand>
+			<LinkedListItems Condition="m_HeadSentinel.m_pNextNode != &amp;m_TailSentinel">
+				<HeadPointer>(FFTL::ListAtomicNode&lt;$T1,$T2&gt;*)((size_t)m_HeadSentinel.m_pNextNode &amp; ~FFTL::ListAtomicNode&lt;$T1,$T2&gt;::LOCK_BIT_MASK)</HeadPointer>
+				<NextPointer>(FFTL::ListAtomicNode&lt;$T1,$T2&gt;*)((size_t)m_pNextNode->m_pNextNode &amp; ~FFTL::ListAtomicNode&lt;$T1,$T2&gt;::LOCK_BIT_MASK) ? (FFTL::ListAtomicNode&lt;$T1,$T2&gt;*)((size_t)m_pNextNode  &amp; ~FFTL::ListAtomicNode&lt;$T1,$T2&gt;::LOCK_BIT_MASK) : 0</NextPointer>
+				<ValueNode>($T1*)((char*)this - FFTL::ListAtomic&lt;$T1,$T2&gt;::NODE_OFFSET)</ValueNode>
 			</LinkedListItems>
 		</Expand>
 	</Type>
