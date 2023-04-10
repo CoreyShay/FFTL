@@ -67,11 +67,12 @@ struct __nodeName__ ## __memberNameTag__										\
 __access__:																		\
 FFTL::ListNode<T, __nodeName__ ## __memberNameTag__> __nodeName__
 
-#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__> __listName__
-#define FFTL_Define_List_Array(T, ElementTypeNodeMember, __listName__, N) FFTL::FixedArray< FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__>, N> __listName__
+#define FFTL_Define_List(T, ElementTypeNodeMember, __listName__) FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember> __listName__
+#define FFTL_Define_List_Array(T, ElementTypeNodeMember, __listName__, N) FFTL::FixedArray< FFTL::List<T, T::ElementTypeNodeMember ## __memberNameTag__, &T::ElementTypeNodeMember>, N> __listName__
 
 
-template <typename T, typename Tag> class List;
+template <typename T, typename Tag> class ListNode;
+template <typename T, typename Tag, ListNode<T, Tag> T::* PtrToMember> class List;
 template <typename T, typename Tag> class ListIterator;
 template <typename T, typename Tag> class ListIteratorFor;
 template <typename T, typename Tag> class ListIteratorRev;
@@ -80,7 +81,7 @@ template <typename T, typename Tag> class ListIteratorRev;
 template <typename T, typename Tag>
 class FFTL_NODISCARD ListNode
 {
-	friend class List<T, Tag>;
+	template <typename _T, typename _Tag, ListNode<_T, _Tag> _T::* PtrToMember> friend class List;
 	friend class ListIterator<T, Tag>;
 	friend class ListIteratorFor<T, Tag>;
 	friend class ListIteratorRev<T, Tag>;
@@ -91,11 +92,7 @@ public:
 		, m_pPrevNode(nullptr)
 	{
 	}
-	ListNode(ListNode<T, Tag>* in_NextNode, ListNode<T, Tag>* in_PrevNode)
-		: m_pNextNode(in_NextNode)
-		, m_pPrevNode(in_PrevNode)
-	{
-	}
+
 	~ListNode()
 	{
 		if (m_pNextNode)
@@ -160,6 +157,12 @@ public:
 	}
 
 private:
+	ListNode(ListNode<T, Tag>* in_NextNode, ListNode<T, Tag>* in_PrevNode)
+		: m_pNextNode(in_NextNode)
+		, m_pPrevNode(in_PrevNode)
+	{
+	}
+
 	ListNode<T, Tag>* m_pNextNode;
 	ListNode<T, Tag>* m_pPrevNode;
 };
@@ -309,12 +312,11 @@ public:
 };
 
 
-template <typename T, typename Tag>
+//	PtrToMember template param needed only for natvis
+template <typename T, typename Tag, ListNode<T, Tag> T::* PtrToMember>
 class FFTL_NODISCARD List
 {
 public:
-	static constexpr ptrdiff_t NODE_OFFSET = Tag::MyOffset();
-
 	List()
 		: m_HeadSentinel(&m_TailSentinel, nullptr)
 		, m_TailSentinel(nullptr, &m_HeadSentinel)

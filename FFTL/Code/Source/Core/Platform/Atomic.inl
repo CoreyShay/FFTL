@@ -174,54 +174,28 @@ FFTL_FORCEINLINE T AtomicCompareExchangeStrong(std::atomic<T>* p, T newVal, T co
 #endif
 
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeWeakRef(volatile T* p, T newVal, T& inout_comp_result)
+FFTL_FORCEINLINE typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeWeakRef(volatile T* p, T newVal, T& inout_comp_result)
 {
 	return AtomicCompareExchangeWeakRef(reinterpret_cast<std::atomic<T>*>(const_cast<T*>(p)), newVal, inout_comp_result);
 }
 
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, T newVal, T& inout_comp_result)
+FFTL_FORCEINLINE typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, T newVal, T& inout_comp_result)
 {
 	return std::atomic_compare_exchange_weak(p, &inout_comp_result, newVal);
 }
 
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, T newVal, T& inout_comp_result)
+FFTL_FORCEINLINE typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeStrongRef(volatile T* p, T newVal, T& inout_comp_result)
 {
 	return AtomicCompareExchangeStrongRef(reinterpret_cast<std::atomic<T>*>(const_cast<T*>(p)), newVal, inout_comp_result);
 }
 
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, T newVal, T& inout_comp_result)
+FFTL_FORCEINLINE typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, T newVal, T& inout_comp_result)
 {
 	return std::atomic_compare_exchange_strong(p, &inout_comp_result, newVal);
 }
-
-#if !defined(_MSC_VER)// && !defined(__clang__) && !defined(__GNUC__)
-template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(volatile T* p, const T& newVal, T& inout_comp_result)
-{
-	return AtomicCompareExchangeWeakRef(reinterpret_cast<std::atomic<T>*>(const_cast<T*>(p)), newVal, inout_comp_result);
-}
-
-template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result)
-{
-	return std::atomic_compare_exchange_weak(p, &inout_comp_result, newVal);
-}
-
-template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, const T& newVal, T& inout_comp_result)
-{
-	return AtomicCompareExchangeStrongRef(reinterpret_cast<std::atomic<T>*>(const_cast<T*>(p)), newVal, inout_comp_result);
-}
-
-template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result)
-{
-	return std::atomic_compare_exchange_strong(p, &inout_comp_result, newVal);
-}
-#endif
 
 
 } // namespace FFTL

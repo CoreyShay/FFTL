@@ -269,6 +269,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="$(MSBuildThisFileDirectory)..\FFTL.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\Source\Core\FFTL_Core.natvis" />
   </ItemGroup>
 </Project>

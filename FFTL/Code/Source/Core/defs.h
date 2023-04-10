@@ -389,7 +389,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 //	Likely / unlikely attributes introduced Visual Studio 16.6
-#if FFTL_CPP_VERSION >= 2020 || (FFTL_HAS_CPP_ATTRIBUTE(likely) && FFTL_HAS_CPP_ATTRIBUTE(unlikely)) || (defined(_MSC_VER) && _MSC_VER >= 1926) || defined(FFTL_PLATFORM_PLAYSTATION)
+#if FFTL_CPP_VERSION >= 2020 || (FFTL_HAS_CPP_ATTRIBUTE(likely) && FFTL_HAS_CPP_ATTRIBUTE(unlikely)) || defined(FFTL_PLATFORM_PLAYSTATION)
 #	define FFTL_LIKELY [[likely]]
 #	define FFTL_UNLIKELY [[unlikely]]
 #else
@@ -415,7 +415,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #	define FFTL_CONSTEVAL constexpr
 #endif
 
-#if (FFTL_CPP_VERSION >= 2020) || (defined(_MSC_VER) && _MSC_VER >= 1927) || FFTL_HAS_BUILTIN(__builtin_bit_cast)
+#if (FFTL_CPP_VERSION >= 2020) || FFTL_HAS_BUILTIN(__builtin_bit_cast)
 #	define FFTL_HAS_CONSTEXPR_BIT_CAST 1
 #	define FFTL_BIT_CAST_CONSTEXPR constexpr
 #else

@@ -862,9 +862,9 @@ void LinkedListThreadSafetyTest()
 				if (AtomicCompareExchangeStrong<u8>(&allocated[targetIndex], 1, 0) == 0 )
 				{
 					ListTester* obj = &testArray[targetIndex];
-					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.IsLinked());
+					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.is_linked());
 					AtomicIncrement(&obj->m_nAddCount);
-					testList.AddTail(obj);
+					testList.push_back(obj);
 					FFTL_ASSERT_ALWAYS(AtomicIncrement(&allocated[targetIndex]) == 1);
 					AtomicIncrement(&nodeCount);
 					AtomicIncrement(&totalAddCount);
@@ -885,7 +885,7 @@ void LinkedListThreadSafetyTest()
 				{
 					ListTester* obj = &testArray[targetIndex];
 					obj->m_ListNode.RemoveFromList();
-					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.IsLinked());
+					FFTL_ASSERT_ALWAYS(!obj->m_ListNode.is_linked());
 					AtomicIncrement(&obj->m_nRemCount);
 					FFTL_ASSERT_ALWAYS(AtomicDecrement(&allocated[targetIndex]) == 1);
 					AtomicDecrement(&nodeCount);

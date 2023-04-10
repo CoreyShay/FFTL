@@ -10,7 +10,7 @@ namespace FFTL
 struct FFTL_NODISCARD s24
 {
 	/*constexpr*/ s24();
-	FFTL_NODISCARD constexpr s24(int r);
+	constexpr s24(int r);
 	constexpr operator int() const;
 
 	u8 b[3];

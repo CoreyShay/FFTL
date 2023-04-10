@@ -35,15 +35,16 @@ template<typename T> T AtomicCompareExchangeWeak(std::atomic<T>* p, T newVal, T 
 template<typename T> T AtomicCompareExchangeStrong(volatile T* p, T newVal, T comp);
 template<typename T> T AtomicCompareExchangeStrong(std::atomic<T>* p, T newVal, T comp);
 
-template<typename T> typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeWeakRef(volatile T* p, T newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, T newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, T newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<!std::is_trivial_v<T> || sizeof(T) != 16 || alignof(T) != 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, T newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeWeakRef(volatile T* p, T newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, T newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeStrongRef(volatile T* p, T newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<std::atomic<T>::is_always_lock_free || !(std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16), bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, T newVal, T& inout_comp_result);
 
-template<typename T> typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(volatile T* p, const T& newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, const T& newVal, T& inout_comp_result);
-template<typename T> typename std::enable_if<std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result);
+//	If we get a linker error here, then we need to implement the 128-bit CAS functions for this platform. See Atomic_Windows.inl or Atomic_GCC.inl for examples.
+template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(volatile T* p, const T& newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeWeakRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, const T& newVal, T& inout_comp_result);
+template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result);
 
 } // namespace FFTL
 

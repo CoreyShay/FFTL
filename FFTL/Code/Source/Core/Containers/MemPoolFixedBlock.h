@@ -32,11 +32,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 #include "../Platform/Atomic.h"
-#include "../Platform/Mutex.h"
 #include "../Utils/MetaProgramming.h"
 
-//	This totally works, but surprisingly, it appears that using mutexes performs slightly better, regardless of contention.
+//	Preferred. Faster than mutexes.
 #define FFTL_FIXEDBLOCKPOOL_ATOMIC 1
+
+#if !FFTL_FIXEDBLOCKPOOL_ATOMIC
+#	include "../Platform/Mutex.h"
+#endif
 
 
 namespace FFTL
@@ -149,6 +152,7 @@ public:
 	FFTL_NODISCARD static constexpr uint GetHeapSize()	{ return _MaxCount*_AllocSize; }
 	FFTL_NODISCARD static constexpr uint GetAllocSize()	{ return _AllocSize; }
 
+	FFTL_NODISCARD bool GetIsEmpty() const				{ return m_NumUsedEntries == 0; }
 	FFTL_NODISCARD bool GetIsFull() const				{ return m_NumUsedEntries == _MaxCount; }
 	FFTL_NODISCARD uint GetNumUsed() const				{ return m_NumUsedEntries; }
 	FFTL_NODISCARD uint GetNumAvailable() const			{ return _MaxCount - m_NumUsedEntries; }
@@ -161,10 +165,10 @@ public:
 	FFTL_NODISCARD u32			GetTotalFrees() const				{ return m_TotalFrees; }
 #endif // defined(FFTL_ENABLE_PROFILING)
 
-protected:
 	FFTL_NODISCARD _BaseType*		GetEntry(uint i) { return reinterpret_cast<_BaseType*>(&m_Pool[i]); }
 	FFTL_NODISCARD const _BaseType*	GetEntry(uint i) const { return reinterpret_cast<const _BaseType*>(&m_Pool[i]); }
 
+protected:
 	struct alignas(_BaseType) tAllocStub { byte m_Bytes[_AllocSize]; };
 
 	FixedArray<tAllocStub, _MaxCount>	m_Pool;
@@ -191,9 +195,6 @@ public:
 	FixedBlockMemPoolStatic_ThreadSafe()
 		: _Mybase()
 	{
-#if FFTL_FIXEDBLOCKPOOL_ATOMIC
-		static_assert((_MaxCount & (_MaxCount - 1)) == 0, "_MaxCount must be a power of 2 for this lock-free method to work");
-#endif
 	}
 
 	// PURPOSE: Gets a pointer to the next free memory space.
@@ -407,6 +408,7 @@ public:
 	FFTL_NODISCARD size_type	GetHeapSize()					{ return _MaxCount * _AllocSize; }
 	FFTL_NODISCARD size_type	GetAllocSize()					{ return _AllocSize; }
 
+	FFTL_NODISCARD bool			GetIsEmpty() const				{ return m_NumUsedEntries == 0; }
 	FFTL_NODISCARD bool			GetIsFull() const				{ return m_NumUsedEntries == _MaxCount; }
 	FFTL_NODISCARD size_type	GetNumUsed() const				{ return m_NumUsedEntries; }
 	FFTL_NODISCARD size_type	GetNumAvailable() const			{ return _MaxCount - m_NumUsedEntries; }
