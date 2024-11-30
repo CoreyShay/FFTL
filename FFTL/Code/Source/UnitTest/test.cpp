@@ -917,12 +917,12 @@ void LinkedListThreadSafetyTest()
 	}
 	terminateAllThreads = true;
 
-	threadFuncUpdate0.Stop();
-	threadFuncUpdate1.Stop();
-	threadFuncAdd0.Stop();
-	threadFuncAdd1.Stop();
-	threadFuncRem0.Stop();
-	threadFuncRem1.Stop();
+	threadFuncUpdate0.Join();
+	threadFuncUpdate1.Join();
+	threadFuncAdd0.Join();
+	threadFuncAdd1.Join();
+	threadFuncRem0.Join();
+	threadFuncRem1.Join();
 
 	FFTL_LOG_MSG("[%s] All threads terminated gracefully\n", __FUNCTION__ );
 }
@@ -1056,12 +1056,12 @@ void MemPoolThreadSafetyTest()
 
 	terminateAllThreads = true;
 
-	threadFuncUpdate0.Stop();
-	threadFuncUpdate1.Stop();
-	threadFuncAdd0.Stop();
-	threadFuncAdd1.Stop();
-	threadFuncRem0.Stop();
-	threadFuncRem1.Stop();
+	threadFuncUpdate0.Join();
+	threadFuncUpdate1.Join();
+	threadFuncAdd0.Join();
+	threadFuncAdd1.Join();
+	threadFuncRem0.Join();
+	threadFuncRem1.Join();
 
 	FFTL_LOG_MSG("[%s] [Performance] Avg Add: %f, Avg Rem: %f \n", __FUNCTION__, Timer::ToMicroseconds(timeAdd) / totalAddCount, Timer::ToMicroseconds(timeRem) / totalRemCount);
 	FFTL_LOG_MSG("[%s] All threads terminated gracefully\n", __FUNCTION__);

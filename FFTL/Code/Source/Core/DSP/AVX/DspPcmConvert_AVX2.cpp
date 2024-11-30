@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "_pch_AudioEngine.h"
+#include "../../_pch_Core.h"
 
 //	If we aren't forcing compilation with AVX2, Windows platforms might support this anyway. Xbox platforms need this to link with debug builds.
 #if defined(__AVX2__) || defined(FFTL_AVX2) || ( defined(FFTL_SSE) && defined(FFTL_PLATFORM_WINDOWS) ) || ( defined(FFTL_PLATFORM_XBOX) && defined(FFTL_ENABLE_ASSERT) )
