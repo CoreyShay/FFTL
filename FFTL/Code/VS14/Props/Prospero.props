@@ -20,7 +20,7 @@
       <AdditionalOptions>-std=c++20 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>-lScePosix_stub_weak;-lSceSysmodule_stub_weak;-lSceAcm_stub_weak;-lSceAudioOut_stub_weak;-lSceAudio3d_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>-lSceAcm_stub_weak;-lSceAjm_stub_weak;-lSceAudio3d_stub_weak;-lSceAudioOut_stub_weak;-lScePosix_stub_weak;-lSceSysmodule_stub_weak;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">

@@ -46,6 +46,9 @@ template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_fre
 template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(volatile T* p, const T& newVal, T& inout_comp_result);
 template<typename T> typename std::enable_if<!std::atomic<T>::is_always_lock_free && std::is_trivial_v<T> && sizeof(T) == 16 && alignof(T) == 16, bool>::type AtomicCompareExchangeStrongRef(std::atomic<T>* p, const T& newVal, T& inout_comp_result);
 
+template<typename T> const std::atomic<T>& ToAtomic(const T& a) { return reinterpret_cast<const std::atomic<T>&>(a); }
+template<typename T> std::atomic<T>& ToAtomic(T& a) { return reinterpret_cast<std::atomic<T>&>(a); }
+
 } // namespace FFTL
 
 #include "Atomic.inl"

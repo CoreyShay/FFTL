@@ -138,22 +138,29 @@ OTHER DEALINGS IN THE SOFTWARE.
 //	Platforms
 #if defined(__ANDROID__)
 #	define FFTL_PLATFORM_ANDROID 1
-#elif defined(__ORBIS__)
+#endif
+#if defined(__ORBIS__)
 #	define FFTL_PLATFORM_ORBIS 1
+#	define FFTL_PLATFORM_PLAYSTATION 1
 #elif defined(__PROSPERO__)
 #	define FFTL_PLATFORM_PROSPERO 1
+#	define FFTL_PLATFORM_PLAYSTATION 1
 #elif defined(_DURANGO) || defined(_GAMING_XBOX_XBOXONE)
 #	define FFTL_PLATFORM_DURANGO 1
+#	define FFTL_PLATFORM_XBOX 1
 #elif defined(_SCARLETT) || defined(_GAMING_XBOX_SCARLETT)
 #	define FFTL_PLATFORM_SCARLETT 1
+#	define FFTL_PLATFORM_XBOX 1
 #elif defined(_WINDOWS) || defined(WIN32) || defined(__WIN32) || defined(__WIN32__)
 #	define FFTL_PLATFORM_WINDOWS 1
 #endif
 
-#if defined(FFTL_PLATFORM_ORBIS) || defined(FFTL_PLATFORM_PROSPERO)
-#	define FFTL_PLATFORM_PLAYSTATION 1
-#elif defined(FFTL_PLATFORM_DURANGO) || defined(FFTL_PLATFORM_SCARLETT)
-#	define FFTL_PLATFORM_XBOX 1
+#if defined(FFTL_PLATFORM_WINDOWS) || defined(FFTL_PLATFORM_PLAYSTATION) || defined(FFTL_PLATFORM_XBOX) || defined(_X86_) || defined(_M_IX86) || defined(_AMD64_) || defined(_M_X64)
+#	define FFTL_PLATFORM_ARCHITECTURE_X86 1
+#elif defined(__ANDROID__) || defined(__ARM_NEON) || defined(__ARM_NEON__)
+#	define FFTL_PLATFORM_ARCHITECTURE_ARM 1
+#else
+#	error "Missing platform architecture"
 #endif
 
 #if !defined(FFTL_FMA3) && (defined(FFTL_USE_FMA3) || defined(__FMA__) || defined(__FMA3__) || defined(__PROSPERO__) || defined(_SCARLETT))
@@ -333,28 +340,74 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define FFTL_VERIFY_EQ_MSG(___cmp, ___expr, msg, ...) FFTL_VERIFY_EQ(___cmp, ___expr)
 #define FFTL_VERIFY_NEQ_MSG(___cmp, ___expr, msg, ...) FFTL_VERIFY_NEQ(___cmp, ___expr)
 
+#if defined( __SNC__ )
+#	define FFTL_DISABLE_OPTIMIZATION _Pragma( "control %push O=0" )
+#	define FFTL_ENABLE_OPTIMIZATION	 _Pragma( "control %pop O" )
+#elif defined( __clang__ ) || defined( __GNUC__ ) // #if defined( __SNC__ )
+#	if defined( _DEBUG )
+#		define FFTL_DISABLE_OPTIMIZATION
+#		define FFTL_ENABLE_OPTIMIZATION
+#	else
+#		define FFTL_DISABLE_OPTIMIZATION									\
+		_Pragma( "clang optimize off" )								\
+		_Pragma( "GCC diagnostic push" )							\
+		_Pragma( "GCC diagnostic ignored \"-Wunused-variable\"" )	\
+		_Pragma( "GCC diagnostic ignored \"-Wunused-value\"" )		\
+		_Pragma( "message \"OPTIMIZATION DISABLED!!( FFTL_DISABLE_OPTIMIZATION )\"" )
+#		define FFTL_ENABLE_OPTIMIZATION		\
+		_Pragma( "clang optimize on" )	\
+		_Pragma( "GCC diagnostic pop" )	\
+		_Pragma( "message \"OPTIMIZATION ENABLED!!( FFTL_ENABLE_OPTIMIZATION )\"" )
+#	endif
+#elif defined( _MSC_VER )
+#	if defined( TL_BUILD_DEBUG ) || defined( _DEBUG )
+#		define MacroStr( x )		#x
+#		define MacroStr2( x )		MacroStr( x )
+#		define PragmaError( desc ) __pragma( message( __FILE__ "(" MacroStr2( __LINE__ ) "): error:" #desc ) )
+#		define FFTL_DISABLE_OPTIMIZATION
+#		define FFTL_ENABLE_OPTIMIZATION
+#	else // #if defined( TL_BUILD_DEBUG ) || defined( _DEBUG )
+#		define FFTL_DISABLE_OPTIMIZATION				\
+		__pragma( optimize( "", off ) )			\
+		__pragma( warning( disable : 4748 ) )	\
+		__pragma( warning( disable : 4189 ) )	\
+		__pragma( message( "OPTIMIZATION DISABLED!!( FFTL_DISABLE_OPTIMIZATION )" ) )
+#		define FFTL_ENABLE_OPTIMIZATION		\
+		__pragma( optimize( "", on ) )	\
+		__pragma( message( "OPTIMIZATION ENABLED!!( FFTL_ENABLE_OPTIMIZATION )" ) )
+#	endif
+#else
+#	define FFTL_ENABLE_OPTIMIZATION
+#	define FFTL_DISABLE_OPTIMIZATION
+#endif
 
+//	inline defs
 #define FFTL_INLINE inline
-
 #if defined(_MSC_VER)
 #	define FFTL_FORCEINLINE __forceinline
 #	define FFTL_NOINLINE __declspec(noinline)
+#elif defined(FFTL_PLATFORM_ANDROID)
+#	define FFTL_FORCEINLINE inline __attribute__((always_inline))
+#	define FFTL_NOINLINE __attribute((noinline))
+#else
+#	define FFTL_FORCEINLINE inline __attribute__((always_inline))
+#	define FFTL_NOINLINE __noinline
+#endif
+
+//	DLL defs
+#if defined(_MSC_VER)
 #	if defined(FFTL_DLL)
 #		define FFTL_DLLEXPORT __declspec(dllexport)
 #	else
 #		define FFTL_DLLEXPORT __declspec(dllimport)
 #	endif
 #elif defined(FFTL_PLATFORM_ANDROID)
-#	define FFTL_FORCEINLINE inline __attribute__((always_inline))
-#	define FFTL_NOINLINE __attribute((noinline))
 #	if defined(FFTL_DLL)
 #		define FFTL_DLLEXPORT __attribute__((visibility("default")))
 #	else
 #		define FFTL_DLLEXPORT
 #	endif
 #else
-#	define FFTL_FORCEINLINE inline __attribute__((always_inline))
-#	define FFTL_NOINLINE __noinline
 #	if defined(FFTL_DLL)
 #		define FFTL_DLLEXPORT __declspec(dllexport)
 #	else
@@ -399,6 +452,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define FFTL_NODISCARD [[nodiscard]]
 #define FFTL_SWITCH_FALLTHROUGH [[fallthrough]]
+#define FFTL_MAYBE_UNUSED [[maybe_unused]]
 
 #if FFTL_HAS_BUILTIN(__builtin_is_constant_evaluated)
 #	define FFTL_IS_CONSTANT_EVALUATED __builtin_is_constant_evaluated()

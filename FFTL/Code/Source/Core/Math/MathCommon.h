@@ -652,7 +652,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE T RadiansToDegrees(T rad)
 
 #if defined(FFTL_SSE)
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s32 bit_cast(const f32& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s32 bit_cast(const f32& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 	{
@@ -668,12 +668,12 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s32 bit_cast(const f32& 
 	}
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR u32 bit_cast(const f32& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR u32 bit_cast(const f32& v) noexcept
 {
 	return static_cast<u32>(bit_cast<s32>(v));
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR __m128 bit_cast(const f32& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR __m128 bit_cast(const f32& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 	{
@@ -684,7 +684,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR __m128 bit_cast(const f3
 		return _mm_set_ss(v);
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const s32& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const s32& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<f32>(v);
@@ -692,7 +692,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const s32& 
 		return _mm_cvtss_f32(_mm_castsi128_ps(_mm_cvtsi32_si128(v)));
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const u32& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const u32& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<f32>(v);
@@ -700,7 +700,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const u32& 
 		return bit_cast<f32>(static_cast<s32>(v));
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const __m128& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const __m128& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 	{
@@ -713,7 +713,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f32 bit_cast(const __m12
 
 #if defined(FFTL_64BIT)
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s64 bit_cast(const f64& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s64 bit_cast(const f64& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<s64>(v);
@@ -721,7 +721,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR s64 bit_cast(const f64& 
 		return _mm_cvtsi128_si64(_mm_castpd_si128(_mm_set_sd(v)));
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f64 bit_cast(const s64& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f64 bit_cast(const s64& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<f64>(v);
@@ -730,7 +730,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f64 bit_cast(const s64& 
 }
 #endif
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR u64 bit_cast(const f64& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR u64 bit_cast(const f64& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<u64>(v);
@@ -738,7 +738,7 @@ FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR u64 bit_cast(const f64& 
 		return static_cast<u64>(bit_cast<s64>(v));
 }
 template <>
-FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f64 bit_cast(const u64& v)
+FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR f64 bit_cast(const u64& v) noexcept
 {
 	if (FFTL_IS_CONSTANT_EVALUATED)
 		return bit_cast_constexpr<f64>(v);

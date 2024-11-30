@@ -406,9 +406,9 @@ public:
 		return ListAtomicNode<T, Tag>::RemLockFlag(this->m_pCurrentNode)->get_element();
 	}
 
-	FFTL_NODISCARD FFTL_FORCEINLINE T& operator->()
+	FFTL_NODISCARD FFTL_FORCEINLINE T* operator->()
 	{
-		return *get();
+		return get();
 	}
 
 	FFTL_NODISCARD FFTL_FORCEINLINE T& operator*()
@@ -418,11 +418,13 @@ public:
 
 	FFTL_NODISCARD FFTL_FORCEINLINE bool is_back() const
 	{
+		FFTL_ASSERT(this->m_pCurrentNode);
 		return this->m_pCurrentNode->is_back();
 	}
 
 	FFTL_NODISCARD FFTL_FORCEINLINE bool is_front() const
 	{
+		FFTL_ASSERT(this->m_pCurrentNode);
 		return this->m_pCurrentNode->is_front();
 	}
 
@@ -468,14 +470,13 @@ public:
 		}
 	}
 
-	void remove_and_advance()
-	{
-		this->m_pCurrentNode->RemoveFromList(*this);
-	}
-
+	//	Don't overload these
 	ListAtomicIteratorFor(const ListAtomicIteratorFor&) = delete;
 	ListAtomicIteratorFor& operator=(const ListAtomicIteratorFor&) = delete;
 	ListAtomicIteratorFor& operator=(ListAtomicIteratorFor&&) = delete;
+	ListAtomicIteratorFor operator++(int) = delete;
+	ListAtomicIteratorFor operator--(int) = delete;
+	ListAtomicIteratorFor& operator--() = delete;
 
 	/**
 	* Advances the iterator to the next element.
@@ -515,10 +516,10 @@ public:
 		return *this;
 	}
 
-	//	Don't overload these
-	ListAtomicIteratorFor operator++(int) = delete;
-	ListAtomicIteratorFor operator--(int) = delete;
-	ListAtomicIteratorFor& operator--() = delete;
+	void remove_and_advance()
+	{
+		this->m_pCurrentNode->RemoveFromList(*this);
+	}
 };
 
 template <typename T, typename Tag>
@@ -551,9 +552,13 @@ public:
 		}
 	}
 
+	//	Don't overload these
 	ListAtomicIteratorRev(const ListAtomicIteratorRev&) = delete;
 	ListAtomicIteratorRev& operator=(const ListAtomicIteratorRev&) = delete;
 	ListAtomicIteratorRev& operator=(ListAtomicIteratorRev&&) = delete;
+	ListAtomicIteratorRev operator++(int) = delete;
+	ListAtomicIteratorRev operator--(int) = delete;
+	ListAtomicIteratorRev& operator--() = delete;
 
 	/**
 	* Advances the iterator to the next element.
@@ -592,11 +597,6 @@ public:
 		this->advance();
 		return *this;
 	}
-
-	//	Don't overload these
-	ListAtomicIteratorRev operator++(int) = delete;
-	ListAtomicIteratorRev operator--(int) = delete;
-	ListAtomicIteratorRev& operator--() = delete;
 };
 
 

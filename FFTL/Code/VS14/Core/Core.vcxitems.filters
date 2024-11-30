@@ -34,6 +34,15 @@
     <Filter Include="Platform\GCC">
       <UniqueIdentifier>{64b4b510-140a-4e04-b64b-b3c774021801}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DSP">
+      <UniqueIdentifier>{fdfa93ce-d525-4775-9d9b-945c16d3b137}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DSP\AVX">
+      <UniqueIdentifier>{80933287-9d3c-488f-8941-2e13ba476157}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DSP\SSE4">
+      <UniqueIdentifier>{627d3095-548b-4007-a6f8-466599159ccd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
@@ -128,6 +137,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\ListAtomic.h">
       <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert.h">
+      <Filter>DSP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -267,8 +279,25 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Atomic.inl">
       <Filter>Platform</Filter>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert.inl">
+      <Filter>DSP</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(MSBuildThisFileDirectory)..\..\Source\Core\FFTL_Core.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert_Default.cpp">
+      <Filter>DSP</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert_SIMD4.cpp">
+      <Filter>DSP</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\AVX\DspPcmConvert_AVX2.cpp">
+      <Filter>DSP\AVX</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\SSE4\DspPcmConvert_SSE4.cpp">
+      <Filter>DSP\SSE4</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

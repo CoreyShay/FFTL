@@ -110,6 +110,27 @@ public:
 	FFTL_NODISCARD constexpr operator T*() { return data(); }
 };
 
+template <typename T, u32 T_N>
+class alignas(8) FixedArray_Aligned8 : public FixedArray<T, T_N>
+{
+};
+
+template <typename T, u32 T_N>
+class alignas(16) FixedArray_Aligned16 : public FixedArray<T, T_N>
+{
+};
+
+template <typename T, u32 T_N>
+class alignas(32) FixedArray_Aligned32 : public FixedArray<T, T_N>
+{
+};
+
+template <typename T, u32 T_N>
+class alignas(64) FixedArray_Aligned64 : public FixedArray<T, T_N>
+{
+};
+
+
 template <typename T, size_t T_MAX_SIZE>
 class Array
 {
@@ -196,6 +217,19 @@ public:
 		}
 		return pItem;
 	}
+	T* swap_erase(T* pItem)
+	{
+		FFTL_ASSERT(m_size > 0);
+		FFTL_ASSERT(pItem >= m_data && pItem < m_data + m_size);
+		pItem->~T();
+		const size_t newSize = --m_size;
+		if ( newSize > 0)
+		{
+			::new(pItem) T(std::move(pItem[1]));
+			pItem[1].~T();
+		}
+		return pItem;
+	}
 
 	struct alignas(T) tAllocStub { byte m_Bytes[sizeof(T)]; };
 	tAllocStub m_data[T_MAX_SIZE];
@@ -203,25 +237,6 @@ private:
 	size_t m_size = 0;
 };
 
-template <typename T, u32 T_N>
-class alignas(8) FixedArray_Aligned8 : public FixedArray<T, T_N>
-{
-};
-
-template <typename T, u32 T_N>
-class alignas(16) FixedArray_Aligned16 : public FixedArray<T, T_N>
-{
-};
-
-template <typename T, u32 T_N>
-class alignas(32) FixedArray_Aligned32 : public FixedArray<T, T_N>
-{
-};
-
-template <typename T, u32 T_N>
-class alignas(64) FixedArray_Aligned64 : public FixedArray<T, T_N>
-{
-};
 
 
 

@@ -48,7 +48,7 @@ inline ThreadHandle GetThreadHandleCurrent()
 	return ::GetCurrentThread();
 }
 
-inline void WaitForThread(ThreadHandle h)
+inline void JoinThread(ThreadHandle h)
 {
 	FFTL_VERIFY_EQ( WAIT_OBJECT_0, ::WaitForSingleObject(h, INFINITE) );
 }

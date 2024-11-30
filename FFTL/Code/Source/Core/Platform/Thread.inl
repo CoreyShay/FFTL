@@ -121,13 +121,12 @@ inline void ThreadMember::Start(ThreadOwner* pOwner, const char* pszName, Thread
 	}
 }
 
-inline void ThreadMember::Stop(bool bWaitForDone)
+inline void ThreadMember::Join()
 {
-	if (GetIsRunning() && !m_bFlaggedForStop)
+	if (m_Handle != 0)
 	{
 		m_bFlaggedForStop = true;
-		if (bWaitForDone)
-			WaitForThread(m_Handle);
+		JoinThread(m_Handle);
 
 		m_pOwner = nullptr;
 		FreeThreadHandle(m_Handle);
@@ -185,13 +184,12 @@ inline void ThreadFunctor<T_Functor>::Start(const char* pszName, ThreadPriority 
 }
 
 template <typename T_Functor>
-inline void ThreadFunctor<T_Functor>::Stop(bool bWaitForDone)
+inline void ThreadFunctor<T_Functor>::Join()
 {
-	if (GetIsRunning() && !m_bFlaggedForStop)
+	if (m_Handle != 0)
 	{
 		m_bFlaggedForStop = true;
-		if (bWaitForDone)
-			WaitForThread(m_Handle);
+		JoinThread(m_Handle);
 
 		FreeThreadHandle(m_Handle);
 		m_Handle = 0;

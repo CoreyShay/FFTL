@@ -135,7 +135,7 @@ void SetThreadName(ThreadHandle handle, const char* pszName);
 
 //	Cross platform thread starter function
 ThreadId CreateAndStartThread(ThreadHandle* outThreadHandle, FFTL_THREAD_RETURNTYPE (FFTL_THREAD_CALLCONV *pFunc)(void*), void* pParam = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, const char* pszName = nullptr, u32 stackSize = 0);
-void WaitForThread(ThreadHandle h);
+void JoinThread(ThreadHandle h);
 void FreeThreadHandle(ThreadHandle h);
 
 //	Halts a thread's execution, usually for debug purposes. Only works on MS compilers as of now.
@@ -202,10 +202,11 @@ class ThreadMember : public ThreadBase
 {
 public:
 	ThreadMember(ThreadOwner::RunFunction func) : m_funcRun(func) {}
-	~ThreadMember() { Stop(true); }
+	~ThreadMember() { Join(); }
 
 	void Start(ThreadOwner* pOwner, const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
-	void Stop(bool bWaitForDone = true);
+	void Join();
+	void FlagForStop() { m_bFlaggedForStop = true; }
 	void Terminate(); // Forces quit. Unsafe.
 
 private:
@@ -223,10 +224,11 @@ class ThreadFunctor : public ThreadBase
 {
 public:
 	ThreadFunctor(T_Functor func) : m_funcRun(func) {}
-	~ThreadFunctor() { Stop(true); }
+	~ThreadFunctor() { Join(); }
 
 	void Start(const char* pszName = nullptr, ThreadPriority priority = ThreadPriority::Normal, uint coreAffinityMask = 0, u32 stackSize = 0);
-	void Stop(bool bWaitForDone = true);
+	void Join();
+	void FlagForStop() { m_bFlaggedForStop = true; }
 	void Terminate(); // Forces quit. Unsafe.
 
 private:
@@ -238,6 +240,8 @@ private:
 };
 
 
+
+void ThreadSleep(uint ms);
 
 
 }

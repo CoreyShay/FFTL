@@ -48,7 +48,7 @@ inline ThreadHandle GetThreadHandleCurrent()
 	return ::pthread_self();
 }
 
-inline void WaitForThread(ThreadHandle h)
+inline void JoinThread(ThreadHandle h)
 {
 	FFTL_VERIFY_EQ( 0, ::pthread_join(h.GetId(), nullptr) );
 }

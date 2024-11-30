@@ -47,6 +47,13 @@ namespace FFTL
 class FFTL_NODISCARD CpuInfo
 {
 public:
+	enum class Supported : u8
+	{
+		NO,
+		YES,
+		MAYBE,
+	};
+
 	enum class Architecture : u8
 	{
 		SSE,
@@ -97,7 +104,7 @@ public:
 		"Architecture::AVX512_4VNNIW",
 		"Architecture::AVX512_4FMAPS",
 	};
-	static_assert(ArraySize(ARCH_NAMES) == underlying_cast(Architecture::COUNT), "Size of ARCH_NAMES vs Architecture enum doesn't match");
+	static_assert(ArrayCount(ARCH_NAMES) == underlying_cast(Architecture::COUNT), "Size of ARCH_NAMES vs Architecture enum doesn't match");
 
 	enum class ArchFlags : u32
 	{
@@ -137,7 +144,7 @@ public:
 		"Extension::FMA3",
 		"Extension::FMA4",
 	};
-	static_assert(ArraySize(EXT_NAMES) == underlying_cast(Extension::COUNT), "Size of EXT_NAMES vs Extension enum doesn't match");
+	static_assert(ArrayCount(EXT_NAMES) == underlying_cast(Extension::COUNT), "Size of EXT_NAMES vs Extension enum doesn't match");
 
 	enum class ExtFlags : u8
 	{
@@ -164,17 +171,17 @@ public:
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestArchitectureName();
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR const char* GetHighestExtensionName(ExtFlags extFlags, Extension startFrom = Extension::COUNT - 1);
 
-	FFTL_NODISCARD static FFTL_SSE_ONLY(constexpr) bool GetSupports_SSE();
-	FFTL_NODISCARD static FFTL_SSE2_ONLY(constexpr) bool GetSupports_SSE2();
-	FFTL_NODISCARD static FFTL_SSE3_ONLY(constexpr) bool GetSupports_SSE3();
-	FFTL_NODISCARD static FFTL_SSE4_ONLY(constexpr) bool GetSupports_SSE4();
-	FFTL_NODISCARD static FFTL_AVX_ONLY(constexpr) bool GetSupports_AVX();
-	FFTL_NODISCARD static FFTL_AVX2_ONLY(constexpr) bool GetSupports_AVX2();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SSE();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SSE2();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SSE3();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SSE4();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_AVX();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_AVX2();
 
-	FFTL_NODISCARD static FFTL_SIMD_F32x8_ONLY(constexpr) bool GetSupports_SIMD_F32x8();
-	FFTL_NODISCARD static FFTL_SIMD_I32x8_ONLY(constexpr) bool GetSupports_SIMD_I32x8();
-	FFTL_NODISCARD static FFTL_SIMD_F32x4_ONLY(constexpr) bool GetSupports_SIMD_F32x4();
-	FFTL_NODISCARD static FFTL_SIMD_I32x4_ONLY(constexpr) bool GetSupports_SIMD_I32x4();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SIMD_F32x8();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SIMD_I32x8();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SIMD_F32x4();
+	FFTL_NODISCARD static FFTL_CONSTEVAL Supported GetSupports_SIMD_I32x4();
 
 private:
 	FFTL_NODISCARD static FFTL_CPU_INFO_COND_CONSTEXPR ArchFlags DetectArchitectureSupport();
@@ -285,85 +292,101 @@ FFTL_FORCEINLINE constexpr CpuInfo::ExtFlags CpuInfo::DetectExtensionSupport()
 
 
 
-FFTL_FORCEINLINE FFTL_SSE_ONLY(constexpr) bool CpuInfo::GetSupports_SSE()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SSE()
 {
 #if defined(FFTL_SSE)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE);
+	return Supported::NO;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SSE2_ONLY(constexpr) bool CpuInfo::GetSupports_SSE2()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SSE2()
 {
 #if defined(FFTL_SSE2)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE2);
+	return Supported::NO;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SSE3_ONLY(constexpr) bool CpuInfo::GetSupports_SSE3()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SSE3()
 {
 #if defined(FFTL_SSE3)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE3);
+	return Supported::NO;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SSE4_ONLY(constexpr) bool CpuInfo::GetSupports_SSE4()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SSE4()
 {
-#if defined(FFTL_SSE4)
-	return true;
+#if defined(FFTL_SSE3)
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE4);
+	return Supported::NO;
 #endif
 }
-FFTL_FORCEINLINE FFTL_AVX_ONLY(constexpr) bool CpuInfo::GetSupports_AVX()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_AVX()
 {
 #if defined(FFTL_AVX)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::AVX);
+	return Supported::NO;
 #endif
 }
-FFTL_FORCEINLINE FFTL_AVX2_ONLY(constexpr) bool CpuInfo::GetSupports_AVX2()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_AVX2()
 {
 #if defined(FFTL_AVX2)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_X86)
+	return Supported::MAYBE;
 #else
-	return GetIsArchitectureEnabled(Architecture::AVX2);
+	return Supported::NO;
 #endif
 }
 
-FFTL_FORCEINLINE FFTL_SIMD_F32x8_ONLY(constexpr) bool CpuInfo::GetSupports_SIMD_F32x8()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SIMD_F32x8()
 {
 #if defined(FFTL_SIMD_F32x8)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_ARM)
+	return Supported::NO;
 #else
-	return GetIsArchitectureEnabled(Architecture::AVX2);
+	return Supported::MAYBE;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SIMD_I32x8_ONLY(constexpr) bool CpuInfo::GetSupports_SIMD_I32x8()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SIMD_I32x8()
 {
 #if defined(FFTL_SIMD_I32x8)
-	return true;
+	return Supported::YES;
+#elif defined(FFTL_PLATFORM_ARCHITECTURE_ARM)
+	return Supported::NO;
 #else
-	return GetIsArchitectureEnabled(Architecture::AVX2);
+	return Supported::MAYBE;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SIMD_F32x4_ONLY(constexpr) bool CpuInfo::GetSupports_SIMD_F32x4()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SIMD_F32x4()
 {
 #if defined(FFTL_SIMD_F32x4)
-	return true;
+	return Supported::YES;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE);
+	return Supported::MAYBE;
 #endif
 }
-FFTL_FORCEINLINE FFTL_SIMD_I32x4_ONLY(constexpr) bool CpuInfo::GetSupports_SIMD_I32x4()
+FFTL_FORCEINLINE FFTL_CONSTEVAL CpuInfo::Supported CpuInfo::GetSupports_SIMD_I32x4()
 {
 #if defined(FFTL_SIMD_I32x4)
-	return true;
+	return Supported::YES;
 #else
-	return GetIsArchitectureEnabled(Architecture::SSE2);
+	return Supported::MAYBE;
 #endif
 }
 

@@ -49,7 +49,7 @@ inline ThreadHandle GetThreadHandleCurrent()
 	return ::scePthreadSelf();
 }
 
-inline void WaitForThread(ThreadHandle h)
+inline void JoinThread(ThreadHandle h)
 {
 	FFTL_VERIFY_EQ( SCE_OK, ::scePthreadJoin(h, nullptr) );
 }

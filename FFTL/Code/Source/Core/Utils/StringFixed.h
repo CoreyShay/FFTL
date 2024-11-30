@@ -16,10 +16,7 @@ template <uint N>
 class StringFixed : public FixedArray<char, N>
 {
 public:
-	StringFixed()
-	{
-		this->m_data[0] = 0;
-	}
+	StringFixed() = default;
 	StringFixed(const char* psz)
 	{
 #if defined(_MSC_VER)

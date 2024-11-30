@@ -83,7 +83,7 @@ public:
 
 	//	reinterprets as mask32x4
 	FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR mask32x4	AsVecfcmp() const { return bit_cast<mask32x4>(m_v); }
-	FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR mask32x4&	AsVecfcmp() { return bit_cast<mask32x4&>(m_v); }
+	FFTL_NODISCARD FFTL_FORCEINLINE FFTL_BIT_CAST_CONSTEXPR mask32x4&	AsVecfcmp() { return *bit_cast<mask32x4*>(&m_v); }
 
 	//	Casting (reinterpreting) between N types (all data is compatible)
 	template<uint M>

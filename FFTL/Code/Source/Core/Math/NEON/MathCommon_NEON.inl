@@ -720,15 +720,15 @@ FFTL_FORCEINLINE mask32x4::operator uint32x4_t&()
 
 FFTL_FORCEINLINE mask32x4 mask32x4::operator|(const mask32x4& b) const
 {
-	return mask32x4(vorrq_u32(m_v, b));
+	return mask32x4( vorrq_u32(m_v, b) );
 }
 FFTL_FORCEINLINE mask32x4 mask32x4::operator&(const mask32x4& b) const
 {
-	return mask32x4(vandq_s32(m_v, b));
+	return mask32x4( vandq_u32(m_v, b) );
 }
 FFTL_FORCEINLINE mask32x4 mask32x4::operator^(const mask32x4& b) const
 {
-	return mask32x4( veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)) );
+	return mask32x4( veorq_u32(m_v, b.m_v) );
 }
 
 FFTL_FORCEINLINE int mask32x4::ToIntMask() const

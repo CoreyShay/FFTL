@@ -340,9 +340,9 @@ FFTL_FORCEINLINE __m128 sse_MulAdd_ss(const __m128& a, const __m128& b, const __
 FFTL_FORCEINLINE __m128 sse_NMulAdd_ps(const __m128& a, const __m128& b, const __m128& c)
 {
 #if defined(FFTL_FMA4)
-	return _mm_macc_ps(a, b, c);
+	return _mm_nmacc_ps(a, b, c);
 #elif defined(FFTL_FMA3)
-	return _mm_fmadd_ps(a, b, c);
+	return _mm_fnmadd_ps(a, b, c);
 #else
 	__m128 r = _mm_mul_ps(a, b);
 	r = _mm_sub_ps(c, r);

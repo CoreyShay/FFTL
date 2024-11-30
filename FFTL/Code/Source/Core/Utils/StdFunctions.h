@@ -157,13 +157,13 @@ FFTL_NODISCARD FFTL_FORCEINLINE constexpr T AlignBackward(const T& alignment, co
 }
 
 template<typename T, size_t N>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const T(&)[N])
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArrayCount(const T(&)[N])
 {
 	return N;
 }
 
 template <typename T, size_t N>
-FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArraySize(const FixedArray<T, N>&)
+FFTL_NODISCARD FFTL_FORCEINLINE constexpr size_t ArrayCount(const FixedArray<T, N>&)
 {
 	return N;
 }

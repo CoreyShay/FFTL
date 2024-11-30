@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include "../defs.h"
 #include "../Platform/Atomic.h"
 #include "../Utils/MetaProgramming.h"
 

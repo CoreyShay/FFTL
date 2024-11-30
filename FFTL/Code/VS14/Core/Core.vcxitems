@@ -19,6 +19,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\ListAtomic.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\defs.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\ComplexNumber.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\FFT.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\MathCommon.h" />
@@ -50,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Containers\MemPoolFixedBlock.inl" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Platform\Alloc.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Default.inl" />
     <None Include="$(MSBuildThisFileDirectory)..\..\Source\Core\Math\Default\MathCommon_Vec8_Default.inl" />
@@ -100,5 +102,11 @@
     <Natvis Include="$(MSBuildThisFileDirectory)..\..\Source\Core\FFTL_Core.natvis">
       <FileType>Document</FileType>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\AVX\DspPcmConvert_AVX2.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert_Default.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\DspPcmConvert_SIMD4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\Source\Core\DSP\SSE4\DspPcmConvert_SSE4.cpp" />
   </ItemGroup>
 </Project>
