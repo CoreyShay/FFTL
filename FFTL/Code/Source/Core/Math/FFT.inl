@@ -402,14 +402,14 @@ FFTL_FORCEINLINE T_TO LoadTo(const T_FROM* a)
 	return static_cast<T_TO>(*a);
 }
 template<>
-FFTL_FORCEINLINE f32_4 LoadTo<f32_4, f32>(const f32* a)
+FFTL_FORCEINLINE f32x4 LoadTo<f32x4, f32>(const f32* a)
 {
-	return f32_4::Splat(a);
+	return f32x4::Splat(a);
 }
 template<>
-FFTL_FORCEINLINE f32_8 LoadTo<f32_8, f32>(const f32* a)
+FFTL_FORCEINLINE f32x8 LoadTo<f32x8, f32>(const f32* a)
 {
-	return f32_8::Splat(a);
+	return f32x8::Splat(a);
 }
 
 template<typename T_TO, typename T_FROM>
@@ -418,14 +418,14 @@ constexpr FFTL_FORCEINLINE T_TO ConvertTo(const T_FROM& a)
 	return static_cast<T_TO>(a);
 }
 template<>
-FFTL_FORCEINLINE f32_4 ConvertTo<f32_4, f32>(const f32& a)
+FFTL_FORCEINLINE f32x4 ConvertTo<f32x4, f32>(const f32& a)
 {
-	return f32_4::Splat(a);
+	return f32x4::Splat(a);
 }
 template<>
-FFTL_FORCEINLINE f32_8 ConvertTo<f32_8, f32>(const f32& a)
+FFTL_FORCEINLINE f32x8 ConvertTo<f32x8, f32>(const f32& a)
 {
-	return f32_8::Splat(&a);
+	return f32x8::Splat(&a);
 }
 
 
@@ -1021,17 +1021,17 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::TransformInverse(const FixedArray<T, N>&
 #if 0 // Don't divide by N because this is typically used in convolution, and we can just do it there.
 	//	Divide everything by N.
 	const T _1_div_N = (T)1 / (T)N;
-	const f32_4 v1_div_N = { _1_div_N,_1_div_N,_1_div_N,_1_div_N };
+	const f32x4 v1_div_N = { _1_div_N,_1_div_N,_1_div_N,_1_div_N };
 
 	for (uint n = 0; n < N; n += 4)
 	{
 		T* pReal = &fOutR[n];
-		f32_4 vReal = f32_4::LoadA(pReal);
+		f32x4 vReal = f32x4::LoadA(pReal);
 		vReal = (vReal * v1_div_N);
 		StoreA(pReal, vReal);
 
 		T* pfI = &fOutI[n];
-		f32_4 vImag = f32_4::LoadA(pfI);
+		f32x4 vImag = f32x4::LoadA(pfI);
 		vImag = (vImag * v1_div_N);
 		StoreA(pfI, vImag);
 	}
@@ -1083,11 +1083,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 			const __m128i v32Indices_Ev = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), FFTL_MM_SHUFFLE_XYZW(0, 2, 0, 2)));
 			const __m128i v32Indices_Od = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(v32Indices_0_3), _mm_castsi128_ps(v32Indices_4_7), FFTL_MM_SHUFFLE_XYZW(1, 3, 1, 3)));
 
-			const f32_4 vCurR = _mm_i32gather_ps(fInReal.data(), v32Indices_Ev, 4);
-			const f32_4 vCurI = _mm_i32gather_ps(fInImag.data(), v32Indices_Ev, 4);
+			const f32x4 vCurR = _mm_i32gather_ps(fInReal.data(), v32Indices_Ev, 4);
+			const f32x4 vCurI = _mm_i32gather_ps(fInImag.data(), v32Indices_Ev, 4);
 
-			const f32_4 vNextR = _mm_i32gather_ps(fInReal.data(), v32Indices_Od, 4);
-			const f32_4 vNextI = _mm_i32gather_ps(fInImag.data(), v32Indices_Od, 4);
+			const f32x4 vNextR = _mm_i32gather_ps(fInReal.data(), v32Indices_Od, 4);
+			const f32x4 vNextI = _mm_i32gather_ps(fInImag.data(), v32Indices_Od, 4);
 
 			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
 			// Also the input is already pre-shuffled.
@@ -1106,11 +1106,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<T, 
 			const uint nR7 = GetBitReverseIndex(n + 7);
 
 			//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
-			const f32_4 vCurR = V4fSet(fInReal[nR0], fInReal[nR2], fInReal[nR4], fInReal[nR6]);
-			const f32_4 vCurI = V4fSet(fInImag[nR0], fInImag[nR2], fInImag[nR4], fInImag[nR6]);
+			const f32x4 vCurR = V4fSet(fInReal[nR0], fInReal[nR2], fInReal[nR4], fInReal[nR6]);
+			const f32x4 vCurI = V4fSet(fInImag[nR0], fInImag[nR2], fInImag[nR4], fInImag[nR6]);
 
-			const f32_4 vNextR = V4fSet(fInReal[nR1], fInReal[nR3], fInReal[nR5], fInReal[nR7]);
-			const f32_4 vNextI = V4fSet(fInImag[nR1], fInImag[nR3], fInImag[nR5], fInImag[nR7]);
+			const f32x4 vNextR = V4fSet(fInReal[nR1], fInReal[nR3], fInReal[nR5], fInReal[nR7]);
+			const f32x4 vNextI = V4fSet(fInImag[nR1], fInImag[nR3], fInImag[nR5], fInImag[nR7]);
 
 			//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
 			// Also the input is already pre-shuffled.
@@ -1148,11 +1148,11 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR(const FixedArray<cxT
 		const uint nR7 = GetBitReverseIndex(n + 7);
 
 		//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
-		const f32_4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
-		const f32_4 vCurI = V4fSet(cxInput[nR0].i, cxInput[nR2].i, cxInput[nR4].i, cxInput[nR6].i);
+		const f32x4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
+		const f32x4 vCurI = V4fSet(cxInput[nR0].i, cxInput[nR2].i, cxInput[nR4].i, cxInput[nR6].i);
 
-		const f32_4 vNextR = V4fSet(cxInput[nR1].r, cxInput[nR3].r, cxInput[nR5].r, cxInput[nR7].r);
-		const f32_4 vNextI = V4fSet(cxInput[nR1].i, cxInput[nR3].i, cxInput[nR5].i, cxInput[nR7].i);
+		const f32x4 vNextR = V4fSet(cxInput[nR1].r, cxInput[nR3].r, cxInput[nR5].r, cxInput[nR7].r);
+		const f32x4 vNextI = V4fSet(cxInput[nR1].i, cxInput[nR3].i, cxInput[nR5].i, cxInput[nR7].i);
 
 		//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
 		// Also the input is already pre-shuffled.
@@ -1189,13 +1189,13 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::Transform_Stage0_BR_1stHalf(const FixedA
 //		const uint nR7 = GetBitReverseIndex(n + 7);
 
 		//	Shuffle the inputs around so that we can do 4 butterflies at once. Current is even, next is odd.
-		const f32_4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
-		const f32_4 vCurI = V4fSet(cxInput[nR0].i, cxInput[nR2].i, cxInput[nR4].i, cxInput[nR6].i);
+		const f32x4 vCurR = V4fSet(cxInput[nR0].r, cxInput[nR2].r, cxInput[nR4].r, cxInput[nR6].r);
+		const f32x4 vCurI = V4fSet(cxInput[nR0].i, cxInput[nR2].i, cxInput[nR4].i, cxInput[nR6].i);
 
-//		const f32_4 vNextR = V4fSet(cxInput[nR1].r, cxInput[nR3].r, cxInput[nR5].r, cxInput[nR7].r);
-//		const f32_4 vNextI = V4fSet(cxInput[nR1].i, cxInput[nR3].i, cxInput[nR5].i, cxInput[nR7].i);
-		const f32_4 vNextR = f32_4::Zero();
-		const f32_4 vNextI = f32_4::Zero();
+//		const f32x4 vNextR = V4fSet(cxInput[nR1].r, cxInput[nR3].r, cxInput[nR5].r, cxInput[nR7].r);
+//		const f32x4 vNextI = V4fSet(cxInput[nR1].i, cxInput[nR3].i, cxInput[nR5].i, cxInput[nR7].i);
+		const f32x4 vNextR = f32x4::Zero();
+		const f32x4 vNextI = f32x4::Zero();
 
 		//	Twiddle factor isn't needed here because it's multiplying by 1 (this calculation requires only adding and subtracting)
 		// Also the input is already pre-shuffled.
@@ -1234,8 +1234,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 	{
 		//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
 		//	Get the phase angles for the next 2 sub DFT's
-		const f32_4 vUr(1,  0, 1,  0);
-		const f32_4 vUi(0, -1, 0, -1);
+		const f32x4 vUr(1,  0, 1,  0);
+		const f32x4 vUi(0, -1, 0, -1);
 	
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
@@ -1252,8 +1252,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
 		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
-		const f32_4 vUr = f32_4::LoadA(twiddlesReal + 0);
-		const f32_4 vUi = f32_4::LoadA(twiddlesImag + 0);
+		const f32x4 vUr = f32x4::LoadA(twiddlesReal + 0);
+		const f32x4 vUi = f32x4::LoadA(twiddlesImag + 0);
 
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
@@ -1277,8 +1277,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 		//	Loop for each sub DFT
 		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8)
 		{
-			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
-			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+			const f32x8 vUr = f32x8::LoadA(twiddlesReal + nSubDFT);
+			const f32x8 vUi = f32x8::LoadA(twiddlesImag + nSubDFT);
 	
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
@@ -1292,8 +1292,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 		//	Loop for each sub DFT
 		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4)
 		{
-			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
-			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+			const f32x4 vUr = f32x4::LoadA(twiddlesReal + nSubDFT);
+			const f32x4 vUi = f32x4::LoadA(twiddlesImag + nSubDFT);
 	
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
@@ -1314,8 +1314,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 		//	Loop for each sub DFT
 		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 8)
 		{
-			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
-			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+			const f32x8 vUr = f32x8::LoadA(twiddlesReal + nSubDFT);
+			const f32x8 vUi = f32x8::LoadA(twiddlesImag + nSubDFT);
 	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
@@ -1332,8 +1332,8 @@ void FFT<M, f32, f32>::Transform_Main_DIT(FixedArray<T, N>& fOutR, FixedArray<T,
 		//	Loop for each sub DFT
 		for (uint nSubDFT = 0; nSubDFT < nStageExp_2; nSubDFT += 4)
 		{
-			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
-			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+			const f32x4 vUr = f32x4::LoadA(twiddlesReal + nSubDFT);
+			const f32x4 vUi = f32x4::LoadA(twiddlesImag + nSubDFT);
 	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
@@ -1382,8 +1382,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 	{
 		//	Specialized SIMD case for stage 1 that requires XYXYZWZW shuffling
 		//	Get the phase angles for the next 2 sub DFT's
-		const f32_4 vUr(1, 0, 1, 0);
-		const f32_4 vUi(0, -1, 0, -1);
+		const f32x4 vUr(1, 0, 1, 0);
+		const f32x4 vUi(0, -1, 0, -1);
 
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += 8)
@@ -1400,8 +1400,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 		const auto& twiddlesReal = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxR();
 		const auto& twiddlesImag = FFT_Twiddles<STAGE_CURRENT, T_Twiddle>::GetCplxI();
 
-		const f32_4 vUr = f32_4::LoadA(twiddlesReal + 0);
-		const f32_4 vUi = f32_4::LoadA(twiddlesImag + 0);
+		const f32x4 vUr = f32x4::LoadA(twiddlesReal + 0);
+		const f32x4 vUi = f32x4::LoadA(twiddlesImag + 0);
 
 		//	Loop for each 4 butterflies
 		for (uint uButterfly = 0; uButterfly < N; uButterfly += nStageExp)
@@ -1426,8 +1426,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 		//	Loop for each sub DFT
 		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8)
 		{
-			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
-			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+			const f32x8 vUr = f32x8::LoadA(twiddlesReal + nSubDFT);
+			const f32x8 vUi = f32x8::LoadA(twiddlesImag + nSubDFT);
 	
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
@@ -1442,8 +1442,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 		//	Loop for each sub DFT
 		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4)
 		{
-			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
-			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+			const f32x4 vUr = f32x4::LoadA(twiddlesReal + nSubDFT);
+			const f32x4 vUi = f32x4::LoadA(twiddlesImag + nSubDFT);
 	
 			const uint uButterfly = nSubDFT;
 			const uint uButterflyNext = uButterfly + nStageExp_2;
@@ -1467,8 +1467,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 		//	Loop for each sub DFT
 		for (int nSubDFT = nStageExp_2 - 8; nSubDFT >= 0; nSubDFT -= 8)
 		{
-			const f32_8 vUr = f32_8::LoadA(twiddlesReal + nSubDFT);
-			const f32_8 vUi = f32_8::LoadA(twiddlesImag + nSubDFT);
+			const f32x8 vUr = f32x8::LoadA(twiddlesReal + nSubDFT);
+			const f32x8 vUi = f32x8::LoadA(twiddlesImag + nSubDFT);
 	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
@@ -1485,8 +1485,8 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Transform_Main_DIF(FixedArray<T, N>& fOu
 		//	Loop for each sub DFT
 		for (int nSubDFT = nStageExp_2 - 4; nSubDFT >= 0; nSubDFT -= 4)
 		{
-			const f32_4 vUr = f32_4::LoadA(twiddlesReal + nSubDFT);
-			const f32_4 vUi = f32_4::LoadA(twiddlesImag + nSubDFT);
+			const f32x4 vUr = f32x4::LoadA(twiddlesReal + nSubDFT);
+			const f32x4 vUi = f32x4::LoadA(twiddlesImag + nSubDFT);
 	
 			//	Loop for each 4 butterflies
 			for (uint uButterfly = nSubDFT; uButterfly < N; uButterfly += nStageExp)
@@ -1532,8 +1532,8 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const Fixed
 		const T fSh7 = fInI[nR3];
 
 #if 1
-		const f32_4 vSh0_3(fSh0, fSh1, fSh2, fSh3);
-		const f32_4 vSh4_7(fSh4, fSh5, fSh6, fSh7);
+		const f32x4 vSh0_3(fSh0, fSh1, fSh2, fSh3);
+		const f32x4 vSh4_7(fSh4, fSh5, fSh6, fSh7);
 
 		vSh0_3.StoreA(pSh + 0);
 		vSh4_7.StoreA(pSh + 4);
@@ -1551,59 +1551,59 @@ FFTL_COND_INLINE void FFT<M, f32, f32>::ApplyBitReverseAndInterleave(const Fixed
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32_4_In vUr, f32_4_In vUi, T* pfR, T* pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage1(f32x4_In vUr, f32x4_In vUi, T* pfR, T* pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
-	const f32_4 vCurR = f32_4::LoadA(pfR + 0);
-	const f32_4 vNextR = f32_4::LoadA(pfR + 4);
+	const f32x4 vCurR = f32x4::LoadA(pfR + 0);
+	const f32x4 vNextR = f32x4::LoadA(pfR + 4);
 
-	const f32_4 vCurI = f32_4::LoadA(pfI + 0);
-	const f32_4 vNextI = f32_4::LoadA(pfI + 4);
+	const f32x4 vCurI = f32x4::LoadA(pfI + 0);
+	const f32x4 vNextI = f32x4::LoadA(pfI + 4);
 
-	const f32_4 Wr = SubMul(vNextR * vUr, vNextI, vUi);
-	const f32_4 Wi = AddMul(vNextR * vUi, vNextI, vUr);
+	const f32x4 Wr = SubMul(vNextR * vUr, vNextI, vUi);
+	const f32x4 Wi = AddMul(vNextR * vUi, vNextI, vUr);
 
-	const f32_4 vNewCurR = (vCurR + Wr);
-	const f32_4 vNewCurI = (vCurI + Wi);
-	const f32_4 vNewNextR = (vCurR - Wr);
-	const f32_4 vNewNextI = (vCurI - Wi);
+	const f32x4 vNewCurR = (vCurR + Wr);
+	const f32x4 vNewCurI = (vCurI + Wi);
+	const f32x4 vNewNextR = (vCurR - Wr);
+	const f32x4 vNewNextI = (vCurI - Wi);
 
 	//	Now shuffle them for the subsequent stages, and store
-	const f32_4 vCCNNr0 = Permute<0, 1, 4, 5>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNr0 = Permute<0, 1, 4, 5>(vNewCurR, vNewNextR);
 	StoreA(pfR + 0, vCCNNr0);
-	const f32_4 vCCNNr1 = Permute<2, 3, 6, 7>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNr1 = Permute<2, 3, 6, 7>(vNewCurR, vNewNextR);
 	StoreA(pfR + 4, vCCNNr1);
 
-	const f32_4 vCCNNi0 = Permute<0, 1, 4, 5>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNi0 = Permute<0, 1, 4, 5>(vNewCurI, vNewNextI);
 	StoreA(pfI + 0, vCCNNi0);
-	const f32_4 vCCNNi1 = Permute<2, 3, 6, 7>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNi1 = Permute<2, 3, 6, 7>(vNewCurI, vNewNextI);
 	StoreA(pfI + 4, vCCNNi1);
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32_4_In vUr, f32_4_In vUi, T* pfR, T* pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage1(f32x4_In vUr, f32x4_In vUi, T* pfR, T* pfI)
 {
 	//	For DIF processing, we're running backwards, so there was no pre-shuffling in stage 2.
 
-	const f32_4 vCCNN0r = f32_4::LoadA(pfR + 0);
-	const f32_4 vCCNN1r = f32_4::LoadA(pfR + 4);
+	const f32x4 vCCNN0r = f32x4::LoadA(pfR + 0);
+	const f32x4 vCCNN1r = f32x4::LoadA(pfR + 4);
 
-	const f32_4 vCCNN0i = f32_4::LoadA(pfI + 0);
-	const f32_4 vCCNN1i = f32_4::LoadA(pfI + 4);
+	const f32x4 vCCNN0i = f32x4::LoadA(pfI + 0);
+	const f32x4 vCCNN1i = f32x4::LoadA(pfI + 4);
 
-	const f32_4 vCurrR = Permute<0, 1, 4, 5>(vCCNN0r, vCCNN1r);
-	const f32_4 vNextR = Permute<2, 3, 6, 7>(vCCNN0r, vCCNN1r);
+	const f32x4 vCurrR = Permute<0, 1, 4, 5>(vCCNN0r, vCCNN1r);
+	const f32x4 vNextR = Permute<2, 3, 6, 7>(vCCNN0r, vCCNN1r);
 
-	const f32_4 vCurrI = Permute<0, 1, 4, 5>(vCCNN0i, vCCNN1i);
-	const f32_4 vNextI = Permute<2, 3, 6, 7>(vCCNN0i, vCCNN1i);
+	const f32x4 vCurrI = Permute<0, 1, 4, 5>(vCCNN0i, vCCNN1i);
+	const f32x4 vNextI = Permute<2, 3, 6, 7>(vCCNN0i, vCCNN1i);
 
-	const f32_4 Wr = vCurrR - vNextR;
-	const f32_4 Wi = vCurrI - vNextI;
+	const f32x4 Wr = vCurrR - vNextR;
+	const f32x4 Wi = vCurrI - vNextI;
 
-	const f32_4 vNewCurR = vCurrR + vNextR;
-	const f32_4 vNewCurI = vCurrI + vNextI;
-	const f32_4 vNewNextR = SubMul(Wr * vUr, Wi, vUi);
-	const f32_4 vNewNextI = AddMul(Wr * vUi, Wi, vUr);
+	const f32x4 vNewCurR = vCurrR + vNextR;
+	const f32x4 vNewCurI = vCurrI + vNextI;
+	const f32x4 vNewNextR = SubMul(Wr * vUr, Wi, vUi);
+	const f32x4 vNewNextI = AddMul(Wr * vUi, Wi, vUr);
 
 	//	Don't pre-shuffle for stage 0. Stage 0 will self-correct.
 	StoreA(pfR + 0, vNewCurR);
@@ -1617,28 +1617,28 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(T* pfR,
 {
 	//	Shuffle the input around for the first stage so we can properly process 4 at a time.
 
-	const f32_4 vCNCN0r = f32_4::LoadA(pfR + 0);
-	const f32_4 vCNCN1r = f32_4::LoadA(pfR + 4);
+	const f32x4 vCNCN0r = f32x4::LoadA(pfR + 0);
+	const f32x4 vCNCN1r = f32x4::LoadA(pfR + 4);
 
-	const f32_4 vCNCN0i = f32_4::LoadA(pfI + 0);
-	const f32_4 vCNCN1i = f32_4::LoadA(pfI + 4);
+	const f32x4 vCNCN0i = f32x4::LoadA(pfI + 0);
+	const f32x4 vCNCN1i = f32x4::LoadA(pfI + 4);
 
-	const f32_4 vCurrR = Permute<0, 2, 4, 6>(vCNCN0r, vCNCN1r);
-	const f32_4 vNextR = Permute<1, 3, 5, 7>(vCNCN0r, vCNCN1r);
+	const f32x4 vCurrR = Permute<0, 2, 4, 6>(vCNCN0r, vCNCN1r);
+	const f32x4 vNextR = Permute<1, 3, 5, 7>(vCNCN0r, vCNCN1r);
 
-	const f32_4 vCurrI = Permute<0, 2, 4, 6>(vCNCN0i, vCNCN1i);
-	const f32_4 vNextI = Permute<1, 3, 5, 7>(vCNCN0i, vCNCN1i);
+	const f32x4 vCurrI = Permute<0, 2, 4, 6>(vCNCN0i, vCNCN1i);
+	const f32x4 vNextI = Permute<1, 3, 5, 7>(vCNCN0i, vCNCN1i);
 
-	const f32_4 vNewCurR = vCurrR + vNextR;
-	const f32_4 vNewCurI = vCurrI + vNextI;
-	const f32_4 vNewNextR = vCurrR - vNextR;
-	const f32_4 vNewNextI = vCurrI - vNextI;
+	const f32x4 vNewCurR = vCurrR + vNextR;
+	const f32x4 vNewCurI = vCurrI + vNextI;
+	const f32x4 vNewNextR = vCurrR - vNextR;
+	const f32x4 vNewNextI = vCurrI - vNextI;
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
-	const f32_4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
-	const f32_4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
 
 	StoreA(pfR + 0, vCCNNr0);
 	StoreA(pfR + 4, vCCNNr1);
@@ -1651,28 +1651,28 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* pfR,
 {
 	//	For DIF processing, we're running backwards, so stage 1 has processed before us, and we need to correct for its order.
 
-	const f32_4 vs1_0r = f32_4::LoadA(pfR + 0);
-	const f32_4 vs1_1r = f32_4::LoadA(pfR + 4);
+	const f32x4 vs1_0r = f32x4::LoadA(pfR + 0);
+	const f32x4 vs1_1r = f32x4::LoadA(pfR + 4);
 
-	const f32_4 vs1_0i = f32_4::LoadA(pfI + 0);
-	const f32_4 vs1_1i = f32_4::LoadA(pfI + 4);
+	const f32x4 vs1_0i = f32x4::LoadA(pfI + 0);
+	const f32x4 vs1_1i = f32x4::LoadA(pfI + 4);
 
-	const f32_4 vCurrR = Permute<0, 4, 2, 6>(vs1_0r, vs1_1r);
-	const f32_4 vNextR = Permute<1, 5, 3, 7>(vs1_0r, vs1_1r);
+	const f32x4 vCurrR = Permute<0, 4, 2, 6>(vs1_0r, vs1_1r);
+	const f32x4 vNextR = Permute<1, 5, 3, 7>(vs1_0r, vs1_1r);
 
-	const f32_4 vCurrI = Permute<0, 4, 2, 6>(vs1_0i, vs1_1i);
-	const f32_4 vNextI = Permute<1, 5, 3, 7>(vs1_0i, vs1_1i);
+	const f32x4 vCurrI = Permute<0, 4, 2, 6>(vs1_0i, vs1_1i);
+	const f32x4 vNextI = Permute<1, 5, 3, 7>(vs1_0i, vs1_1i);
 
-	const f32_4 vNewCurR = vCurrR + vNextR;
-	const f32_4 vNewCurI = vCurrI + vNextI;
-	const f32_4 vNewNextR = vCurrR - vNextR;
-	const f32_4 vNewNextI = vCurrI - vNextI;
+	const f32x4 vNewCurR = vCurrR + vNextR;
+	const f32x4 vNewCurI = vCurrI + vNextI;
+	const f32x4 vNewNextR = vCurrR - vNextR;
+	const f32x4 vNewNextI = vCurrI - vNextI;
 
 	//	Now post shuffle them back to the normal (final) order.
-	const f32_4 vCNCNr0 = Permute<0, 4, 1, 5>(vNewCurR, vNewNextR);
-	const f32_4 vCNCNr1 = Permute<2, 6, 3, 7>(vNewCurR, vNewNextR);
-	const f32_4 vCNCNi0 = Permute<0, 4, 1, 5>(vNewCurI, vNewNextI);
-	const f32_4 vCNCNi1 = Permute<2, 6, 3, 7>(vNewCurI, vNewNextI);
+	const f32x4 vCNCNr0 = Permute<0, 4, 1, 5>(vNewCurR, vNewNextR);
+	const f32x4 vCNCNr1 = Permute<2, 6, 3, 7>(vNewCurR, vNewNextR);
+	const f32x4 vCNCNi0 = Permute<0, 4, 1, 5>(vNewCurI, vNewNextI);
+	const f32x4 vCNCNi1 = Permute<2, 6, 3, 7>(vNewCurI, vNewNextI);
 
 	StoreA(pfR + 0, vCNCNr0);
 	StoreA(pfR + 4, vCNCNr1);
@@ -1681,19 +1681,19 @@ FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIF_Stage0(T* pfR,
 }
 
 template <uint M>
-FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* pfR, T* pfI)
+FFTL_FORCEINLINE void FFT<M, f32, f32>::Calculate4Butterflies_DIT_Stage0(f32x4_In vCurR, f32x4_In vNextR, f32x4_In vCurI, f32x4_In vNextI, T* pfR, T* pfI)
 {
 	//	No need to shuffle the input because we've already pre-shuffled
-	const f32_4 vNewCurR = vCurR + vNextR;
-	const f32_4 vNewCurI = vCurI + vNextI;
-	const f32_4 vNewNextR = vCurR - vNextR;
-	const f32_4 vNewNextI = vCurI - vNextI;
+	const f32x4 vNewCurR = vCurR + vNextR;
+	const f32x4 vNewCurI = vCurI + vNextI;
+	const f32x4 vNewNextR = vCurR - vNextR;
+	const f32x4 vNewNextI = vCurI - vNextI;
 
 	//	Now shuffle them so that stage 1 doesn't have to pre-shuffle on input, and store
-	const f32_4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
-	const f32_4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
-	const f32_4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNr0 = Permute<0, 4, 2, 6>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNr1 = Permute<1, 5, 3, 7>(vNewCurR, vNewNextR);
+	const f32x4 vCCNNi0 = Permute<0, 4, 2, 6>(vNewCurI, vNewNextI);
+	const f32x4 vCCNNi1 = Permute<1, 5, 3, 7>(vNewCurI, vNewNextI);
 
 	StoreA(pfR + 0, vCCNNr0);
 	StoreA(pfR + 4, vCCNNr1);
@@ -1972,7 +1972,7 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_
 		fFreqOutI[0] = fDcR - fDcI; // Sneaky shove of the Nyquist bin into the imag DC bin because it's always 0 anyway.
 	}
 
-	const f32_4 vHalf = ConvertTo<f32_4>(0.5f);
+	const f32x4 vHalf = ConvertTo<f32x4>(0.5f);
 
 	//	Special case for 3 element loads and stores we only need to do once.
 	{
@@ -1980,14 +1980,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_
 		const uint Nmn = N_2 - n - 2;
 
 		//	Starting at 1 forces an unaligned load.
-		const cxNumber<f32_4> twid(f32_4::LoadU(GetTwiddleRealPtr(n)), f32_4::LoadU(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadU(GetTwiddleRealPtr(n)), f32x4::LoadU(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fpk(f32_4::LoadU(fFreqOutR + n), f32_4::LoadU(fFreqOutI + n));
-		const cxNumber<f32_4> fpnk(ZYXX(f32_4::Load3(fFreqOutR + Nmn)), ZYXX(f32_4::Load3(fFreqOutI + Nmn)));
+		const cxNumber<f32x4> fpk(f32x4::LoadU(fFreqOutR + n), f32x4::LoadU(fFreqOutI + n));
+		const cxNumber<f32x4> fpnk(ZYXX(f32x4::Load3(fFreqOutR + Nmn)), ZYXX(f32x4::Load3(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
-		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
-		const cxNumber<f32_4> tw = f2k * twid;
+		const cxNumber<f32x4> f1k = cxNumber<f32x4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32x4> f2k = cxNumber<f32x4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
+		const cxNumber<f32x4> tw = f2k * twid;
 
 		//	Store only 3 so we don't pollute the next stage
 		(vHalf * (f1k.r + tw.r)).Store3(fFreqOutR + n);
@@ -2001,14 +2001,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_
 		const uint n = 4;
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadA(GetTwiddleRealPtr(n)), f32x4::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fpk(f32_4::LoadA(fFreqOutR + n), f32_4::LoadA(fFreqOutI + n));
-		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32x4> fpk(f32x4::LoadA(fFreqOutR + n), f32x4::LoadA(fFreqOutI + n));
+		const cxNumber<f32x4> fpnk(Reverse(f32x4::LoadU(fFreqOutR + Nmn)), Reverse(f32x4::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
-		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
-		const cxNumber<f32_4> tw = f2k * twid;
+		const cxNumber<f32x4> f1k = cxNumber<f32x4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32x4> f2k = cxNumber<f32x4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
+		const cxNumber<f32x4> tw = f2k * twid;
 
 		(vHalf * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
 		(vHalf * (f1k.i + tw.i)).StoreA(fFreqOutI + n);
@@ -2019,18 +2019,18 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_
 	//	N-n loading will be unaligned.
 	for (uint n = 8; n < N_4; n += 8)
 	{
-		const f32_8 vHalf8 = f32_8::Splat(vHalf);
+		const f32x8 vHalf8 = f32x8::Splat(vHalf);
 
 		const uint Nmn = N_2 - n - 7;
 
-		const cxNumber<f32_8> twid(f32_8::LoadA(GetTwiddleRealPtr(n)), f32_8::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x8> twid(f32x8::LoadA(GetTwiddleRealPtr(n)), f32x8::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_8> fpk(f32_8::LoadA(fFreqOutR + n), f32_8::LoadA(fFreqOutI + n));
-		const cxNumber<f32_8> fpnk(Reverse(f32_8::LoadU(fFreqOutR + Nmn)), Reverse(f32_8::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32x8> fpk(f32x8::LoadA(fFreqOutR + n), f32x8::LoadA(fFreqOutI + n));
+		const cxNumber<f32x8> fpnk(Reverse(f32x8::LoadU(fFreqOutR + Nmn)), Reverse(f32x8::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_8> f1k = cxNumber<f32_8>(fpk.r + fpnk.r, fpk.i - fpnk.i);
-		const cxNumber<f32_8> f2k = cxNumber<f32_8>(fpk.r - fpnk.r, fpk.i + fpnk.i);
-		const cxNumber<f32_8> tw = f2k * twid;
+		const cxNumber<f32x8> f1k = cxNumber<f32x8>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32x8> f2k = cxNumber<f32x8>(fpk.r - fpnk.r, fpk.i + fpnk.i);
+		const cxNumber<f32x8> tw = f2k * twid;
 
 		(vHalf8 * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
 		(vHalf8 * (f1k.i + tw.i)).StoreA(fFreqOutI + n);
@@ -2043,14 +2043,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PostProcessForward(FixedArray<T, N_
 	{
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadA(GetTwiddleRealPtr(n)), f32x4::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fpk(f32_4::LoadA(fFreqOutR + n), f32_4::LoadA(fFreqOutI + n));
-		const cxNumber<f32_4> fpnk(Reverse(f32_4::LoadU(fFreqOutR + Nmn)), Reverse(f32_4::LoadU(fFreqOutI + Nmn)));
+		const cxNumber<f32x4> fpk(f32x4::LoadA(fFreqOutR + n), f32x4::LoadA(fFreqOutI + n));
+		const cxNumber<f32x4> fpnk(Reverse(f32x4::LoadU(fFreqOutR + Nmn)), Reverse(f32x4::LoadU(fFreqOutI + Nmn)));
 
-		const cxNumber<f32_4> f1k = cxNumber<f32_4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
-		const cxNumber<f32_4> f2k = cxNumber<f32_4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
-		const cxNumber<f32_4> tw = f2k * twid;
+		const cxNumber<f32x4> f1k = cxNumber<f32x4>(fpk.r + fpnk.r, fpk.i - fpnk.i);
+		const cxNumber<f32x4> f2k = cxNumber<f32x4>(fpk.r - fpnk.r, fpk.i + fpnk.i);
+		const cxNumber<f32x4> tw = f2k * twid;
 
 		(vHalf * (f1k.r + tw.r)).StoreA(fFreqOutR + n);
 		(vHalf * (f1k.i + tw.i)).StoreA(fFreqOutI + n);
@@ -2090,14 +2090,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PreProcessInverse(FixedArray<T, N_2
 		const uint Nmn = N_2 - n - 2;
 
 		//	Starting at 1 forces an unaligned load.
-		const cxNumber<f32_4> twid(f32_4::LoadU(GetTwiddleRealPtr(n)), f32_4::LoadU(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadU(GetTwiddleRealPtr(n)), f32x4::LoadU(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fk(f32_4::LoadU(fFreqInR + n), f32_4::LoadU(fFreqInI + n));
-		const cxNumber<f32_4> fnkc(ZYXX(f32_4::Load3(fFreqInR + Nmn)), ZYXX(f32_4::Load3(fFreqInI + Nmn)));
+		const cxNumber<f32x4> fk(f32x4::LoadU(fFreqInR + n), f32x4::LoadU(fFreqInI + n));
+		const cxNumber<f32x4> fnkc(ZYXX(f32x4::Load3(fFreqInR + Nmn)), ZYXX(f32x4::Load3(fFreqInI + Nmn)));
 
-		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
-		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
-		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+		const cxNumber<f32x4> fek = cxNumber<f32x4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32x4> tmp = cxNumber<f32x4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32x4> fok = NegMul(tmp, twid);
 
 		//	Store only 3 so we don't pollute the next stage
 		(fek.r + fok.r).Store3(fFreqOutR + n);
@@ -2111,14 +2111,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PreProcessInverse(FixedArray<T, N_2
 		const uint n = 4;
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadA(GetTwiddleRealPtr(n)), f32x4::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fk(f32_4::LoadA(fFreqInR + n), f32_4::LoadA(fFreqInI + n));
-		const cxNumber<f32_4> fnkc(Reverse(f32_4::LoadU(fFreqInR + Nmn)), Reverse(f32_4::LoadU(fFreqInI + Nmn)));
+		const cxNumber<f32x4> fk(f32x4::LoadA(fFreqInR + n), f32x4::LoadA(fFreqInI + n));
+		const cxNumber<f32x4> fnkc(Reverse(f32x4::LoadU(fFreqInR + Nmn)), Reverse(f32x4::LoadU(fFreqInI + Nmn)));
 
-		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
-		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
-		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+		const cxNumber<f32x4> fek = cxNumber<f32x4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32x4> tmp = cxNumber<f32x4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32x4> fok = NegMul(tmp, twid);
 
 		(fek.r + fok.r).StoreA(fFreqOutR + n);
 		(fek.i + fok.i).StoreA(fFreqOutI + n);
@@ -2132,14 +2132,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PreProcessInverse(FixedArray<T, N_2
 	{
 		const uint Nmn = N_2 - n - 7;
 
-		const cxNumber<f32_8> twid(f32_8::LoadA(GetTwiddleRealPtr(n)), f32_8::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x8> twid(f32x8::LoadA(GetTwiddleRealPtr(n)), f32x8::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_8> fk(f32_8::LoadA(fFreqInR + n), f32_8::LoadA(fFreqInI + n));
-		const cxNumber<f32_8> fnkc(Reverse(f32_8::LoadU(fFreqInR + Nmn)), Reverse(f32_8::LoadU(fFreqInI + Nmn)));
+		const cxNumber<f32x8> fk(f32x8::LoadA(fFreqInR + n), f32x8::LoadA(fFreqInI + n));
+		const cxNumber<f32x8> fnkc(Reverse(f32x8::LoadU(fFreqInR + Nmn)), Reverse(f32x8::LoadU(fFreqInI + Nmn)));
 
-		const cxNumber<f32_8> fek = cxNumber<f32_8>(fk.r + fnkc.r, fk.i - fnkc.i);
-		const cxNumber<f32_8> tmp = cxNumber<f32_8>(fk.r - fnkc.r, fk.i + fnkc.i);
-		const cxNumber<f32_8> fok = NegMul(tmp, twid);
+		const cxNumber<f32x8> fek = cxNumber<f32x8>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32x8> tmp = cxNumber<f32x8>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32x8> fok = NegMul(tmp, twid);
 
 		(fek.r + fok.r).StoreA(fFreqOutR + n);
 		(fek.i + fok.i).StoreA(fFreqOutI + n);
@@ -2152,14 +2152,14 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::PreProcessInverse(FixedArray<T, N_2
 	{
 		const uint Nmn = N_2 - n - 3;
 
-		const cxNumber<f32_4> twid(f32_4::LoadA(GetTwiddleRealPtr(n)), f32_4::LoadA(GetTwiddleImagPtr(n)));
+		const cxNumber<f32x4> twid(f32x4::LoadA(GetTwiddleRealPtr(n)), f32x4::LoadA(GetTwiddleImagPtr(n)));
 
-		const cxNumber<f32_4> fk(f32_4::LoadA(fFreqInR + n), f32_4::LoadA(fFreqInI + n));
-		const cxNumber<f32_4> fnkc(Reverse(f32_4::LoadU(fFreqInR + Nmn)), Reverse(f32_4::LoadU(fFreqInI + Nmn)));
+		const cxNumber<f32x4> fk(f32x4::LoadA(fFreqInR + n), f32x4::LoadA(fFreqInI + n));
+		const cxNumber<f32x4> fnkc(Reverse(f32x4::LoadU(fFreqInR + Nmn)), Reverse(f32x4::LoadU(fFreqInI + Nmn)));
 
-		const cxNumber<f32_4> fek = cxNumber<f32_4>(fk.r + fnkc.r, fk.i - fnkc.i);
-		const cxNumber<f32_4> tmp = cxNumber<f32_4>(fk.r - fnkc.r, fk.i + fnkc.i);
-		const cxNumber<f32_4> fok = NegMul(tmp, twid);
+		const cxNumber<f32x4> fek = cxNumber<f32x4>(fk.r + fnkc.r, fk.i - fnkc.i);
+		const cxNumber<f32x4> tmp = cxNumber<f32x4>(fk.r - fnkc.r, fk.i + fnkc.i);
+		const cxNumber<f32x4> fok = NegMul(tmp, twid);
 
 		(fek.r + fok.r).StoreA(fFreqOutR + n);
 		(fek.i + fok.i).StoreA(fFreqOutI + n);
@@ -2200,15 +2200,15 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse(const FixedArray<T
 	timer.Start();
 #endif
 
-	const f32_4 vInv_N = ConvertTo<f32_4>(1.f / N);
+	const f32x4 vInv_N = ConvertTo<f32x4>(1.f / N);
 
 	//	Restore the time domain real output as interleaved real and complex.
 	for (uint n = 0; n < N_2; n += 4)
 	{
-		const f32_4 vInA = f32_4::LoadA(fTempR + n) * vInv_N;
-		const f32_4 vInB = f32_4::LoadA(fTempI + n) * vInv_N;
-		const f32_4 vShA = MergeXY(vInA, vInB); // Evens
-		const f32_4 vShB = MergeZW(vInA, vInB); // Odds
+		const f32x4 vInA = f32x4::LoadA(fTempR + n) * vInv_N;
+		const f32x4 vInB = f32x4::LoadA(fTempI + n) * vInv_N;
+		const f32x4 vShA = MergeXY(vInA, vInB); // Evens
+		const f32x4 vShB = MergeZW(vInA, vInB); // Odds
 		vShA.StoreA(fTimeOut + n * 2 + 0);
 		vShB.StoreA(fTimeOut + n * 2 + 4);
 	}
@@ -2239,7 +2239,7 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 	timer.Start();
 #endif
 
-	const f32_4 vInv_N = ConvertTo<f32_4>(1.f / N);
+	const f32x4 vInv_N = ConvertTo<f32x4>(1.f / N);
 
 	//	Restore the time domain real output as interleaved real and complex. We need to apply bit reversal here as well.
 	for (uint n = 0; n < N_2; n += 4)
@@ -2250,8 +2250,8 @@ FFTL_COND_INLINE void FFT_Real<M, f32, f32>::TransformInverse_ClobberInput(Fixed
 		const uint nR3 = sm_fft::GetBitReverseIndex(n + 3);
 
 		//	Interleave the output while bit reversing.
-		const f32_4 vShA(fFftInR[nR0], fFftInI[nR0], fFftInR[nR1], fFftInI[nR1]);
-		const f32_4 vShB(fFftInR[nR2], fFftInI[nR2], fFftInR[nR3], fFftInI[nR3]);
+		const f32x4 vShA(fFftInR[nR0], fFftInI[nR0], fFftInR[nR1], fFftInI[nR1]);
+		const f32x4 vShB(fFftInR[nR2], fFftInI[nR2], fFftInR[nR3], fFftInI[nR3]);
 
 		(vShA * vInv_N).StoreA(fTimeOut + n * 2 + 0);
 		(vShB * vInv_N).StoreA(fTimeOut + n * 2 + 4);
@@ -2692,16 +2692,16 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	{
 		for (uint n = 0; n < N; n += 8)
 		{
-			const f32_8 xR = f32_8::LoadA(inX.r() + n);
-			const f32_8 xI = f32_8::LoadA(inX.i() + n);
-			const f32_8 yR = f32_8::LoadA(inY.r() + n);
-			const f32_8 yI = f32_8::LoadA(inY.i() + n);
+			const f32x8 xR = f32x8::LoadA(inX.r() + n);
+			const f32x8 xI = f32x8::LoadA(inX.i() + n);
+			const f32x8 yR = f32x8::LoadA(inY.r() + n);
+			const f32x8 yI = f32x8::LoadA(inY.i() + n);
 
-			const f32_8 rR = AddMul(xI * yI, xR, yR);
-			const f32_8 rI = AddMul(xI * yR, xR, yI);
+			const f32x8 rR = AddMul(xI * yI, xR, yR);
+			const f32x8 rI = AddMul(xI * yR, xR, yI);
 
-//			const f32_8 rR = (xR * yR - xI * yI);
-//			const f32_8 rI = (xR * yI + xI * yR);
+//			const f32x8 rR = (xR * yR - xI * yI);
+//			const f32x8 rI = (xR * yI + xI * yR);
 			rR.StoreA(output.r() + n);
 			rI.StoreA(output.i() + n);
 		}
@@ -2744,18 +2744,18 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	{
 		for (uint n = 0; n < N; n += 8)
 		{
-			const f32_8 xR = f32_8::LoadA(inX.r() + n);
-			const f32_8 xI = f32_8::LoadA(inX.i() + n);
-			const f32_8 yR = f32_8::LoadA(inY.r() + n);
-			const f32_8 yI = f32_8::LoadA(inY.i() + n);
-			const f32_8 wR = f32_8::LoadA(inW.r() + n);
-			const f32_8 wI = f32_8::LoadA(inW.i() + n);
+			const f32x8 xR = f32x8::LoadA(inX.r() + n);
+			const f32x8 xI = f32x8::LoadA(inX.i() + n);
+			const f32x8 yR = f32x8::LoadA(inY.r() + n);
+			const f32x8 yI = f32x8::LoadA(inY.i() + n);
+			const f32x8 wR = f32x8::LoadA(inW.r() + n);
+			const f32x8 wI = f32x8::LoadA(inW.i() + n);
 
-			const f32_8 rR = AddMul(SubMul(wR, xI, yI), xR, yR);
-			const f32_8 rI = AddMul(AddMul(wI, xI, yR), xR, yI);
+			const f32x8 rR = AddMul(SubMul(wR, xI, yI), xR, yR);
+			const f32x8 rI = AddMul(AddMul(wI, xI, yR), xR, yI);
 
-//			const f32_8 rR = (xR * yR - xI * yI + wR);
-//			const f32_8 rI = (xR * yI + xI * yR + wI);
+//			const f32x8 rR = (xR * yR - xI * yI + wR);
+//			const f32x8 rI = (xR * yI + xI * yR + wI);
 			rR.StoreA(output.r() + n);
 			rI.StoreA(output.i() + n);
 		}
@@ -2798,22 +2798,22 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
 	if constexpr (std::is_same<T, f32>::value)
 	{
-		const f32_8 vGainY = f32_8::Splat(fGainY);
+		const f32x8 vGainY = f32x8::Splat(fGainY);
 
 		for (uint n = 0; n < N; n += 8)
 		{
-			const f32_8 xR = f32_8::LoadA(inX.r() + n);
-			const f32_8 xI = f32_8::LoadA(inX.i() + n);
-			const f32_8 yR = f32_8::LoadA(inY.r() + n);
-			const f32_8 yI = f32_8::LoadA(inY.i() + n);
-			const f32_8 wR = f32_8::LoadA(inW.r() + n);
-			const f32_8 wI = f32_8::LoadA(inW.i() + n);
+			const f32x8 xR = f32x8::LoadA(inX.r() + n);
+			const f32x8 xI = f32x8::LoadA(inX.i() + n);
+			const f32x8 yR = f32x8::LoadA(inY.r() + n);
+			const f32x8 yI = f32x8::LoadA(inY.i() + n);
+			const f32x8 wR = f32x8::LoadA(inW.r() + n);
+			const f32x8 wI = f32x8::LoadA(inW.i() + n);
 
-			const f32_8 aR = yR * vGainY;
-			const f32_8 aI = yI * vGainY;
+			const f32x8 aR = yR * vGainY;
+			const f32x8 aI = yI * vGainY;
 
-			const f32_8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
-			const f32_8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+			const f32x8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const f32x8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
 
 			rR.StoreA(output.r() + n);
 			rI.StoreA(output.i() + n);
@@ -2858,25 +2858,25 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::ConvolveFD(Kernel& output, const
 	//	Perform the convolution in the frequency domain, which corresponds to a complex multiplication by the kernel
 	if constexpr (std::is_same<T, f32>::value)
 	{
-		const f32_8 vGainY = f32_8::Splat(fGainY);
-		const f32_8 vGainZ = f32_8::Splat(fGainZ);
+		const f32x8 vGainY = f32x8::Splat(fGainY);
+		const f32x8 vGainZ = f32x8::Splat(fGainZ);
 
 		for (uint n = 0; n < N; n += 8)
 		{
-			const f32_8 xR = f32_8::LoadA(inX.r() + n);
-			const f32_8 xI = f32_8::LoadA(inX.i() + n);
-			const f32_8 yR = f32_8::LoadA(inY.r() + n);
-			const f32_8 yI = f32_8::LoadA(inY.i() + n);
-			const f32_8 zR = f32_8::LoadA(inZ.r() + n);
-			const f32_8 zI = f32_8::LoadA(inZ.i() + n);
-			const f32_8 wR = f32_8::LoadA(inW.r() + n);
-			const f32_8 wI = f32_8::LoadA(inW.i() + n);
+			const f32x8 xR = f32x8::LoadA(inX.r() + n);
+			const f32x8 xI = f32x8::LoadA(inX.i() + n);
+			const f32x8 yR = f32x8::LoadA(inY.r() + n);
+			const f32x8 yI = f32x8::LoadA(inY.i() + n);
+			const f32x8 zR = f32x8::LoadA(inZ.r() + n);
+			const f32x8 zI = f32x8::LoadA(inZ.i() + n);
+			const f32x8 wR = f32x8::LoadA(inW.r() + n);
+			const f32x8 wI = f32x8::LoadA(inW.i() + n);
 
-			const f32_8 aR = AddMul(yR * vGainY, zR, vGainZ);
-			const f32_8 aI = AddMul(yI * vGainY, zI, vGainZ);
+			const f32x8 aR = AddMul(yR * vGainY, zR, vGainZ);
+			const f32x8 aI = AddMul(yI * vGainY, zI, vGainZ);
 
-			const f32_8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
-			const f32_8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
+			const f32x8 rR = AddMul(SubMul(wR, xI, aI), xR, aR);
+			const f32x8 rI = AddMul(AddMul(wI, xI, aR), xR, aI);
 
 			rR.StoreA(output.r() + n);
 			rI.StoreA(output.i() + n);
@@ -2921,9 +2921,9 @@ void Convolver<M, T_MAX_KERNELS, T, T_Twiddle>::AddArrays(FixedArray_Aligned32<T
 	{
 		for (uint n = 0; n < N; n += 8)
 		{
-			const f32_8 a = f32_8::LoadA(inA + n);
-			const f32_8 b = f32_8::LoadA(inB + n);
-			const f32_8 val = a + b;
+			const f32x8 a = f32x8::LoadA(inA + n);
+			const f32x8 b = f32x8::LoadA(inB + n);
+			const f32x8 val = a + b;
 			val.StoreA(output + n);
 		}
 	}

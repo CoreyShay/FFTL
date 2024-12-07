@@ -291,7 +291,7 @@ public:
 
 //	fft_Single class performs FFT's without attempting to vectorize using SIMD instructions,
 // however, if T is a SIMD type with the appropriate operators overloaded, you basically get
-// that for free, eg, 4 channels at once if T is of type f32_4.
+// that for free, eg, 4 channels at once if T is of type f32x4.
 template <uint M, typename T, typename T_Twiddle = T>
 class FFTL_NODISCARD FFT : public FFT_Base<M, T, T_Twiddle>
 {
@@ -345,9 +345,9 @@ protected:
 
 	static void Calculate4Butterflies_DIT_Stage0(T* pfReal, T* pfImag);
 	static void Calculate4Butterflies_DIF_Stage0(T* pfReal, T* pfImag);
-	static void Calculate4Butterflies_DIT_Stage0(f32_4_In vCurR, f32_4_In vNextR, f32_4_In vCurI, f32_4_In vNextI, T* pfReal, T* pfImag);
-	static void Calculate4Butterflies_DIT_Stage1(f32_4_In vUR, f32_4_In vUI, T* pfReal, T* pfImag);
-	static void Calculate4Butterflies_DIF_Stage1(f32_4_In vUR, f32_4_In vUI, T* pfReal, T* pfImag);
+	static void Calculate4Butterflies_DIT_Stage0(f32x4_In vCurR, f32x4_In vNextR, f32x4_In vCurI, f32x4_In vNextI, T* pfReal, T* pfImag);
+	static void Calculate4Butterflies_DIT_Stage1(f32x4_In vUR, f32x4_In vUI, T* pfReal, T* pfImag);
+	static void Calculate4Butterflies_DIF_Stage1(f32x4_In vUR, f32x4_In vUI, T* pfReal, T* pfImag);
 
 	template <typename V> static void CalculateVButterflies_DIT(const V& vUR, const V& vUI, T* pfCurReal, T* pfCurImag, T* pfNextReal, T* pfNextImag);
 	template <typename V> static void CalculateVButterflies_DIF(const V& vUR, const V& vUI, T* pfCurReal, T* pfCurImag, T* pfNextReal, T* pfNextImag);

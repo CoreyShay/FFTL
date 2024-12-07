@@ -74,11 +74,11 @@ FFTL_FORCEINLINE Vec8f V8fLoad2(const f32* pf)
 }
 FFTL_FORCEINLINE Vec8f V8fLoad3(const f32* pf)
 {
-	return _mm256_castps128_ps256(f32_4::Load3(pf).GetNative());
+	return _mm256_castps128_ps256(f32x4::Load3(pf).GetNative());
 }
 FFTL_FORCEINLINE Vec8f V8fLoad4(const f32* pf)
 {
-	return _mm256_castps128_ps256(f32_4::LoadA(pf).GetNative());
+	return _mm256_castps128_ps256(f32x4::LoadA(pf).GetNative());
 }
 FFTL_FORCEINLINE Vec8f V8fLoad6(const f32* pf)
 {
@@ -412,15 +412,15 @@ template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator^(const T& b
 	return T(_mm256_xor_ps(m_v, b.m_v));
 }
 
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const T& a, const T& b)
 {
 	return T(_mm256_andnot_ps(b.m_v, a.m_v));
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const mask32x8& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const mask32x8& a, const T& b)
 {
 	return T(_mm256_andnot_ps(b.m_v, a.m_v));
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const mask32x8& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const T& a, const mask32x8& b)
 {
 	return T(_mm256_andnot_ps(b.m_v, a.m_v));
 }
@@ -429,46 +429,46 @@ FFTL_FORCEINLINE mask32x8 AndNot(const mask32x8& a, const mask32x8& b)
 	return mask32x8(_mm256_andnot_ps(b.m_v, a.m_v));
 }
 
-FFTL_FORCEINLINE f32_8 f32_8::operator|(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator|(const mask32x8& b) const
 {
-	return f32_8(_mm256_or_ps(m_v, b.m_v));
+	return f32x8(_mm256_or_ps(m_v, b.m_v));
 }
-FFTL_FORCEINLINE f32_8 f32_8::operator&(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator&(const mask32x8& b) const
 {
-	return f32_8(_mm256_and_ps(m_v, b.m_v));
+	return f32x8(_mm256_and_ps(m_v, b.m_v));
 }
-FFTL_FORCEINLINE f32_8 f32_8::operator^(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator^(const mask32x8& b) const
 {
-	return f32_8(_mm256_xor_ps(m_v, b.m_v));
+	return f32x8(_mm256_xor_ps(m_v, b.m_v));
 }
 
-FFTL_FORCEINLINE mask32x8 CmpEq(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpEq(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_EQ_OQ));
 }
-FFTL_FORCEINLINE mask32x8 CmpNe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpNe(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_NEQ_OQ));
 }
-FFTL_FORCEINLINE mask32x8 CmpLt(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpLt(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_LT_OQ));
 }
-FFTL_FORCEINLINE mask32x8 CmpLe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpLe(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_LE_OQ));
 }
-FFTL_FORCEINLINE mask32x8 CmpGt(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpGt(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_GT_OQ));
 }
-FFTL_FORCEINLINE mask32x8 CmpGe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpGe(f32x8_In a, f32x8_In b)
 {
 	return mask32x8(_mm256_cmp_ps(a.m_v, b.m_v, _CMP_GE_OQ));
 }
 
 template<typename T, bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type Blend(const T& a, const T& b)
 {
 	constexpr int i0 = b0 ? 1 : 0;
 	constexpr int i1 = b1 ? 1 : 0;
@@ -482,7 +482,7 @@ FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::t
 	return T{ _mm256_blend_ps(a, b, mask) };
 }
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
 {
 	return T{ _mm256_blendv_ps(b, a, msk) };
 }

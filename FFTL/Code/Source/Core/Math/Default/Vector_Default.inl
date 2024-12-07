@@ -9,7 +9,7 @@ namespace FFTL
 
 template<uint N>
 inline vecT<N>::vecT()
-	: f32_4()
+	: f32x4()
 {
 #if defined(FFTL_ENABLE_ASSERT)
 	//	Fill with invalid stuff that will be more obvious if used accidentally

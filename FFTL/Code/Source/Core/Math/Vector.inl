@@ -19,26 +19,26 @@ namespace FFTL
 {
 
 template<uint N>
-FFTL_FORCEINLINE constexpr vecT<N>::vecT(const f32_4& v)
-	: f32_4(v)
+FFTL_FORCEINLINE constexpr vecT<N>::vecT(const f32x4& v)
+	: f32x4(v)
 {
 }
 
 template<uint N>
 FFTL_FORCEINLINE constexpr vecT<N>::vecT(Vec4f_In v)
-	: f32_4(v)
+	: f32x4(v)
 {
 }
 
 template<uint N>
 FFTL_FORCEINLINE vecT<N>& vecT<N>::operator=(Vec4f_In v)
 {
-	return static_cast<vecT<N>&>(f32_4::operator=(v));
+	return static_cast<vecT<N>&>(f32x4::operator=(v));
 }
 
 template<uint N>
-FFTL_FORCEINLINE vecT<N>::vecT(f32_4::enZeroType zero)
-	: f32_4(zero)
+FFTL_FORCEINLINE vecT<N>::vecT(f32x4::enZeroType zero)
+	: f32x4(zero)
 {
 }
 
@@ -67,12 +67,12 @@ FFTL_FORCEINLINE vecT<4>::vecT(const vecT<3>& xyz, f32 w)
 template<uint N>
 FFTL_FORCEINLINE vecT<N> AndNot(const vecT<N>& a, const mask32x4& b)
 {
-	return vecT<N>{ AndNot(static_cast<const f32_4&>(a), b) };
+	return vecT<N>{ AndNot(static_cast<const f32x4&>(a), b) };
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N> AndNot(const mask32x4& a, const vecT<N>& b)
 {
-	return vecT<N>{ AndNot(a, static_cast<const f32_4&>(b)) };
+	return vecT<N>{ AndNot(a, static_cast<const f32x4&>(b)) };
 }
 
 template<uint N>
@@ -484,12 +484,12 @@ FFTL_FORCEINLINE vecT<N> ClosestPointOnLineSegment(const vecT<N>& a, const vecT<
 template<bool bX, bool bY, bool bZ, bool bW, uint N>
 FFTL_FORCEINLINE vecT<N> Blend(const vecT<N>& a, const vecT<N>& b)
 {
-	return vecT<N>(Blend<f32_4, bX, bY, bZ, bW>(a, b));
+	return vecT<N>(Blend<f32x4, bX, bY, bZ, bW>(a, b));
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N> Blend(const mask32x4& msk, const vecT<N>& a, const vecT<N>& b)
 {
-	return vecT<N>(Blend<f32_4>(msk, a, b));
+	return vecT<N>(Blend<f32x4>(msk, a, b));
 }
 
 template<uint N>

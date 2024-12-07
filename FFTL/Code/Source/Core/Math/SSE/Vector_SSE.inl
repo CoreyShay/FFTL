@@ -20,7 +20,7 @@ template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT()
 #if defined(FFTL_ENABLE_ASSERT)
 //	Fill with invalid stuff that will be more obvious if used accidentally
-	: f32_4( _mm_castsi128_ps( _mm_set1_epi32(0xffffffff) ) )
+	: f32x4( _mm_castsi128_ps( _mm_set1_epi32(0xffffffff) ) )
 #endif
 {
 }
@@ -36,12 +36,12 @@ FFTL_FORCEINLINE vecT<N>::vecT(f32 x, f32 y, f32 z)
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT(f32 x, f32 y)
-	: f32_4( _mm_unpacklo_ps(_mm_set_ss(x), _mm_set_ss(y)))
+	: f32x4( _mm_unpacklo_ps(_mm_set_ss(x), _mm_set_ss(y)))
 {
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT(f32 x)
-	: f32_4(_mm_set_ss(x))
+	: f32x4(_mm_set_ss(x))
 {
 }
 

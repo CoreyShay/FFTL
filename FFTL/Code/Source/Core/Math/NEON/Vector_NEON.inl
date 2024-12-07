@@ -17,7 +17,7 @@ template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT()
 #if defined(FFTL_ENABLE_ASSERT)
 //	Fill with invalid stuff that will be more obvious if used accidentally
-	: f32_4( vreinterpretq_f32_u32( vdupq_n_u32(0xffffffff) ) )
+	: f32x4( vreinterpretq_f32_u32( vdupq_n_u32(0xffffffff) ) )
 #endif
 {
 }
@@ -41,7 +41,7 @@ FFTL_FORCEINLINE vecT<N>::vecT(f32 x, f32 y)
 }
 template<uint N>
 FFTL_FORCEINLINE vecT<N>::vecT(f32 x)
-: f32_4(vsetq_lane_f32(x, vdupq_n_f32(0), 0))
+: f32x4(vsetq_lane_f32(x, vdupq_n_f32(0), 0))
 {
 }
 

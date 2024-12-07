@@ -1464,10 +1464,10 @@ void DspPcmConvert_SIMD4::DeInterleave2(f32* pOutBuffer0, f32* pOutBuffer1, cons
 		auto* pDst1 = pOutBuffer1 + i;
 
 		//	c = channel, s = sample, src_cs_cs_cs_cs
-		const auto src_00_10_01_11 = FFTL::f32_4::LoadU(pSrc + 0x0);
-		const auto src_02_12_03_13 = FFTL::f32_4::LoadU(pSrc + 0x4);
-		const auto src_04_14_05_15 = FFTL::f32_4::LoadU(pSrc + 0x8);
-		const auto src_06_16_07_17 = FFTL::f32_4::LoadU(pSrc + 0xC);
+		const auto src_00_10_01_11 = FFTL::f32x4::LoadU(pSrc + 0x0);
+		const auto src_02_12_03_13 = FFTL::f32x4::LoadU(pSrc + 0x4);
+		const auto src_04_14_05_15 = FFTL::f32x4::LoadU(pSrc + 0x8);
+		const auto src_06_16_07_17 = FFTL::f32x4::LoadU(pSrc + 0xC);
 
 		const auto src_00_01_02_03 = FFTL::Permute<0, 2, 4, 6>(src_00_10_01_11, src_02_12_03_13);
 		const auto src_10_11_12_13 = FFTL::Permute<1, 3, 5, 7>(src_00_10_01_11, src_02_12_03_13);
@@ -1504,10 +1504,10 @@ void DspPcmConvert_SIMD4::DeInterleave4(f32* pOutBuffer0, f32* pOutBuffer1, f32*
 		auto* pDst3 = pOutBuffer3 + i;
 
 		//	c = channel, s = sample, src_cs_cs_cs_cs
-		const auto src_00_10_20_30 = FFTL::f32_4::LoadU(pSrc + 0x0);
-		const auto src_01_11_21_31 = FFTL::f32_4::LoadU(pSrc + 0x4);
-		const auto src_02_12_22_32 = FFTL::f32_4::LoadU(pSrc + 0x8);
-		const auto src_03_13_23_33 = FFTL::f32_4::LoadU(pSrc + 0xC);
+		const auto src_00_10_20_30 = FFTL::f32x4::LoadU(pSrc + 0x0);
+		const auto src_01_11_21_31 = FFTL::f32x4::LoadU(pSrc + 0x4);
+		const auto src_02_12_22_32 = FFTL::f32x4::LoadU(pSrc + 0x8);
+		const auto src_03_13_23_33 = FFTL::f32x4::LoadU(pSrc + 0xC);
 
 		const auto src_00_20_01_21 = FFTL::Permute<0, 2, 4, 6>(src_00_10_20_30, src_01_11_21_31);
 		const auto src_10_30_11_31 = FFTL::Permute<1, 3, 5, 7>(src_00_10_20_30, src_01_11_21_31);

@@ -622,7 +622,7 @@ inline mask32x4 AndNot(const mask32x4& a, const mask32x4& b)
 	return r;
 }
 
-inline f32_4 f32_4::operator|(const mask32x4& b) const
+inline f32x4 f32x4::operator|(const mask32x4& b) const
 {
 	mask32x4 r;
 	const u32* p = reinterpret_cast<const u32*>(&m_v);
@@ -630,9 +630,9 @@ inline f32_4 f32_4::operator|(const mask32x4& b) const
 	r.m_v[1] = b.m_v[1] | p[1];
 	r.m_v[2] = b.m_v[2] | p[2];
 	r.m_v[3] = b.m_v[3] | p[3];
-	return *reinterpret_cast<const f32_4*>(&r);
+	return *reinterpret_cast<const f32x4*>(&r);
 }
-inline f32_4 f32_4::operator&(const mask32x4& b) const
+inline f32x4 f32x4::operator&(const mask32x4& b) const
 {
 	mask32x4 r;
 	const u32* p = reinterpret_cast<const u32*>(&m_v);
@@ -640,9 +640,9 @@ inline f32_4 f32_4::operator&(const mask32x4& b) const
 	r.m_v[1] = b.m_v[1] & p[1];
 	r.m_v[2] = b.m_v[2] & p[2];
 	r.m_v[3] = b.m_v[3] & p[3];
-	return *reinterpret_cast<const f32_4*>(&r);
+	return *reinterpret_cast<const f32x4*>(&r);
 }
-inline f32_4 f32_4::operator^(const mask32x4& b) const
+inline f32x4 f32x4::operator^(const mask32x4& b) const
 {
 	mask32x4 r;
 	const u32* p = reinterpret_cast<const u32*>(&m_v);
@@ -650,10 +650,10 @@ inline f32_4 f32_4::operator^(const mask32x4& b) const
 	r.m_v[1] = b.m_v[1] ^ p[1];
 	r.m_v[2] = b.m_v[2] ^ p[2];
 	r.m_v[3] = b.m_v[3] ^ p[3];
-	return *reinterpret_cast<const f32_4*>(&r);
+	return *reinterpret_cast<const f32x4*>(&r);
 }
 
-inline mask32x4 CmpEq(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpEq(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -663,7 +663,7 @@ inline mask32x4 CmpEq(f32_4_In a, f32_4_In b)
 		a.m_v.w == b.m_v.w ? 0xffffffff : 0,
 	};
 }
-inline mask32x4 CmpNe(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpNe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -673,7 +673,7 @@ inline mask32x4 CmpNe(f32_4_In a, f32_4_In b)
 		a.m_v.w != b.m_v.w ? 0xffffffff : 0,
 	};
 }
-inline mask32x4 CmpLt(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpLt(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -683,7 +683,7 @@ inline mask32x4 CmpLt(f32_4_In a, f32_4_In b)
 		a.m_v.w < b.m_v.w ? 0xffffffff : 0,
 	};
 }
-inline mask32x4 CmpLe(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpLe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -693,7 +693,7 @@ inline mask32x4 CmpLe(f32_4_In a, f32_4_In b)
 		a.m_v.w <= b.m_v.w ? 0xffffffff : 0,
 	};
 }
-inline mask32x4 CmpGt(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpGt(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -703,7 +703,7 @@ inline mask32x4 CmpGt(f32_4_In a, f32_4_In b)
 		a.m_v.w > b.m_v.w ? 0xffffffff : 0,
 	};
 }
-inline mask32x4 CmpGe(f32_4_In a, f32_4_In b)
+inline mask32x4 CmpGe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4
 	{
@@ -776,13 +776,13 @@ inline mask32x4 CmpGe(mask32x4_In a, mask32x4_In b)
 }
 
 template<typename T, bool bX, bool bY, bool bZ, bool bW>
-inline typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
+inline typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type Blend(const T& a, const T& b)
 {
 	return T{ bX ? b.GetX() : a.GetX(), bY ? b.GetY() : a.GetY(), bZ ? b.GetZ() : a.GetZ(), bW ? b.GetW() : a.GetW() };
 }
 
 template<typename T>
-inline typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
+inline typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
 {
 	return T{ msk.Get(0) ? b.GetX() : a.GetX(), msk.Get(1) ? b.GetY() : a.GetY(), msk.Get(2) ? b.GetZ() : a.GetZ(), msk.Get(3) ? b.GetW() : a.GetW() };
 }

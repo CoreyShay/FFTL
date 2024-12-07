@@ -23,7 +23,7 @@ typedef Vec4f vecNative;
 
 
 template<uint N>
-class vecT : public f32_4
+class vecT : public f32x4
 {
 public:
 
@@ -36,7 +36,7 @@ public:
 
 	vecT(enZeroType);
 	constexpr vecT(const vecT& v) = default;
-	constexpr vecT(const f32_4& v);
+	constexpr vecT(const f32x4& v);
 	constexpr vecT(Vec4f_In v);
 	vecT& operator=(const vecT& v) = default;
 	vecT& operator=(Vec4f_In v);
@@ -48,7 +48,7 @@ public:
 	FFTL_NODISCARD f32*				Ptr() { return reinterpret_cast<f32*>(&m_v); }
 #endif
 
-	constexpr vecT(f32 x, f32 y, f32 z, f32 w) : f32_4(x, y, z, w) {}	//(x, y, z, w)
+	constexpr vecT(f32 x, f32 y, f32 z, f32 w) : f32x4(x, y, z, w) {}	//(x, y, z, w)
 	vecT(f32 x, f32 y, f32 z);			//(x, y, z, 0)
 	vecT(f32 x, f32 y);					//(x, y, 0, 0)
 	vecT(f32 x);						//(x, 0, 0, 0)
@@ -149,9 +149,9 @@ public:
 	FFTL_NODISCARD bool				operator==(const vecT& b) const;
 	FFTL_NODISCARD bool				operator!=(const vecT& b) const;
 
-	FFTL_NODISCARD vecT				operator|(const mask32x4& b) const { return vecT{ f32_4::operator|(b) }; }
-	FFTL_NODISCARD vecT				operator&(const mask32x4& b) const { return vecT{ f32_4::operator&(b) }; }
-	FFTL_NODISCARD vecT				operator^(const mask32x4& b) const { return vecT{ f32_4::operator^(b) }; }
+	FFTL_NODISCARD vecT				operator|(const mask32x4& b) const { return vecT{ f32x4::operator|(b) }; }
+	FFTL_NODISCARD vecT				operator&(const mask32x4& b) const { return vecT{ f32x4::operator&(b) }; }
+	FFTL_NODISCARD vecT				operator^(const mask32x4& b) const { return vecT{ f32x4::operator^(b) }; }
 	template<uint M> friend vecT<M>	AndNot(const vecT<M>& a, const mask32x4& b);
 	template<uint M> friend vecT<M>	AndNot(const mask32x4& a, const vecT<M>& b);
 

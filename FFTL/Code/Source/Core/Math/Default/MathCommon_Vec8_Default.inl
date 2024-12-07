@@ -418,81 +418,81 @@ FFTL_FORCEINLINE mask32x8 mask32x8::operator^(const mask32x8& b) const
 }
 template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator|(const T& b) const
 {
-	return T{ mask32x4(m_v[0]) | f32_4(b.m_v.a), mask32x4(m_v[1]) | f32_4(b.m_v.b) };
+	return T{ mask32x4(m_v[0]) | f32x4(b.m_v.a), mask32x4(m_v[1]) | f32x4(b.m_v.b) };
 }
 template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator&(const T& b) const
 {
-	return T{ mask32x4(m_v[0]) & f32_4(b.m_v.a), mask32x4(m_v[1]) & f32_4(b.m_v.b) };
+	return T{ mask32x4(m_v[0]) & f32x4(b.m_v.a), mask32x4(m_v[1]) & f32x4(b.m_v.b) };
 }
 template<typename T, typename> FFTL_FORCEINLINE T mask32x8::operator^(const T& b) const
 {
-	return T{ mask32x4(m_v[0]) ^ f32_4(b.m_v.a), mask32x4(m_v[1]) ^ f32_4(b.m_v.b) };
+	return T{ mask32x4(m_v[0]) ^ f32x4(b.m_v.a), mask32x4(m_v[1]) ^ f32x4(b.m_v.b) };
 }
 
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const T& a, const T& b)
 {
-	return T{ AndNot(f32_4(a.m_v.a), f32_4(b.m_v.a)), AndNot(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return T{ AndNot(f32x4(a.m_v.a), f32x4(b.m_v.a)), AndNot(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const mask32x8& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const mask32x8& a, const T& b)
 {
-	return T{ AndNot(mask32x4(a.m_v[0]), f32_4(b.m_v.a)), AndNot(mask32x4(a.m_v[1]), f32_4(b.m_v.b)) };
+	return T{ AndNot(mask32x4(a.m_v[0]), f32x4(b.m_v.a)), AndNot(mask32x4(a.m_v[1]), f32x4(b.m_v.b)) };
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type AndNot(const T& a, const mask32x8& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type AndNot(const T& a, const mask32x8& b)
 {
-	return T{ AndNot(f32_4(a.m_v.a), mask32x4(b.m_v[0])), AndNot(f32_4(a.m_v.b), mask32x4(b.m_v[1])) };
+	return T{ AndNot(f32x4(a.m_v.a), mask32x4(b.m_v[0])), AndNot(f32x4(a.m_v.b), mask32x4(b.m_v[1])) };
 }
 FFTL_FORCEINLINE mask32x8 AndNot(const mask32x8& a, const mask32x8& b)
 {
 	return mask32x8{ AndNot(a.m_v[0], b.m_v[0]), AndNot(a.m_v[1], b.m_v[1]) };
 }
 
-FFTL_FORCEINLINE f32_8 f32_8::operator|(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator|(const mask32x8& b) const
 {
-	return f32_8{ f32_4(m_v.a) | mask32x4(b.m_v[0]), f32_4(m_v.b) | mask32x4(b.m_v[1]) };
+	return f32x8{ f32x4(m_v.a) | mask32x4(b.m_v[0]), f32x4(m_v.b) | mask32x4(b.m_v[1]) };
 }
-FFTL_FORCEINLINE f32_8 f32_8::operator&(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator&(const mask32x8& b) const
 {
-	return f32_8{ f32_4(m_v.a) & mask32x4(b.m_v[0]), f32_4(m_v.b) & mask32x4(b.m_v[1]) };
+	return f32x8{ f32x4(m_v.a) & mask32x4(b.m_v[0]), f32x4(m_v.b) & mask32x4(b.m_v[1]) };
 }
-FFTL_FORCEINLINE f32_8 f32_8::operator^(const mask32x8& b) const
+FFTL_FORCEINLINE f32x8 f32x8::operator^(const mask32x8& b) const
 {
-	return f32_8{ f32_4(m_v.a) ^ mask32x4(b.m_v[0]), f32_4(m_v.b) ^ mask32x4(b.m_v[1]) };
+	return f32x8{ f32x4(m_v.a) ^ mask32x4(b.m_v[0]), f32x4(m_v.b) ^ mask32x4(b.m_v[1]) };
 }
 
-FFTL_FORCEINLINE mask32x8 CmpEq(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpEq(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpEq(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpEq(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpEq(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpEq(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-FFTL_FORCEINLINE mask32x8 CmpNe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpNe(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpNe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpNe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpNe(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpNe(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-FFTL_FORCEINLINE mask32x8 CmpLt(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpLt(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpLt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLt(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpLt(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpLt(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-FFTL_FORCEINLINE mask32x8 CmpLe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpLe(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpLe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpLe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpLe(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpLe(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-FFTL_FORCEINLINE mask32x8 CmpGt(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpGt(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpGt(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGt(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpGt(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpGt(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
-FFTL_FORCEINLINE mask32x8 CmpGe(f32_8_In a, f32_8_In b)
+FFTL_FORCEINLINE mask32x8 CmpGe(f32x8_In a, f32x8_In b)
 {
-	return mask32x8{ CmpGe(f32_4(a.m_v.a), f32_4(b.m_v.a)), CmpGe(f32_4(a.m_v.b), f32_4(b.m_v.b)) };
+	return mask32x8{ CmpGe(f32x4(a.m_v.a), f32x4(b.m_v.a)), CmpGe(f32x4(a.m_v.b), f32x4(b.m_v.b)) };
 }
 
 template<typename T, bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type Blend(const T& a, const T& b)
 {
-	return T{ Blend<b0, b1, b2, b3>(f32_4(a.GetNative().a), f32_4(b.GetNative().a)), Blend<b4, b5, b6, b7>(f32_4(a.GetNative().b), f32_4(b.GetNative().b)) };
+	return T{ Blend<b0, b1, b2, b3>(f32x4(a.GetNative().a), f32x4(b.GetNative().a)), Blend<b4, b5, b6, b7>(f32x4(a.GetNative().b), f32x4(b.GetNative().b)) };
 }
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x8, T>::value, T>::type Blend(const mask32x8& msk, const T& a, const T& b)
 {
-	return T{ Blend(msk.GetArray()[0], f32_4(a.GetNative().a), f32_4(b.GetNative().a)), Blend(msk.GetArray()[1], f32_4(a.GetNative().b), f32_4(b.GetNative().b)) };
+	return T{ Blend(msk.GetArray()[0], f32x4(a.GetNative().a), f32x4(b.GetNative().a)), Blend(msk.GetArray()[1], f32x4(a.GetNative().b), f32x4(b.GetNative().b)) };
 }
 
 inline Vec8f V8fSin(Vec8f_In r)

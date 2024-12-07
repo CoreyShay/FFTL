@@ -813,15 +813,15 @@ template<typename T, typename> FFTL_FORCEINLINE T mask32x4::operator^(const T& b
 	return T(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
 
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type AndNot(const T& a, const T& b)
 {
 	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const mask32x4& a, const T& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type AndNot(const mask32x4& a, const T& b)
 {
 	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
-template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type AndNot(const T& a, const mask32x4& b)
+template<typename T> FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type AndNot(const T& a, const mask32x4& b)
 {
 	return T(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
@@ -830,40 +830,40 @@ FFTL_FORCEINLINE mask32x4 AndNot(const mask32x4& a, const mask32x4& b)
 	return mask32x4(vbicq_u32(vreinterpretq_u32_f32(a.m_v), vreinterpretq_u32_f32(b.m_v)));
 }
 
-FFTL_FORCEINLINE f32_4 f32_4::operator|(const mask32x4& b) const
+FFTL_FORCEINLINE f32x4 f32x4::operator|(const mask32x4& b) const
 {
-	return f32_4(vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+	return f32x4(vorrq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
-FFTL_FORCEINLINE f32_4 f32_4::operator&(const mask32x4& b) const
+FFTL_FORCEINLINE f32x4 f32x4::operator&(const mask32x4& b) const
 {
-	return f32_4(vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+	return f32x4(vandq_s32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
-FFTL_FORCEINLINE f32_4 f32_4::operator^(const mask32x4& b) const
+FFTL_FORCEINLINE f32x4 f32x4::operator^(const mask32x4& b) const
 {
-	return f32_4(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
+	return f32x4(veorq_u32(vreinterpretq_u32_f32(m_v), vreinterpretq_u32_f32(b.m_v)));
 }
 
-FFTL_FORCEINLINE mask32x4 CmpEq(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpEq(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vceqq_f32(a.m_v, b.m_v));
 }
-FFTL_FORCEINLINE mask32x4 CmpNe(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpNe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vmvnq_u32(vceqq_f32(a.m_v, b.m_v)));
 }
-FFTL_FORCEINLINE mask32x4 CmpLt(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpLt(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vcltq_f32(a.m_v, b.m_v));
 }
-FFTL_FORCEINLINE mask32x4 CmpLe(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpLe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vcleq_f32(a.m_v, b.m_v));
 }
-FFTL_FORCEINLINE mask32x4 CmpGt(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpGt(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vcgtq_f32(a.m_v, b.m_v));
 }
-FFTL_FORCEINLINE mask32x4 CmpGe(f32_4_In a, f32_4_In b)
+FFTL_FORCEINLINE mask32x4 CmpGe(f32x4_In a, f32x4_In b)
 {
 	return mask32x4(vcgeq_f32(a.m_v, b.m_v));
 }
@@ -894,12 +894,12 @@ FFTL_FORCEINLINE mask32x4 CmpGe(mask32x4_In a, mask32x4_In b)
 }
 
 template<typename T, bool bX, bool bY, bool bZ, bool bW>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type Blend(const T& a, const T& b)
 {
 	return T{ neon_blend<bX, bY, bZ, bW>(a.GetNative(), b.GetNative()) };
 }
 template<typename T>
-FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32_4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
+FFTL_FORCEINLINE typename std::enable_if<std::is_base_of<f32x4, T>::value, T>::type Blend(const mask32x4& msk, const T& a, const T& b)
 {
 	return T{ neon_blend(msk, a.GetNative(), b.GetNative()) };
 }
