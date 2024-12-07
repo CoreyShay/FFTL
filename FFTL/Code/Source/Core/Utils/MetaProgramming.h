@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-#if __has_include(<bit>)
+#if FFTL_CPP_VERSION >= 2020 && __has_include(<bit>)
 #	include <bit>
 #	define FFTL_HAS_BIT_CAST_HEADER 1
 #endif

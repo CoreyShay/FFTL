@@ -32,8 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "../_pch_Core.h"
 #include "DspPcmConvert.h"
 
-#include "../../Core/Math/MathCommon.h"
-#include "../../Core/Platform/CpuInfo.h"
+#include "../Math/MathCommon.h"
+#include "../Platform/CpuInfo.h"
 
 #if defined(FFTL_SSE)
 #	include <tmmintrin.h>

@@ -36,8 +36,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "../DspPcmConvert.h"
 
-#include "../../../Core/Math/MathCommon.h"
-#include "../../../Core/Platform/CpuInfo.h"
+#include "../../Math/MathCommon.h"
+#include "../../Platform/CpuInfo.h"
 
 #include <immintrin.h>
 
