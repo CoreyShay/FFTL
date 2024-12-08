@@ -29,7 +29,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "../../_pch_Core.h"
+#if __has_include("../../_pch_Core.h")
+#	include "../../_pch_Core.h"
+#endif
+
+#include "../../defs.h"
 
 #if defined(FFTL_SSE2)
 

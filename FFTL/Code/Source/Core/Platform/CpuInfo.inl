@@ -37,7 +37,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #if defined(_MSC_VER)
 #	pragma warning(push)
-#	pragma warning(disable : 4793) //warning C4793 : 'FFTL::CpuInfo::DetectArchitectureSupport' : function compiled as native :
+#	pragma warning(disable : 4714) //warning C4714: function 'void __cdecl FFTL::__x86_cpuid(int (& __ptr64)[4],int)' marked as __forceinline not inlined
+#	pragma warning(disable : 4793) //warning C4793: 'FFTL::CpuInfo::DetectArchitectureSupport' : function compiled as native :
 #endif
 
 namespace FFTL
@@ -49,7 +50,7 @@ namespace FFTL
 
 
 #if defined(FFTL_SSE)
-FFTL_FORCEINLINE void __x86_cpuid(int regs[4], int i)
+FFTL_FORCEINLINE void __x86_cpuid(int (&regs)[4], int i)
 {
 #if defined(__GNUC__)
 	__asm__ __volatile__(

@@ -29,9 +29,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "_pch_Core.h"
-#include "DspPcmConvert.h"
+#if __has_include("../../_pch_Core.h")
+	#include "_pch_Core.h"
+#endif
 
+#include "../defs.h"
+
+#include "DspPcmConvert.h"
 #include "../Math/MathCommon.h"
 
 
